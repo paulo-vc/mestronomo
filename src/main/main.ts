@@ -17,6 +17,7 @@ import { SceneManager, type Scene, type SceneMusic } from './scenes';
 import { PACKAGED, ROOT } from './paths';
 import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
 import { createTray } from './tray';
+import { DEVELOPER_PORTAL, botIdFromToken, checkToken, inviteUrl } from './botSetup';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
@@ -312,6 +313,9 @@ function registerIpc() {
   ipcMain.handle('tabela-rolar', (_e, nome: string) => rollTableSafe(nome));
   ipcMain.handle('discord-texto', (_e, texto: string) => postToDiscord(texto));
   ipcMain.handle('abrir-tabelas', () => shell.openPath(TABLES_DIR));
+  ipcMain.handle('bot-verificar', (_e, token: string) => checkToken(token));
+  ipcMain.handle('bot-portal', () => shell.openExternal(DEVELOPER_PORTAL));
+  ipcMain.handle('bot-convidar', (_e, token?: string) => openInvite(token));
   ipcMain.handle('handout', async (_e, legenda: string) => {
     try {
       return await sendHandout(legenda);
@@ -320,6 +324,17 @@ function registerIpc() {
       return false;
     }
   });
+}
+
+/** Abre o convite do bot: do token digitado na tela, ou do bot já configurado. */
+function openInvite(token?: string) {
+  const id = botIdFromToken(token || loadCredentials()?.token || '');
+  if (!id) {
+    send('erro', 'Configure o token do bot primeiro (botão ⚙).');
+    return false;
+  }
+  shell.openExternal(inviteUrl(id));
+  return true;
 }
 
 function isAutoStart() {
@@ -518,6 +533,7 @@ app.whenReady().then(() => {
     stopEffects,
     isAutoStart,
     setAutoStart,
+    invite: () => openInvite(),
   });
 });
 

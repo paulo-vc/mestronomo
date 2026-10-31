@@ -10,6 +10,7 @@ export interface TrayActions {
   stopEffects(): void;
   isAutoStart(): boolean;
   setAutoStart(enabled: boolean): void;
+  invite(): void;
 }
 
 /** Ícone na bandeja: o app continua rodando com a janela fechada. */
@@ -25,6 +26,7 @@ export function createTray(actions: TrayActions) {
         { type: 'separator' },
         { label: actions.isBotInCall() ? 'Dispensar bot' : 'Chamar bot', click: actions.toggleBot },
         { label: 'Parar efeitos', click: actions.stopEffects },
+        { label: 'Convidar o bot para um servidor…', click: actions.invite },
         { type: 'separator' },
         {
           label: 'Iniciar com o Windows',

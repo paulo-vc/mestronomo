@@ -8,6 +8,7 @@ import path from 'node:path';
 
 export interface Credentials {
   token: string;
+  /** Vazio: o dono da aplicação no Discord é o mestre. */
   ownerId: string;
 }
 
@@ -28,11 +29,11 @@ function readStored(): Stored {
 
 export function loadCredentials(): Credentials | undefined {
   const { DISCORD_TOKEN, DISCORD_OWNER_ID } = process.env;
-  if (DISCORD_TOKEN && DISCORD_OWNER_ID) return { token: DISCORD_TOKEN, ownerId: DISCORD_OWNER_ID };
+  if (DISCORD_TOKEN) return { token: DISCORD_TOKEN, ownerId: DISCORD_OWNER_ID ?? '' };
   const stored = readStored();
-  if (!stored.token || !stored.ownerId || !safeStorage.isEncryptionAvailable()) return undefined;
+  if (!stored.token || !safeStorage.isEncryptionAvailable()) return undefined;
   try {
-    return { token: safeStorage.decryptString(Buffer.from(stored.token, 'base64')), ownerId: stored.ownerId };
+    return { token: safeStorage.decryptString(Buffer.from(stored.token, 'base64')), ownerId: stored.ownerId ?? '' };
   } catch {
     return undefined;
   }
@@ -48,7 +49,7 @@ export function saveCredentials(token: string, ownerId: string) {
 
 /** O que a tela de configuração pode saber: se há token salvo e de onde ele vem, nunca o valor. */
 export function credentialsInfo() {
-  const fromEnv = Boolean(process.env.DISCORD_TOKEN && process.env.DISCORD_OWNER_ID);
+  const fromEnv = Boolean(process.env.DISCORD_TOKEN);
   const stored = readStored();
   return { fromEnv, hasToken: fromEnv || Boolean(stored.token), ownerId: fromEnv ? process.env.DISCORD_OWNER_ID : stored.ownerId ?? '' };
 }

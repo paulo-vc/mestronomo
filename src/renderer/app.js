@@ -52,6 +52,54 @@ function mostrarErro(msg) {
   if (msg) erroTimer = setTimeout(() => (els.erro.textContent = ''), 8000);
 }
 
+// --- Navegação ---------------------------------------------------------
+
+const PAGINAS = ['cenas', 'musica', 'ambiente', 'soundboard', 'mesa', 'audio'];
+
+function irPara(pagina) {
+  if (!PAGINAS.includes(pagina)) pagina = 'cenas';
+  for (const p of document.querySelectorAll('.pagina')) p.classList.toggle('ativa', p.dataset.pagina === pagina);
+  for (const b of document.querySelectorAll('.menu button')) b.classList.toggle('ativo', b.dataset.ir === pagina);
+  $('.conteudo').scrollTop = 0;
+  try {
+    localStorage.setItem('pagina', pagina);
+  } catch {}
+}
+
+for (const b of document.querySelectorAll('.menu button')) b.addEventListener('click', () => irPara(b.dataset.ir));
+// Ctrl+1..6 troca de página (com a janela em foco; os atalhos globais usam Ctrl+Alt).
+window.addEventListener('keydown', (e) => {
+  if (!e.ctrlKey || e.altKey || e.shiftKey) return;
+  const i = Number(e.key) - 1;
+  if (i >= 0 && i < PAGINAS.length) {
+    e.preventDefault();
+    irPara(PAGINAS[i]);
+  }
+});
+try {
+  irPara(localStorage.getItem('pagina') || 'cenas');
+} catch {
+  irPara('cenas');
+}
+
+// --- Barra fixa ----------------------------------------------------------
+
+const barra = { cena: undefined, camadas: 0 };
+
+function renderBarra() {
+  const faixa = yt?.fila[yt.atual];
+  $('#barra-titulo').textContent = yt?.carregando && !faixa ? 'Carregando…' : faixa ? faixa.title : 'Nada tocando';
+  $('#barra-pausar').textContent = faixa && !yt.pausado ? '⏸' : '▶';
+  const partes = [];
+  if (barra.cena) partes.push(`Cena: ${barra.cena}`);
+  if (barra.camadas) partes.push(`${barra.camadas} camada${barra.camadas > 1 ? 's' : ''} de ambiente`);
+  if (capturando.length) partes.push(`${capturando.map((c) => c.app.replace(/\.exe$/i, '')).join(', ')} ao vivo`);
+  $('#barra-sub').textContent = partes.join(' · ');
+}
+
+$('#barra-pausar').addEventListener('click', () => api.yt.pausar());
+$('#barra-proxima').addEventListener('click', () => api.yt.proxima());
+
 function slider(valor, aoMudar) {
   const input = el('input', { type: 'range', min: 0, max: 100, value: Math.round(valor * 100) });
   const saida = el('output', { textContent: `${input.value}%` });
@@ -102,8 +150,15 @@ dialogoHandout.addEventListener('close', async () => {
 const dialogo = $('#config');
 const configForm = $('#config-form');
 
+function mostrarCheck(texto, classe = '') {
+  const check = $('#bot-check');
+  check.textContent = texto;
+  check.className = `hint ${classe}`;
+}
+
 async function abrirConfig() {
   const info = await api.configInfo();
+  mostrarCheck(info.hasToken ? 'Token salvo e guardado criptografado neste PC.' : 'Fica guardado criptografado neste PC.');
   configForm.token.value = '';
   configForm.token.placeholder = info.hasToken ? '•••••••• (salvo; deixe vazio para manter)' : 'Cole o token aqui';
   configForm.ownerId.value = info.ownerId ?? '';
@@ -113,11 +168,22 @@ async function abrirConfig() {
     ? 'Canal de texto definido. Para trocar, use /canal no canal desejado.'
     : 'Para "tocando agora" e handouts, use /canal no canal de texto desejado.';
   configForm.token.disabled = configForm.ownerId.disabled = info.fromEnv;
+  $('#bot-verificar').disabled = info.fromEnv;
   $('#config-env').classList.toggle('hidden', !info.fromEnv);
   dialogo.showModal();
 }
 
 $('#abrir-config').addEventListener('click', abrirConfig);
+$('#bot-portal').addEventListener('click', () => api.botPortal());
+$('#bot-convidar').addEventListener('click', () => api.botConvidar(configForm.token.value));
+$('#bot-verificar').addEventListener('click', async () => {
+  const token = configForm.token.value.trim();
+  if (!token) return mostrarCheck('Cole o token primeiro.', 'err');
+  mostrarCheck('Verificando…');
+  const r = await api.botVerificar(token);
+  if (!r.ok) return mostrarCheck(r.erro, 'err');
+  mostrarCheck(`✓ Bot "${r.bot}" encontrado${r.dono ? ` · dono: ${r.dono}` : ''}. Agora convide e clique em Salvar.`, 'ok');
+});
 dialogo.addEventListener('close', () => {
   if (dialogo.returnValue !== 'salvar') return;
   api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked, configForm.tocandoAgora.checked);
@@ -128,6 +194,7 @@ dialogo.addEventListener('close', () => {
 
 function renderCapturas(lista) {
   capturando = lista;
+  renderBarra();
   els.capturas.replaceChildren(
     ...lista.map(({ app, volume }) =>
       el(
@@ -178,6 +245,7 @@ $('#recarregar').addEventListener('click', carregarApps);
 
 function renderYoutube(estado) {
   yt = estado;
+  renderBarra();
   ytRecebidoEm = performance.now();
   const faixa = estado.fila[estado.atual];
   els.ytTitulo.textContent = estado.carregando ? 'Carregando link…' : faixa ? faixa.title : 'Nada tocando';
@@ -275,6 +343,8 @@ els.ytRepetir.addEventListener('click', () => api.yt.repetir(REPETIR[yt?.repetir
 // --- Cenas -------------------------------------------------------------
 
 function renderCenas(estado) {
+  barra.cena = estado.cenas.find((c) => c.id === estado.ativa)?.nome;
+  renderBarra();
   $('#cenas-lista').replaceChildren(
     ...estado.cenas.map((c, i) =>
       el(
@@ -314,6 +384,8 @@ $('#cena-fade').addEventListener('input', (e) => {
 const semExtensao = (arquivo) => arquivo.replace(/\.[^.]+$/, '');
 
 function renderAmbiente(estado) {
+  barra.camadas = estado.camadas.length;
+  renderBarra();
   const ativas = new Set(estado.camadas.map((c) => c.arquivo));
   $('#amb-arquivos').replaceChildren(
     ...estado.arquivos.map((arquivo) =>

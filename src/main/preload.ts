@@ -39,6 +39,9 @@ contextBridge.exposeInMainWorld('mestronomo', {
   botSair: invoke('bot-sair'),
   configInfo: invoke('config-info'),
   configSalvar: invoke('config-salvar'),
+  botVerificar: invoke('bot-verificar'),
+  botPortal: invoke('bot-portal'),
+  botConvidar: invoke('bot-convidar'),
   handout: invoke('handout'),
   discordTexto: invoke('discord-texto'),
   combate: {
