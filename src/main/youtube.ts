@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import type { Mixer, Source } from './mixer';
-import { StreamSource, resolveTracks, type TrackInfo } from './sources';
+import { FileSource, StreamSource, isSingleVideo, resolveTracks, searchTracks, type FfmpegSource, type TrackInfo } from './sources';
 
 export type LoopMode = 'nenhum' | 'fila' | 'faixa';
 
@@ -15,13 +15,16 @@ export interface YouTubeState {
   carregando: boolean;
 }
 
-/** Fila de links do YouTube tocando pelo bus de música. Emite 'change' e 'erro'. */
+/**
+ * Player de música: uma fila que mistura links (YouTube e outros sites do yt-dlp) e arquivos locais,
+ * tocando pelo bus de música. Emite 'change' e 'erro'.
+ */
 export class YouTubePlayer extends EventEmitter {
   queue: TrackInfo[] = [];
   current = -1;
   loop: LoopMode = 'nenhum';
   volume = 0.8;
-  private source: StreamSource | undefined;
+  private source: FfmpegSource | undefined;
   private loading = 0;
   private failures = 0;
 
@@ -34,17 +37,47 @@ export class YouTubePlayer extends EventEmitter {
 
   /** Adiciona um link (vídeo ou playlist). Começa a tocar se nada estiver tocando. */
   async add(url: string) {
+    // Vídeo único com o player parado: começa já, e o título chega depois (economiza ~2 s).
+    let placeholder: TrackInfo | undefined;
+    if (isSingleVideo(url) && !this.source) {
+      placeholder = { url, title: 'Carregando…' };
+      this.queue.push(placeholder);
+      this.play(this.queue.length - 1);
+    }
     this.loading++;
     this.changed();
     try {
       const tracks = await resolveTracks(url);
       if (tracks.length === 0) throw new Error('nenhuma faixa encontrada');
-      const first = this.queue.length;
-      this.queue.push(...tracks);
-      if (!this.source) this.play(first);
+      if (placeholder) Object.assign(placeholder, tracks[0]);
+      else this.addTracks(tracks);
     } catch (err) {
-      const detail = (err as { stderr?: string }).stderr?.match(/ERROR: (.+)/)?.[1] ?? (err as Error).message;
-      this.emit('erro', `Não consegui abrir o link: ${detail}`);
+      if (placeholder) this.remove(this.queue.indexOf(placeholder));
+      this.emit('erro', `Não consegui abrir o link: ${errorDetail(err)}`);
+    } finally {
+      this.loading--;
+      this.changed();
+    }
+  }
+
+  /** Coloca faixas no fim da fila (ex.: uma pasta de músicas locais). */
+  addTracks(tracks: TrackInfo[]) {
+    if (tracks.length === 0) return;
+    const first = this.queue.length;
+    this.queue.push(...tracks);
+    if (!this.source) this.play(first);
+    else this.changed();
+  }
+
+  /** Busca no YouTube; não mexe na fila. */
+  async search(query: string): Promise<TrackInfo[]> {
+    this.loading++;
+    this.changed();
+    try {
+      return await searchTracks(query);
+    } catch (err) {
+      this.emit('erro', `A busca falhou: ${errorDetail(err)}`);
+      return [];
     } finally {
       this.loading--;
       this.changed();
@@ -59,7 +92,8 @@ export class YouTubePlayer extends EventEmitter {
       return this.changed();
     }
     this.current = index;
-    const source = new StreamSource(this.queue[index].url);
+    const track = this.queue[index];
+    const source = track.local ? new FileSource(track.url, 'musica') : new StreamSource(track.url);
     source.volume = this.volume;
     this.source = source;
     this.mixer.fadeIn(source, fadeMs);
@@ -135,7 +169,7 @@ export class YouTubePlayer extends EventEmitter {
     };
   }
 
-  private onTrackEnd(source: StreamSource) {
+  private onTrackEnd(source: FfmpegSource) {
     this.source = undefined;
     if (source.framesPlayed === 0) {
       // Nada tocou: vídeo indisponível ou bloqueado. Pula, mas sem girar para sempre numa fila toda quebrada.
@@ -161,4 +195,8 @@ export class YouTubePlayer extends EventEmitter {
   private changed() {
     this.emit('change', this.state());
   }
+}
+
+function errorDetail(err: unknown) {
+  return (err as { stderr?: string }).stderr?.match(/ERROR: (.+)/)?.[1] ?? (err as Error).message;
 }

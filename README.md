@@ -101,6 +101,12 @@ Escolha o dispositivo de saída e o que ouvir:
 
 O volume do fone não muda o que vai para a call.
 
+## Player (YouTube e músicas locais)
+
+- **Link**: cole um link de vídeo ou playlist do YouTube (ou de outro site que o yt-dlp suporte).
+- **Busca**: digite um texto (ex.: "tavern music") e escolha entre os 5 primeiros resultados.
+- **Músicas locais**: cada subpasta de `musicas/` vira uma playlist (instalado: `Documentos\Mestrônomo\musicas`); escolha e clique em **Pôr na fila**. Links e arquivos locais podem ficar na mesma fila.
+
 ## Cenas
 
 Monte o clima (camadas de ambiente, sons ocasionais e, se quiser, a fila do YouTube) e clique em **Salvar cena atual**. Depois, um clique na cena troca tudo com **crossfade** (duração ajustável em "Transição"). Para cada cena você escolhe o que fazer com a música: usar a fila atual do YouTube, parar a música ou não mexer nela.
@@ -141,6 +147,8 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 | `/api/musica/capturar/Spotify.exe` | Adiciona a captura de um app |
 | `/api/musica/parar/Spotify.exe` | Para uma captura (sem o nome, para todas) |
 | `/api/youtube/adicionar?url=<link>` | Adiciona vídeo ou playlist à fila |
+| `/api/youtube/buscar?q=<texto>` | Busca e põe o primeiro resultado na fila |
+| `/api/youtube/pasta/Taverna` | Põe uma pasta de músicas locais na fila |
 | `/api/youtube/pausar` · `proxima` · `anterior` · `parar` · `limpar` | Controles do player |
 | `/api/youtube/repetir/fila` | Repetição: `nenhum`, `fila` ou `faixa` |
 | `/api/volume/musica/60` | Volume (`musica`, `efeitos`, `master`, `ducking`, `youtube`, `monitorVolume`) de 0 a 100 |

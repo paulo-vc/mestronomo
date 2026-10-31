@@ -3,12 +3,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
 import { Mixer, type MixerSettings, type MonitorMode, type VolumeKey } from './mixer';
-import { AppCaptureSource, listAudioApps } from './sources';
+import { AppCaptureSource, listAudioApps, type TrackInfo } from './sources';
 import { DiscordBot, type BotStatus } from './discord';
 import { YouTubePlayer, type LoopMode } from './youtube';
 import { startApi } from './api';
 import { Ambience, type Occasional } from './ambience';
 import { Soundboard, type SoundOptions } from './soundboard';
+import { listPlaylists, loadPlaylist } from './library';
 import { SceneManager, type Scene, type SceneMusic } from './scenes';
 import { PACKAGED, ROOT } from './paths';
 import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
@@ -20,6 +21,7 @@ if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 const DATA_DIR = PACKAGED ? path.join(app.getPath('documents'), 'Mestrônomo') : ROOT;
 const SOUNDS_DIR = path.join(DATA_DIR, 'sons');
 const AMBIENT_DIR = path.join(DATA_DIR, 'ambientes');
+const MUSIC_DIR = path.join(DATA_DIR, 'musicas');
 /** Iniciado junto com o Windows: abre direto na bandeja, sem mostrar a janela. */
 const START_HIDDEN = process.argv.includes('--oculto');
 const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
@@ -141,6 +143,7 @@ function state() {
     bot: bot?.status ?? ({ state: 'desligado', motivo: 'Bot não configurado' } satisfies BotStatus),
     capturas: capturesState(),
     youtube: youtube.state(),
+    playlists: listPlaylists(MUSIC_DIR),
     ambiente: ambience.state(),
     cenas: scenes.state(),
     mixer: mixer.settings,
@@ -174,6 +177,11 @@ function registerIpc() {
   ipcMain.handle('bot-entrar', () => joinBot());
   ipcMain.handle('bot-sair', () => leaveBot());
   ipcMain.handle('yt-adicionar', (_e, url: string) => youtube.add(url));
+  ipcMain.handle('yt-buscar', (_e, query: string) => youtube.search(query));
+  ipcMain.handle('yt-adicionar-faixa', (_e, track: TrackInfo) => youtube.addTracks([track]));
+  ipcMain.handle('playlists', () => listPlaylists(MUSIC_DIR));
+  ipcMain.handle('playlist-carregar', async (_e, nome: string) => youtube.addTracks(await loadPlaylist(MUSIC_DIR, nome)));
+  ipcMain.handle('abrir-musicas', () => shell.openPath(MUSIC_DIR));
   ipcMain.handle('yt-tocar', (_e, index: number) => youtube.play(index));
   ipcMain.handle('yt-pausar', () => youtube.togglePause());
   ipcMain.handle('yt-proxima', () => youtube.next());
@@ -332,6 +340,7 @@ app.whenReady().then(() => {
     youtube,
     ambience,
     scenes,
+    loadPlaylist: async (nome: string) => youtube.addTracks(await loadPlaylist(MUSIC_DIR, nome)),
   });
   startBot();
   createWindow();

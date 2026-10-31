@@ -97,7 +97,7 @@ export class AppCaptureSource implements Source {
  * Áudio decodificado pelo ffmpeg a partir de um arquivo ou do stdin.
  * O ffmpeg decodifica bem mais rápido que o tempo real, então seguramos com ~1 s de folga.
  */
-class FfmpegSource implements Source {
+export class FfmpegSource implements Source {
   volume = 1;
   ducks = true;
   paused = false;
@@ -178,19 +178,40 @@ export class StreamSource extends FfmpegSource {
 }
 
 export interface TrackInfo {
+  /** Link (YouTube etc.) ou, para músicas locais, o caminho do arquivo. */
   url: string;
   title: string;
   /** Em segundos; ausente em lives. */
   duration?: number;
+  /** Faixa local: toca o arquivo direto com o ffmpeg, sem yt-dlp. */
+  local?: boolean;
 }
 
 /** Lê título e duração. Se for uma playlist, devolve todas as faixas dela. */
 export async function resolveTracks(url: string): Promise<TrackInfo[]> {
+  return parseTracks(await ytdlpPrint(url));
+}
+
+/** Busca no YouTube e devolve os primeiros resultados (sem tocar nada). */
+export async function searchTracks(query: string, count = 5): Promise<TrackInfo[]> {
+  return parseTracks(await ytdlpPrint(`ytsearch${count}:${query}`));
+}
+
+/** Um vídeo único (não playlist): dá para começar a tocar antes de saber o título. */
+export function isSingleVideo(url: string) {
+  return /youtu\.be\/|youtube\.com\/(watch|shorts\/)/.test(url) && !/[?&]list=/.test(url);
+}
+
+async function ytdlpPrint(target: string) {
   const { stdout } = await execFileAsync(
     YTDLP,
-    ['--flat-playlist', '--no-warnings', ...YTDLP_JS_RUNTIME.args, '--print', '%(webpage_url,url)s\t%(title)s\t%(duration)s', url],
+    ['--flat-playlist', '--no-warnings', ...YTDLP_JS_RUNTIME.args, '--print', '%(webpage_url,url)s\t%(title)s\t%(duration)s', target],
     { maxBuffer: 16 * 1024 * 1024, windowsHide: true, env: { ...process.env, ...YTDLP_JS_RUNTIME.env } },
   );
+  return stdout;
+}
+
+function parseTracks(stdout: string): TrackInfo[] {
   return stdout
     .split('\n')
     .filter((line) => line.includes('\t'))
@@ -199,4 +220,13 @@ export async function resolveTracks(url: string): Promise<TrackInfo[]> {
       const seconds = Number(duration);
       return { url: trackUrl, title, duration: Number.isFinite(seconds) ? seconds : undefined };
     });
+}
+
+/** Duração de um arquivo local, lida do cabeçalho pelo ffmpeg ("Duration: 00:03:21.45"). */
+export async function probeDuration(file: string): Promise<number | undefined> {
+  const stderr = await new Promise<string>((resolve) => {
+    execFile(FFMPEG, ['-hide_banner', '-i', file], { windowsHide: true }, (_err, _out, err) => resolve(String(err)));
+  });
+  const m = stderr.match(/Duration: (\d+):(\d+):(\d+(?:\.\d+)?)/);
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : undefined;
 }

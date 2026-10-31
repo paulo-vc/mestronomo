@@ -81,11 +81,17 @@
       </section>
 
       <section class="card" id="youtube">
-        <h2>YouTube</h2>
+        <h2>Player</h2>
         <form id="yt-form" class="row">
-          <input id="yt-url" type="url" placeholder="Cole um link de vídeo ou playlist" required />
+          <input id="yt-url" type="text" placeholder="Link do YouTube ou texto para buscar" required />
           <button class="primary">Adicionar</button>
         </form>
+        <ul id="yt-resultados" class="lista resultados"></ul>
+        <div class="row">
+          <select id="playlists" title="Pastas dentro de musicas/"></select>
+          <button id="playlist-carregar" class="ghost">Pôr na fila</button>
+          <button id="playlist-pasta" class="ghost" title="Abrir a pasta de músicas">📁</button>
+        </div>
         <div class="tocando">
           <div id="yt-titulo" class="titulo">Nada tocando</div>
           <div id="yt-tempo" class="tempo"></div>

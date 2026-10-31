@@ -10,3 +10,5 @@ vendor/
 release/
 ambientes/*
 !ambientes/LEIA-ME.txt
+musicas/*
+!musicas/LEIA-ME.txt

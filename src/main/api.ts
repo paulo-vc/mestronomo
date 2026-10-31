@@ -18,6 +18,7 @@ export interface ApiActions {
   youtube: YouTubePlayer;
   ambience: Ambience;
   scenes: SceneManager;
+  loadPlaylist(nome: string): Promise<void>;
 }
 
 const VOLUME_KEYS = ['musica', 'efeitos', 'ambiente', 'master', 'ducking', 'monitorVolume', 'youtube'];
@@ -37,6 +38,8 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/musica/capturar/<app.exe>       adiciona a captura de um app
  *   /api/musica/parar[/<app.exe>]        para uma captura (ou todas)
  *   /api/youtube/adicionar?url=<link>    adiciona vídeo ou playlist à fila
+ *   /api/youtube/buscar?q=<texto>        adiciona o primeiro resultado da busca
+ *   /api/youtube/pasta/<nome>            adiciona uma pasta de músicas locais à fila
  *   /api/youtube/<pausar|proxima|anterior|parar|limpar>
  *   /api/youtube/repetir/<nenhum|fila|faixa>
  *   /api/cenas                           lista de cenas
@@ -46,7 +49,7 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/volume/<musica|efeitos|master|ducking|youtube>/<0-100>
  */
 export function startApi(port: number, actions: ApiActions) {
-  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes } = actions;
+  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes, loadPlaylist } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
     // Divide antes de decodificar: ids de som têm "/" (ex.: Combate%2Fespada).
@@ -93,6 +96,18 @@ export function startApi(port: number, actions: ApiActions) {
             youtube.add(link);
             return ok();
           }
+          case 'buscar': {
+            const q = url.searchParams.get('q');
+            if (!q) return reply(400, { erro: 'use /api/youtube/buscar?q=<texto>' });
+            const [primeiro] = await youtube.search(q);
+            if (!primeiro) return reply(404, { erro: 'nada encontrado' });
+            youtube.addTracks([primeiro]);
+            return reply(200, { adicionado: primeiro.title });
+          }
+          case 'pasta':
+            if (!b) return reply(400, { erro: 'use /api/youtube/pasta/<nome>' });
+            await loadPlaylist(b);
+            return ok();
           case 'pausar': youtube.togglePause(); return ok();
           case 'proxima': youtube.next(); return ok();
           case 'anterior': youtube.previous(); return ok();

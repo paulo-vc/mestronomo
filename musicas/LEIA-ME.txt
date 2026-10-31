@@ -1,0 +1,2 @@
+Cada subpasta aqui vira uma playlist no Player (ex.: musicas/Taverna, musicas/Combate).
+Arquivos soltos nesta pasta aparecem como a playlist "Soltas".

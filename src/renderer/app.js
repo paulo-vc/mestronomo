@@ -208,11 +208,49 @@ function atualizarTempo() {
 }
 setInterval(atualizarTempo, 500);
 
-$('#yt-form').addEventListener('submit', (e) => {
+// Link → adiciona direto; texto → busca e mostra os 5 primeiros para escolher.
+$('#yt-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  api.yt.adicionar(els.ytUrl.value.trim());
-  els.ytUrl.value = '';
+  const texto = els.ytUrl.value.trim();
+  if (/^https?:\/\//i.test(texto)) {
+    api.yt.adicionar(texto);
+    els.ytUrl.value = '';
+    return $('#yt-resultados').replaceChildren();
+  }
+  const resultados = await api.yt.buscar(texto);
+  $('#yt-resultados').replaceChildren(
+    ...resultados.map((faixa) =>
+      el(
+        'li',
+        {
+          title: 'Pôr na fila',
+          onclick: () => {
+            api.yt.adicionarFaixa(faixa);
+            els.ytUrl.value = '';
+            $('#yt-resultados').replaceChildren();
+          },
+        },
+        el('span', { className: 'nome', textContent: faixa.title }),
+        el('span', { className: 'detalhe', textContent: tempo(faixa.duration) }),
+        el('span', { className: 'detalhe', textContent: '+' }),
+      ),
+    ),
+  );
+  if (resultados.length === 0) mostrarErro('Nada encontrado.');
 });
+
+async function carregarPlaylists() {
+  const pastas = await api.yt.playlists();
+  $('#playlists').replaceChildren(
+    ...(pastas.length ? pastas.map((p) => new Option(p, p)) : [new Option('Nenhuma pasta em musicas/', '')]),
+  );
+}
+$('#playlist-carregar').addEventListener('click', () => {
+  const pasta = $('#playlists').value;
+  if (pasta) api.yt.carregarPasta(pasta);
+});
+$('#playlist-pasta').addEventListener('click', () => api.yt.abrirPasta());
+window.addEventListener('focus', carregarPlaylists);
 els.ytPausar.addEventListener('click', () => api.yt.pausar());
 $('#yt-proxima').addEventListener('click', () => api.yt.proxima());
 $('#yt-anterior').addEventListener('click', () => api.yt.anterior());
@@ -527,4 +565,5 @@ api.onErro(mostrarErro);
   renderSoundboard(estado.soundboard);
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();
+  carregarPlaylists();
 })();

@@ -41,6 +41,11 @@ contextBridge.exposeInMainWorld('mestronomo', {
   configSalvar: invoke('config-salvar'),
   yt: {
     adicionar: invoke('yt-adicionar'),
+    buscar: invoke('yt-buscar'),
+    adicionarFaixa: invoke('yt-adicionar-faixa'),
+    playlists: invoke('playlists'),
+    carregarPasta: invoke('playlist-carregar'),
+    abrirPasta: invoke('abrir-musicas'),
     tocar: invoke('yt-tocar'),
     pausar: invoke('yt-pausar'),
     proxima: invoke('yt-proxima'),
