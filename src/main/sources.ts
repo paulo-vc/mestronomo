@@ -61,6 +61,7 @@ export async function listAudioApps(): Promise<AudioApp[]> {
 /** Áudio ao vivo de outro programa (Spotify, navegador...) via mestronomo-capture. */
 export class AppCaptureSource implements Source {
   readonly bus: Bus = 'musica';
+  volume = 1;
   private queue = new PcmQueue();
   private proc: ChildProcess;
   private ended = false;
@@ -91,37 +92,108 @@ export class AppCaptureSource implements Source {
   }
 }
 
-/** Um arquivo de áudio decodificado pelo ffmpeg (efeitos da soundboard). */
-export class FileSource implements Source {
+/**
+ * Áudio decodificado pelo ffmpeg a partir de um arquivo ou do stdin.
+ * O ffmpeg decodifica bem mais rápido que o tempo real, então seguramos com ~1 s de folga.
+ */
+class FfmpegSource implements Source {
+  volume = 1;
+  paused = false;
+  /** Quadros já tocados — dá a posição atual da faixa. */
+  framesPlayed = 0;
+  protected ffmpeg: ChildProcess;
   private queue = new PcmQueue();
-  private proc: ChildProcess;
   private decoded = false;
   private stopped = false;
 
-  constructor(readonly file: string, readonly bus: Bus) {
-    this.proc = spawn(
+  constructor(readonly bus: Bus, input: string) {
+    this.ffmpeg = spawn(
       'ffmpeg',
-      ['-hide_banner', '-loglevel', 'error', '-i', file, '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
+      ['-hide_banner', '-loglevel', 'error', '-i', input, '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
       { windowsHide: true },
     );
-    const stdout = this.proc.stdout!;
+    const stdout = this.ffmpeg.stdout!;
     stdout.on('data', (chunk: Buffer) => {
       this.queue.push(chunk);
-      // O ffmpeg decodifica bem mais rápido que o tempo real; segura com ~1 s de folga.
       if (this.queue.length > FRAME_BYTES * 50) stdout.pause();
     });
-    this.proc.on('exit', () => (this.decoded = true));
-    this.proc.on('error', () => (this.decoded = true));
+    this.ffmpeg.on('exit', () => (this.decoded = true));
+    this.ffmpeg.on('error', () => (this.decoded = true));
+  }
+
+  get seconds() {
+    return (this.framesPlayed * FRAME_BYTES) / (SAMPLE_RATE * CHANNELS * 2);
   }
 
   read(out: Int16Array) {
+    if (this.stopped) return false;
+    if (this.paused) return true;
+    const before = this.queue.length;
     this.queue.readInto(out);
-    if (this.queue.length < FRAME_BYTES * 25) this.proc.stdout?.resume();
-    return !this.stopped && !(this.decoded && this.queue.length === 0);
+    if (this.queue.length < before) this.framesPlayed++;
+    if (this.queue.length < FRAME_BYTES * 25) this.ffmpeg.stdout?.resume();
+    return !(this.decoded && this.queue.length === 0);
   }
 
   stop() {
     this.stopped = true;
-    this.proc.kill();
+    this.ffmpeg.kill();
   }
+}
+
+/** Um arquivo local (efeitos da soundboard). */
+export class FileSource extends FfmpegSource {
+  constructor(readonly file: string, bus: Bus) {
+    super(bus, file);
+  }
+}
+
+export const YTDLP = process.env.YTDLP_PATH || 'yt-dlp';
+
+/**
+ * Uma faixa do YouTube (ou outro site suportado pelo yt-dlp): yt-dlp baixa o áudio
+ * e passa direto para o ffmpeg. Pausado por muito tempo, o YouTube pode fechar a conexão.
+ */
+export class StreamSource extends FfmpegSource {
+  private ytdlp: ChildProcess;
+
+  constructor(readonly url: string, bus: Bus = 'musica') {
+    super(bus, 'pipe:0');
+    this.ytdlp = spawn(YTDLP, ['-q', '--no-warnings', '--no-playlist', '-f', 'bestaudio/best', '--js-runtimes', 'node', '-o', '-', url], {
+      windowsHide: true,
+    });
+    this.ytdlp.stdout!.pipe(this.ffmpeg.stdin!);
+    // ffmpeg fechado antes do fim (faixa pulada) gera EPIPE no stdin; é esperado.
+    this.ffmpeg.stdin!.on('error', () => {});
+    this.ytdlp.on('error', () => this.ffmpeg.stdin!.end());
+  }
+
+  stop() {
+    super.stop();
+    this.ytdlp.kill();
+  }
+}
+
+export interface TrackInfo {
+  url: string;
+  title: string;
+  /** Em segundos; ausente em lives. */
+  duration?: number;
+}
+
+/** Lê título e duração. Se for uma playlist, devolve todas as faixas dela. */
+export async function resolveTracks(url: string): Promise<TrackInfo[]> {
+  const { stdout } = await execFileAsync(
+    YTDLP,
+    ['--flat-playlist', '--no-warnings', '--print', '%(webpage_url,url)s\t%(title)s\t%(duration)s', url],
+    { maxBuffer: 16 * 1024 * 1024, windowsHide: true },
+  );
+  return stdout
+    .split('\n')
+    .filter((line) => line.includes('\t'))
+    .map((line) => {
+      const [trackUrl, title, duration] = line.trim().split('\t');
+      const seconds = Number(duration);
+      return { url: trackUrl, title, duration: Number.isFinite(seconds) ? seconds : undefined };
+    });
 }

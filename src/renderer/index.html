@@ -9,28 +9,63 @@
   <body>
     <header>
       <h1><span class="sigil">♪</span> Mestrônomo</h1>
-      <div id="bot" class="pill">Bot desligado</div>
+      <div class="row">
+        <div id="bot" class="pill">Bot desligado</div>
+        <button id="bot-botao">Chamar bot</button>
+      </div>
     </header>
 
     <main>
-      <section class="card" id="musica">
-        <h2>Música</h2>
-        <p class="hint">Captura o áudio de um programa (Spotify, navegador…) e manda pelo bot.</p>
+      <section class="card" id="programas">
+        <h2>Música dos programas</h2>
+        <p class="hint">Capture o áudio de um ou mais programas ao mesmo tempo (Spotify, navegador…).</p>
         <div class="row">
           <select id="apps"><option value="">Carregando apps…</option></select>
           <button id="recarregar" class="ghost" title="Atualizar lista">⟳</button>
-          <button id="capturar">Capturar</button>
+          <button id="capturar" class="primary">Adicionar</button>
         </div>
-        <p id="captura-status" class="status"></p>
-        <label class="slider">Volume da música <input type="range" data-volume="musica" min="0" max="100" /><output></output></label>
+        <ul id="capturas" class="lista" data-vazio="Nenhum programa sendo capturado."></ul>
+      </section>
+
+      <section class="card" id="youtube">
+        <h2>YouTube</h2>
+        <form id="yt-form" class="row">
+          <input id="yt-url" type="url" placeholder="Cole um link de vídeo ou playlist" required />
+          <button class="primary">Adicionar</button>
+        </form>
+        <div class="tocando">
+          <div id="yt-titulo" class="titulo">Nada tocando</div>
+          <div id="yt-tempo" class="tempo"></div>
+        </div>
+        <div class="row controles">
+          <button id="yt-anterior" class="ghost" title="Anterior">⏮</button>
+          <button id="yt-pausar" title="Tocar/pausar">▶</button>
+          <button id="yt-proxima" class="ghost" title="Próxima">⏭</button>
+          <button id="yt-parar" class="ghost" title="Parar">⏹</button>
+          <button id="yt-repetir" class="ghost" title="Repetir"></button>
+          <label class="slider compacto"><input type="range" data-volume="youtube" min="0" max="100" /><output></output></label>
+        </div>
+        <ol id="yt-fila" class="lista fila" data-vazio="Fila vazia."></ol>
+        <button id="yt-limpar" class="ghost pequeno">Limpar fila</button>
       </section>
 
       <section class="card" id="mixer">
         <h2>Mixer</h2>
-        <label class="slider">Efeitos <input type="range" data-volume="efeitos" min="0" max="100" /><output></output></label>
-        <label class="slider">Geral <input type="range" data-volume="master" min="0" max="100" /><output></output></label>
-        <label class="slider" title="Volume da música enquanto um efeito toca. 100% desliga o ducking.">
-          Música durante efeitos <input type="range" data-volume="ducking" min="0" max="100" /><output></output>
+        <label class="slider">
+          <span>Geral<small>tudo que sai pelo bot</small></span>
+          <input type="range" data-volume="master" min="0" max="100" /><output></output>
+        </label>
+        <label class="slider">
+          <span>Música<small>programas + YouTube</small></span>
+          <input type="range" data-volume="musica" min="0" max="100" /><output></output>
+        </label>
+        <label class="slider">
+          <span>Efeitos<small>soundboard</small></span>
+          <input type="range" data-volume="efeitos" min="0" max="100" /><output></output>
+        </label>
+        <label class="slider">
+          <span>Ducking<small>música enquanto um efeito toca</small></span>
+          <input type="range" data-volume="ducking" min="0" max="100" /><output></output>
         </label>
       </section>
 

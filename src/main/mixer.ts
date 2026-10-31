@@ -17,6 +17,8 @@ export type Bus = 'musica' | 'efeitos';
 
 export interface Source {
   readonly bus: Bus;
+  /** Volume próprio da fonte (0–1), aplicado antes do volume do bus. */
+  volume: number;
   /** Preenche `out` (s16 intercalado, um quadro). Retorna false quando acabou e pode sair do mixer. */
   read(out: Int16Array): boolean;
   stop(): void;
@@ -119,15 +121,20 @@ export class Mixer extends EventEmitter {
       this.scratch.fill(0);
       const alive = source.read(this.scratch);
       if (source.bus === 'efeitos') {
-        for (let i = 0; i < FRAME_VALUES; i++) this.acc[i] += this.scratch[i] * efeitos;
+        const gain = efeitos * source.volume;
+        for (let i = 0; i < FRAME_VALUES; i++) this.acc[i] += this.scratch[i] * gain;
       } else {
+        const gain = musica * source.volume;
         // Interpola o ganho dentro do quadro para não gerar estalos.
         for (let i = 0; i < FRAME_VALUES; i++) {
           const duck = duckFrom + ((duckTo - duckFrom) * i) / FRAME_VALUES;
-          this.acc[i] += this.scratch[i] * musica * duck;
+          this.acc[i] += this.scratch[i] * gain * duck;
         }
       }
-      if (!alive) this.remove(source);
+      if (!alive) {
+        this.remove(source);
+        this.emit('ended', source);
+      }
     }
 
     const out = Buffer.allocUnsafe(FRAME_BYTES);

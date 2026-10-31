@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { Mixer, type MixerSettings } from './mixer';
 import { AppCaptureSource, FileSource, listAudioApps } from './sources';
 import { DiscordBot, type BotStatus } from './discord';
+import { YouTubePlayer, type LoopMode } from './youtube';
 import { startApi } from './api';
 
 const ROOT = path.join(__dirname, '..', '..');
@@ -15,15 +16,21 @@ const AUDIO_EXT = new Set(['.mp3', '.ogg', '.wav', '.flac', '.m4a', '.opus', '.w
 const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
 
 const mixer = new Mixer();
+const youtube = new YouTubePlayer(mixer);
+/** Capturas ativas, por nome do executável. Várias podem tocar juntas. */
+const captures = new Map<string, AppCaptureSource>();
 let bot: DiscordBot | undefined;
-let capture: AppCaptureSource | undefined;
 let window: BrowserWindow | undefined;
 const configFile = () => path.join(app.getPath('userData'), 'config.json');
 
 interface SavedConfig {
   mixer?: Partial<MixerSettings>;
-  app?: string;
+  /** Último volume usado para cada app capturado. */
+  appVolumes?: Record<string, number>;
+  youtube?: { volume: number; repetir: LoopMode };
 }
+
+let config: SavedConfig = {};
 
 function loadConfig(): SavedConfig {
   try {
@@ -34,7 +41,8 @@ function loadConfig(): SavedConfig {
 }
 
 function saveConfig() {
-  const config: SavedConfig = { mixer: mixer.settings, app: capture?.appName ?? loadConfig().app };
+  config.mixer = mixer.settings;
+  config.youtube = { volume: youtube.volume, repetir: youtube.loop };
   fs.writeFileSync(configFile(), JSON.stringify(config, null, 2));
 }
 
@@ -61,37 +69,63 @@ function stopEffects() {
   mixer.stopBus('efeitos');
 }
 
+function capturesState() {
+  return [...captures.values()].map((c) => ({ app: c.appName, volume: c.volume }));
+}
+
 function startCapture(appName: string) {
-  stopCapture();
+  if (captures.has(appName)) return;
   const source = new AppCaptureSource(appName, (error) => {
-    if (capture !== source) return;
-    capture = undefined;
-    send('captura', { app: undefined, erro: error });
+    if (captures.get(appName) !== source) return;
+    captures.delete(appName);
+    send('capturas', capturesState());
+    if (error) send('erro', `A captura de ${appName} parou: ${error}`);
   });
-  capture = source;
+  source.volume = config.appVolumes?.[appName] ?? 1;
+  captures.set(appName, source);
   mixer.add(source);
-  send('captura', { app: appName });
+  send('capturas', capturesState());
+}
+
+/** Sem nome, para todas as capturas. */
+function stopCapture(appName?: string) {
+  for (const [name, source] of captures) {
+    if (appName && name !== appName) continue;
+    captures.delete(name);
+    mixer.remove(source);
+  }
+  send('capturas', capturesState());
+}
+
+function setCaptureVolume(appName: string, value: number) {
+  const source = captures.get(appName);
+  if (!source) return;
+  source.volume = Math.min(1, Math.max(0, value));
+  config.appVolumes = { ...config.appVolumes, [appName]: source.volume };
   saveConfig();
 }
 
-function stopCapture() {
-  if (!capture) return;
-  const old = capture;
-  capture = undefined;
-  mixer.remove(old);
-  send('captura', { app: undefined });
-}
-
-function setVolume(key: keyof MixerSettings, value: number) {
-  mixer.settings[key] = Math.min(1, Math.max(0, value));
+function setVolume(key: keyof MixerSettings | 'youtube', value: number) {
+  if (key === 'youtube') youtube.setVolume(value);
+  else mixer.settings[key] = Math.min(1, Math.max(0, value));
   send('mixer', mixer.settings);
   saveConfig();
+}
+
+function joinBot() {
+  if (!bot) send('erro', 'Configure DISCORD_TOKEN e DISCORD_OWNER_ID no arquivo .env');
+  return bot?.joinOwner() ?? false;
+}
+
+function leaveBot() {
+  bot?.leave();
 }
 
 function state() {
   return {
     bot: bot?.status ?? ({ state: 'desligado', motivo: 'Configure o arquivo .env' } satisfies BotStatus),
-    captura: capture?.appName,
+    capturas: capturesState(),
+    youtube: youtube.state(),
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
     sons: listSounds(),
@@ -104,9 +138,25 @@ function registerIpc() {
   ipcMain.handle('apps', () => listAudioApps());
   ipcMain.handle('som', (_e, name: string) => playSound(name));
   ipcMain.handle('parar-efeitos', () => stopEffects());
-  ipcMain.handle('captura', (_e, appName: string | null) => (appName ? startCapture(appName) : stopCapture()));
-  ipcMain.handle('volume', (_e, key: keyof MixerSettings, value: number) => setVolume(key, value));
+  ipcMain.handle('capturar', (_e, appName: string) => startCapture(appName));
+  ipcMain.handle('parar-captura', (_e, appName?: string) => stopCapture(appName));
+  ipcMain.handle('volume-captura', (_e, appName: string, value: number) => setCaptureVolume(appName, value));
+  ipcMain.handle('volume', (_e, key: keyof MixerSettings | 'youtube', value: number) => setVolume(key, value));
   ipcMain.handle('abrir-sons', () => shell.openPath(SOUNDS_DIR));
+  ipcMain.handle('bot-entrar', () => joinBot());
+  ipcMain.handle('bot-sair', () => leaveBot());
+  ipcMain.handle('yt-adicionar', (_e, url: string) => youtube.add(url));
+  ipcMain.handle('yt-tocar', (_e, index: number) => youtube.play(index));
+  ipcMain.handle('yt-pausar', () => youtube.togglePause());
+  ipcMain.handle('yt-proxima', () => youtube.next());
+  ipcMain.handle('yt-anterior', () => youtube.previous());
+  ipcMain.handle('yt-parar', () => youtube.stop());
+  ipcMain.handle('yt-remover', (_e, index: number) => youtube.remove(index));
+  ipcMain.handle('yt-limpar', () => youtube.clear());
+  ipcMain.handle('yt-repetir', (_e, mode: LoopMode) => {
+    youtube.setLoop(mode);
+    saveConfig();
+  });
 }
 
 /** Ctrl+Alt+1..9 tocam os primeiros sons; Ctrl+Alt+0 para os efeitos. Funcionam com o app em segundo plano. */
@@ -130,19 +180,36 @@ function startBot() {
 }
 
 app.whenReady().then(() => {
-  const saved = loadConfig();
-  Object.assign(mixer.settings, saved.mixer);
+  config = loadConfig();
+  Object.assign(mixer.settings, config.mixer);
+  if (config.youtube) {
+    youtube.volume = config.youtube.volume;
+    youtube.loop = config.youtube.repetir;
+  }
   mixer.on('change', () => send('tocando', state().tocando));
+  youtube.on('change', (s) => send('youtube', s));
+  youtube.on('erro', (msg) => send('erro', msg));
   mixer.start();
 
   registerIpc();
   registerShortcuts();
-  startApi(API_PORT, { state, listSounds, playSound, stopEffects, startCapture, stopCapture, setVolume });
+  startApi(API_PORT, {
+    state,
+    listSounds,
+    playSound,
+    stopEffects,
+    startCapture,
+    stopCapture,
+    setVolume,
+    joinBot,
+    leaveBot,
+    youtube,
+  });
   startBot();
 
   window = new BrowserWindow({
-    width: 960,
-    height: 720,
+    width: 1100,
+    height: 820,
     minWidth: 560,
     minHeight: 480,
     title: 'Mestrônomo',
@@ -159,4 +226,3 @@ app.on('window-all-closed', async () => {
   await bot?.destroy();
   app.quit();
 });
-

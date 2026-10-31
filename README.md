@@ -2,7 +2,8 @@
 
 Ferramentas de áudio para mestres de RPG online. Um bot do Discord entra no seu canal de voz e transmite:
 
-- **Música capturada de qualquer programa** (Spotify, navegador, YouTube…), sem VB-Cable nem conta secundária;
+- **Música capturada de um ou mais programas ao mesmo tempo** (Spotify, navegador…), cada um com seu volume, sem VB-Cable nem conta secundária;
+- **Player de YouTube** com fila, playlists, pausa e repetição;
 - **Soundboard** com atalhos globais (`Ctrl+Alt+1..9`, `Ctrl+Alt+0` para parar os efeitos);
 - **Ducking**: a música abaixa sozinha enquanto um efeito toca.
 
@@ -10,6 +11,7 @@ Ferramentas de áudio para mestres de RPG online. Um bot do Discord entra no seu
 
 ```
 Spotify / navegador ──(mestronomo-capture)──┐
+Links do YouTube ──(yt-dlp + ffmpeg)────────┤
 Efeitos (pasta sons/, via ffmpeg) ──────────┼─► Mixer (20 ms, Opus) ─► Bot no canal de voz
                                             │
 Ulanzi / Stream Deck ──► API local :7777 ───┘
@@ -23,7 +25,7 @@ Ulanzi / Stream Deck ──► API local :7777 ───┘
 
 - Windows 10 (2004) ou 11
 - Node.js 22+ e Rust (`cargo`)
-- `ffmpeg` no PATH
+- `ffmpeg` e `yt-dlp` no PATH (`winget install yt-dlp.yt-dlp`)
 
 ## Criando o bot no Discord
 
@@ -34,7 +36,7 @@ Ulanzi / Stream Deck ──► API local :7777 ───┘
    - Clique em **Reset Token** e copie o token. **Não compartilhe com ninguém**: quem tem o token controla o bot.
    - Nenhum *Privileged Gateway Intent* é necessário.
 4. Aba **OAuth2 → URL Generator**:
-   - Scopes: `bot`
+   - Scopes: `bot` e `applications.commands` (para os comandos `/entrar` e `/sair`)
    - Bot Permissions: `View Channels`, `Connect`, `Speak`
    - Abra a URL gerada no navegador e escolha o servidor da mesa.
 5. No Discord, ative **Configurações → Avançado → Modo desenvolvedor**. Depois clique com o botão direito no seu próprio nome e escolha **Copiar ID do usuário**.
@@ -56,7 +58,29 @@ npm run build:capture   # só na primeira vez (ou quando mexer em capture/)
 npm start
 ```
 
-Entre num canal de voz e o bot vai atrás de você. Se você trocar de canal, ele segue; se sair, ele sai.
+O bot fica online mas só entra na call quando você chama:
+
+- `/entrar` no Discord: entra no canal de voz em que você está (só o dono, definido em `DISCORD_OWNER_ID`, pode usar);
+- `/sair` no Discord, ou o botão **Dispensar bot** no app;
+- botão **Chamar bot** no app, ou `/api/bot/entrar` (Ulanzi).
+
+Ele sai sozinho quando não sobra nenhuma pessoa no canal.
+
+## Volumes
+
+Cada som passa por três controles, multiplicados entre si:
+
+```
+volume da fonte  ×  volume do grupo  ×  Geral
+(cada app, YouTube)  (Música ou Efeitos)
+```
+
+- **Geral**: tudo que sai pelo bot.
+- **Música**: todos os programas capturados e o YouTube juntos.
+- **Efeitos**: a soundboard.
+- **Ducking**: para quanto a música cai enquanto um efeito toca. Com 35%, a música abaixa para 35% do volume e volta sozinha. 100% desliga o ducking.
+
+## Soundboard
 
 Coloque os efeitos na pasta `sons/`. A ordem alfabética define os atalhos, então use prefixos como `01 espada.mp3`.
 
@@ -68,11 +92,15 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 | --- | --- |
 | `/api/som/3` ou `/api/som/espada.mp3` | Toca um efeito |
 | `/api/efeitos/parar` | Para todos os efeitos |
-| `/api/musica/capturar/Spotify.exe` | Começa a capturar um app |
-| `/api/musica/parar` | Para a captura |
-| `/api/volume/musica/60` | Volume (`musica`, `efeitos`, `master`, `ducking`) de 0 a 100 |
+| `/api/bot/entrar` · `/api/bot/sair` | Chama ou dispensa o bot |
+| `/api/musica/capturar/Spotify.exe` | Adiciona a captura de um app |
+| `/api/musica/parar/Spotify.exe` | Para uma captura (sem o nome, para todas) |
+| `/api/youtube/adicionar?url=<link>` | Adiciona vídeo ou playlist à fila |
+| `/api/youtube/pausar` · `proxima` · `anterior` · `parar` · `limpar` | Controles do player |
+| `/api/youtube/repetir/fila` | Repetição: `nenhum`, `fila` ou `faixa` |
+| `/api/volume/musica/60` | Volume (`musica`, `efeitos`, `master`, `ducking`, `youtube`) de 0 a 100 |
 | `/api/estado` | Estado atual em JSON |
 
-## Aviso sobre Spotify
+## Aviso sobre Spotify e YouTube
 
-A captura funciona com qualquer programa, mas retransmitir o Spotify para outras pessoas vai contra os termos de uso dele. Para uso entre amigos o risco é baixo; se um dia quiser distribuir o Mestrônomo, prefira arquivos locais ou trilhas com licença livre.
+A captura e o player funcionam, mas retransmitir o Spotify ou o YouTube para outras pessoas vai contra os termos de uso dele. Para uso entre amigos o risco é baixo; se um dia quiser distribuir o Mestrônomo, prefira arquivos locais ou trilhas com licença livre.

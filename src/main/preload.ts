@@ -3,16 +3,37 @@ import { contextBridge, ipcRenderer } from 'electron';
 const on = (channel: string) => (callback: (payload: any) => void) =>
   ipcRenderer.on(channel, (_event, payload) => callback(payload));
 
+const invoke =
+  (channel: string) =>
+  (...args: unknown[]) =>
+    ipcRenderer.invoke(channel, ...args);
+
 contextBridge.exposeInMainWorld('mestronomo', {
-  estado: () => ipcRenderer.invoke('estado'),
-  apps: () => ipcRenderer.invoke('apps'),
-  som: (nome: string) => ipcRenderer.invoke('som', nome),
-  pararEfeitos: () => ipcRenderer.invoke('parar-efeitos'),
-  captura: (app: string | null) => ipcRenderer.invoke('captura', app),
-  volume: (chave: string, valor: number) => ipcRenderer.invoke('volume', chave, valor),
-  abrirSons: () => ipcRenderer.invoke('abrir-sons'),
+  estado: invoke('estado'),
+  apps: invoke('apps'),
+  som: invoke('som'),
+  pararEfeitos: invoke('parar-efeitos'),
+  capturar: invoke('capturar'),
+  pararCaptura: invoke('parar-captura'),
+  volumeCaptura: invoke('volume-captura'),
+  volume: invoke('volume'),
+  abrirSons: invoke('abrir-sons'),
+  botEntrar: invoke('bot-entrar'),
+  botSair: invoke('bot-sair'),
+  yt: {
+    adicionar: invoke('yt-adicionar'),
+    tocar: invoke('yt-tocar'),
+    pausar: invoke('yt-pausar'),
+    proxima: invoke('yt-proxima'),
+    anterior: invoke('yt-anterior'),
+    parar: invoke('yt-parar'),
+    remover: invoke('yt-remover'),
+    limpar: invoke('yt-limpar'),
+    repetir: invoke('yt-repetir'),
+  },
   onBot: on('bot'),
-  onCaptura: on('captura'),
+  onCapturas: on('capturas'),
+  onYoutube: on('youtube'),
   onMixer: on('mixer'),
   onTocando: on('tocando'),
   onErro: on('erro'),
