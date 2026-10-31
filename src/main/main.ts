@@ -214,6 +214,7 @@ app.whenReady().then(() => {
     minHeight: 480,
     title: 'Mestrônomo',
     backgroundColor: '#15121c',
+    icon: path.join(ROOT, 'assets', 'icon.ico'),
     autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js') },
   });

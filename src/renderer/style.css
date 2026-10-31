@@ -6,6 +6,7 @@
   --text: #ece6f5;
   --muted: #9d93ad;
   --accent: #d9a441;
+  --accent-2: #f0c262;
   --accent-ink: #1a1408;
   --ok: #5fbf85;
   --warn: #e0b04a;
@@ -38,8 +39,9 @@ header { border-bottom: 1px solid var(--border); }
 footer { margin-top: auto; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
 
 h1 { margin: 0; font-size: 20px; letter-spacing: 0.02em; }
+.marca { display: flex; align-items: center; gap: 10px; font-family: Constantia, 'Palatino Linotype', Georgia, serif; font-size: 24px; color: var(--accent); }
+.marca img { width: 32px; height: 32px; }
 h2 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
-.sigil { color: var(--accent); }
 
 main {
   display: grid;

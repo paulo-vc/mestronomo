@@ -1,4 +1,4 @@
-# Mestrônomo
+<p align="center"><img src="assets/logo.svg" alt="Mestrônomo — o ritmo da sua mesa" width="520"></p>
 
 Ferramentas de áudio para mestres de RPG online. Um bot do Discord entra no seu canal de voz e transmite:
 

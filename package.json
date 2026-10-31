@@ -7,7 +7,8 @@
     "build:capture": "cargo build --release --manifest-path capture/Cargo.toml",
     "build": "tsc",
     "start": "tsc && electron .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "icons": "electron scripts/render-icons.js"
   },
   "author": "",
   "license": "MIT",
