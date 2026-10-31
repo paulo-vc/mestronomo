@@ -211,6 +211,7 @@ app.whenReady().then(() => {
   startApi(API_PORT, {
     state,
     listSounds,
+    listApps: listAudioApps,
     playSound,
     stopEffects,
     startCapture,

@@ -1,0 +1,150 @@
+{
+  "Author": "paulo-vc",
+  "Name": "Mestrônomo",
+  "Description": "Music, ambience and soundboard for tabletop RPG game masters on Discord",
+  "Icon": "assets/icons/plugin.png",
+  "Version": "1.0.0",
+  "Category": "Mestrônomo",
+  "CategoryIcon": "assets/icons/plugin.png",
+  "CodePath": "plugin/app.js",
+  "Type": "JavaScript",
+  "SupportedInMultiActions": true,
+  "UUID": "com.ulanzi.ulanzistudio.mestronomo",
+  "Actions": [
+    {
+      "Name": "Play Sound",
+      "Icon": "assets/icons/som.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.som",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Plays a soundboard sound in the call (or only in your headphones)",
+      "state": 0,
+      "States": [
+        {
+          "Name": "Play Sound",
+          "Image": "assets/icons/som.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    },
+    {
+      "Name": "YouTube Play/Pause",
+      "Icon": "assets/icons/play.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.youtube",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Plays or pauses the YouTube queue",
+      "state": 0,
+      "States": [
+        {
+          "Name": "YouTube Play/Pause",
+          "Image": "assets/icons/play.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    },
+    {
+      "Name": "YouTube Next",
+      "Icon": "assets/icons/proxima.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.proxima",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Skips to the next track in the queue",
+      "state": 0,
+      "States": [
+        {
+          "Name": "YouTube Next",
+          "Image": "assets/icons/proxima.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    },
+    {
+      "Name": "Stop Effects",
+      "Icon": "assets/icons/pararEfeitos.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.pararefeitos",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Stops every sound effect that is playing",
+      "state": 0,
+      "States": [
+        {
+          "Name": "Stop Effects",
+          "Image": "assets/icons/pararEfeitos.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    },
+    {
+      "Name": "Call / Dismiss Bot",
+      "Icon": "assets/icons/bot.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.bot",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Brings the bot to your voice channel, or sends it away",
+      "state": 0,
+      "States": [
+        {
+          "Name": "Call / Dismiss Bot",
+          "Image": "assets/icons/bot.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    },
+    {
+      "Name": "Volume",
+      "Icon": "assets/icons/volumeMais.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.volume",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Raises or lowers a volume (music, effects, master...)",
+      "state": 0,
+      "States": [
+        {
+          "Name": "Volume",
+          "Image": "assets/icons/volumeMais.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    },
+    {
+      "Name": "Capture App",
+      "Icon": "assets/icons/captura.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.captura",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Starts or stops streaming the audio of an app",
+      "state": 0,
+      "States": [
+        {
+          "Name": "Capture App",
+          "Image": "assets/icons/captura.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    }
+  ],
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Software": {
+    "MinVersion": "2.1.4"
+  }
+}

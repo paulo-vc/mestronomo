@@ -1,20 +1,22 @@
-// Gera os PNGs e o .ico a partir dos SVGs de assets/. Rode com: npm run icons
+// Gera os PNGs e o .ico a partir dos SVGs de assets/, e os ícones do plugin do Ulanzi. Rode com: npm run icons
 // Usa o próprio Electron (Chromium) para rasterizar, então não precisa de nenhuma dependência extra.
 const { app, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const ASSETS = path.join(__dirname, '..', 'assets');
+const PLUGIN = path.join(__dirname, '..', 'ulanzi-plugin', 'com.ulanzi.mestronomo.ulanziPlugin');
 const ICON_SIZES = [16, 24, 32, 48, 64, 128, 256];
 
 let win;
 
-/** Renderiza um SVG de assets/ em PNG no tamanho pedido (desenha grande e reduz, para bordas suaves). */
-async function render(svgFile, width, height) {
+/** Renderiza um SVG (arquivo de assets/ ou o próprio texto) em PNG; desenha grande e reduz, para bordas suaves. */
+async function render(svgFileOrText, width, height) {
   const scale = Math.max(1, Math.ceil(512 / Math.max(width, height)));
   const [w, h] = [width * scale, height * scale];
-  const svg = fs.readFileSync(path.join(ASSETS, svgFile), 'utf8');
+  const svg = svgFileOrText.startsWith('<svg') ? svgFileOrText : fs.readFileSync(path.join(ASSETS, svgFileOrText), 'utf8');
   const html = path.join(os.tmpdir(), 'mestronomo-render.html');
   fs.writeFileSync(
     html,
@@ -70,7 +72,14 @@ app.whenReady().then(async () => {
   fs.writeFileSync(path.join(ASSETS, 'icon.ico'), buildIco(pngs));
   fs.writeFileSync(path.join(ASSETS, 'icon.png'), await render('icon.svg', 512, 512));
   fs.writeFileSync(path.join(ASSETS, 'social.png'), await render('social.svg', 1280, 640));
+
+  const { GLYPHS, iconSvg } = await import(pathToFileURL(path.join(PLUGIN, 'plugin', 'glyphs.js')).href);
+  const icons = path.join(PLUGIN, 'assets', 'icons');
+  fs.mkdirSync(icons, { recursive: true });
+  fs.writeFileSync(path.join(icons, 'plugin.png'), await render('icon.svg', 144, 144));
+  for (const name of Object.keys(GLYPHS)) fs.writeFileSync(path.join(icons, `${name}.png`), await render(iconSvg(name), 144, 144));
+
   win.destroy();
-  console.log('Gerados: icon.ico, icon.png, social.png');
+  console.log(`Gerados: icon.ico, icon.png, social.png e ${Object.keys(GLYPHS).length + 1} ícones do plugin`);
   app.quit();
 });

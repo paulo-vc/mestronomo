@@ -5,6 +5,7 @@ import type { LoopMode, YouTubePlayer } from './youtube';
 export interface ApiActions {
   state(): unknown;
   listSounds(): string[];
+  listApps(): Promise<unknown>;
   playSound(name: string, preview?: boolean): boolean;
   stopEffects(): void;
   startCapture(appName: string): void;
@@ -25,6 +26,7 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/estado                          estado atual (JSON)
  *   /api/bot/entrar | /api/bot/sair      chama ou dispensa o bot
  *   /api/sons                            lista da soundboard
+ *   /api/apps                            apps com áudio que dá para capturar
  *   /api/som/<arquivo ou número>         toca um efeito (número começa em 1)
  *   /api/previa/<arquivo ou número>      toca um efeito só no fone do mestre
  *   /api/efeitos/parar                   para todos os efeitos
@@ -36,7 +38,7 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/volume/<musica|efeitos|master|ducking|youtube>/<0-100>
  */
 export function startApi(port: number, actions: ApiActions) {
-  const { state, listSounds, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube } = actions;
+  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
     const parts = decodeURIComponent(url.pathname).split('/').filter(Boolean);
@@ -57,6 +59,12 @@ export function startApi(port: number, actions: ApiActions) {
         return ok();
       case 'sons':
         return reply(200, listSounds());
+      case 'apps':
+        try {
+          return reply(200, await listApps());
+        } catch {
+          return reply(500, { erro: 'capturador não encontrado (npm run build:capture)' });
+        }
       case 'som':
       case 'previa': {
         const sounds = listSounds();

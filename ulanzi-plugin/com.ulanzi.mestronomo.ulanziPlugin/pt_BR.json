@@ -1,0 +1,54 @@
+{
+  "Name": "Mestrônomo",
+  "Description": "Música, ambiente e soundboard para mestres de RPG no Discord",
+  "Actions": [
+    {
+      "Name": "Tocar Som",
+      "Tooltip": "Toca um som da soundboard na call (ou só no seu fone)"
+    },
+    {
+      "Name": "YouTube Tocar/Pausar",
+      "Tooltip": "Toca ou pausa a fila do YouTube"
+    },
+    {
+      "Name": "YouTube Próxima",
+      "Tooltip": "Pula para a próxima faixa da fila"
+    },
+    {
+      "Name": "Parar Efeitos",
+      "Tooltip": "Para todos os efeitos que estão tocando"
+    },
+    {
+      "Name": "Chamar / Dispensar Bot",
+      "Tooltip": "Chama o bot para o seu canal de voz, ou dispensa"
+    },
+    {
+      "Name": "Volume",
+      "Tooltip": "Aumenta ou diminui um volume (música, efeitos, geral...)"
+    },
+    {
+      "Name": "Capturar App",
+      "Tooltip": "Liga ou desliga a transmissão do áudio de um app"
+    }
+  ],
+  "Localization": {
+    "Sound": "Som",
+    "Refresh list": "Atualizar lista",
+    "Only in my headphones (preview)": "Só no meu fone (pré-escuta)",
+    "Volume": "Volume",
+    "Direction": "Direção",
+    "Raise": "Aumentar",
+    "Lower": "Diminuir",
+    "Step": "Passo",
+    "Music": "Música",
+    "Effects": "Efeitos",
+    "Master": "Geral",
+    "Headphones": "Fone",
+    "App": "App",
+    "Loading...": "Carregando...",
+    "Open Mestrônomo to load the list.": "Abra o Mestrônomo para carregar a lista.",
+    "Files in the sons/ folder of Mestrônomo.": "Arquivos da pasta sons/ do Mestrônomo.",
+    "Only apps that are playing or have played audio show up.": "Só aparecem apps que estão tocando ou já tocaram áudio.",
+    "This key needs no settings.": "Esta tecla não precisa de configuração."
+  }
+}

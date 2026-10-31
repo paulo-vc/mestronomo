@@ -114,6 +114,28 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 | `/api/volume/musica/60` | Volume (`musica`, `efeitos`, `master`, `ducking`, `youtube`, `monitorVolume`) de 0 a 100 |
 | `/api/estado` | Estado atual em JSON |
 
+## Plugin do Ulanzi Studio
+
+A pasta `ulanzi-plugin/` tem um plugin para o Ulanzi Studio com sete ações, todas mostrando o estado ao vivo na tecla:
+
+| Ação | O que faz | Na tecla |
+| --- | --- | --- |
+| Tocar Som | Toca um som da soundboard (ou só no seu fone, com "pré-escuta") | Nome do som |
+| YouTube Tocar/Pausar | Toca ou pausa a fila | ▶/⏸ e o título da faixa |
+| YouTube Próxima | Pula para a próxima faixa | Título da próxima |
+| Parar Efeitos | Para todos os efeitos | Acende enquanto há efeito tocando |
+| Chamar / Dispensar Bot | Leva o bot para a sua call, ou dispensa | Nome do canal / "CHAMAR BOT" |
+| Volume | Sobe ou desce um volume (música, efeitos, geral, YouTube, fone) | Volume atual |
+| Capturar App | Liga ou desliga a captura de um app | Nome do app e ON quando ativo |
+
+Para instalar:
+
+```bash
+npm run plugin:ulanzi
+```
+
+Depois reinicie o Ulanzi Studio: as ações aparecem na categoria **Mestrônomo**. Com o Mestrônomo fechado, as teclas mostram "Abra o Mestrônomo".
+
 ## Aviso sobre Spotify e YouTube
 
 A captura e o player funcionam, mas retransmitir o Spotify ou o YouTube para outras pessoas vai contra os termos de uso dele. Para uso entre amigos o risco é baixo; se um dia quiser distribuir o Mestrônomo, prefira arquivos locais ou trilhas com licença livre.

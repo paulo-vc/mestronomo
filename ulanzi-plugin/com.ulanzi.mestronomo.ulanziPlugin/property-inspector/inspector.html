@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,minimal-ui,viewport-fit=cover" />
+  <title>Mestrônomo</title>
+  <link rel="stylesheet" href="../libs/css/uspi.css">
+  <style>
+    .uspi-item.top { align-items: flex-start; }
+    .uspi-item-value.column { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .hint { color: var(--uspi-unitcolor); font-size: 12px; }
+    .row { display: flex; gap: 6px; width: 100%; }
+    .row select { flex: 1; min-width: 0; }
+    button.refresh { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="uspi-wrapper hidden">
+    <form id="property-inspector">
+
+      <section data-kind="som" class="hidden">
+        <div class="uspi-item">
+          <div class="uspi-item-label" data-localize>Sound</div>
+          <div class="uspi-item-value row">
+            <select class="select" name="som"><option value="" data-localize>Loading...</option></select>
+            <button type="button" class="refresh" data-cmd="getSons" title="Refresh list">⟳</button>
+          </div>
+        </div>
+        <div class="uspi-item">
+          <div class="uspi-item-label empty"></div>
+          <div class="uspi-item-value column">
+            <div class="uspi-item-child">
+              <input id="previa" name="previa" type="checkbox">
+              <label for="previa" data-localize>Only in my headphones (preview)</label>
+            </div>
+            <div class="hint" data-localize>Files in the sons/ folder of Mestrônomo.</div>
+          </div>
+        </div>
+      </section>
+
+      <section data-kind="volume" class="hidden">
+        <div class="uspi-item">
+          <div class="uspi-item-label" data-localize>Volume</div>
+          <select class="uspi-item-value select" name="alvo">
+            <option value="musica" data-localize>Music</option>
+            <option value="efeitos" data-localize>Effects</option>
+            <option value="master" data-localize>Master</option>
+            <option value="youtube">YouTube</option>
+            <option value="monitorVolume" data-localize>Headphones</option>
+          </select>
+        </div>
+        <div class="uspi-item">
+          <div class="uspi-item-label" data-localize>Direction</div>
+          <select class="uspi-item-value select" name="direcao">
+            <option value="mais" data-localize>Raise</option>
+            <option value="menos" data-localize>Lower</option>
+          </select>
+        </div>
+        <div class="uspi-item">
+          <div class="uspi-item-label" data-localize>Step</div>
+          <select class="uspi-item-value select" name="passo">
+            <option value="5">5%</option>
+            <option value="10">10%</option>
+            <option value="20">20%</option>
+          </select>
+        </div>
+      </section>
+
+      <section data-kind="captura" class="hidden">
+        <div class="uspi-item">
+          <div class="uspi-item-label" data-localize>App</div>
+          <div class="uspi-item-value row">
+            <select class="select" name="app"><option value="" data-localize>Loading...</option></select>
+            <button type="button" class="refresh" data-cmd="getApps" title="Refresh list">⟳</button>
+          </div>
+        </div>
+        <div class="uspi-item">
+          <div class="uspi-item-label empty"></div>
+          <div class="uspi-item-value hint" data-localize>Only apps that are playing or have played audio show up.</div>
+        </div>
+      </section>
+
+      <section data-kind="none" class="hidden">
+        <div class="uspi-item">
+          <div class="uspi-item-label empty"></div>
+          <div class="uspi-item-value hint" data-localize>This key needs no settings.</div>
+        </div>
+      </section>
+
+      <div class="uspi-item erro hidden">
+        <div class="uspi-item-label empty"></div>
+        <div class="uspi-item-value hint" data-localize>Open Mestrônomo to load the list.</div>
+      </div>
+
+    </form>
+  </div>
+
+  <script src="../libs/js/constants.js"></script>
+  <script src="../libs/js/eventEmitter.js"></script>
+  <script src="../libs/js/timers.js"></script>
+  <script src="../libs/js/utils.js"></script>
+  <script src="../libs/js/ulanziApi.js"></script>
+  <script src="./inspector.js"></script>
+</body>
+</html>

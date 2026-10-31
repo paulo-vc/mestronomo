@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "tsc && electron .",
     "typecheck": "tsc --noEmit",
-    "icons": "electron scripts/render-icons.js"
+    "icons": "electron scripts/render-icons.js",
+    "plugin:ulanzi": "node scripts/instalar-plugin-ulanzi.js"
   },
   "author": "",
   "license": "MIT",
