@@ -1,6 +1,6 @@
 {
   "name": "mestronomo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Ferramentas de áudio para mestres de RPG: música, ambiente e soundboard direto no Discord",
   "main": "dist/main/main.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "icons": "electron scripts/render-icons.js",
     "plugin:ulanzi": "node scripts/instalar-plugin-ulanzi.js",
-    "dist": "npm run build:capture && tsc && npm run icons && node scripts/preparar-vendor.js && electron-builder --win nsis"
+    "dist": "npm run build:capture && tsc && npm run icons && node scripts/preparar-vendor.js && electron-builder --win nsis && electron-builder --win --config scripts/electron-builder-portatil.js"
   },
   "author": "paulo-vc",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "productName": "Mestrônomo",
     "executableName": "Mestronomo",
     "directories": {
-      "output": "release"
+      "output": "release/${version}"
     },
     "files": [
       "dist/**",
@@ -60,7 +60,8 @@
       "createDesktopShortcut": true,
       "shortcutName": "Mestrônomo",
       "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico"
+      "uninstallerIcon": "assets/icon.ico",
+      "artifactName": "Mestronomo-Setup-${version}.${ext}"
     }
   }
 }

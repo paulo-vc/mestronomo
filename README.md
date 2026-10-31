@@ -28,33 +28,34 @@ Ulanzi / Stream Deck ──► API local :7777 ───┘
 - Node.js 22+ e Rust (`cargo`) — só para compilar; o instalador não precisa de nada disso
 - `ffmpeg` e `yt-dlp` no PATH (`winget install yt-dlp.yt-dlp`)
 
-## Criando o bot no Discord
+## Configurando o bot
 
-1. Acesse <https://discord.com/developers/applications> e clique em **New Application**. Dê o nome que quiser (ex.: Mestrônomo).
-2. Aba **Installation**: em *Install Link*, escolha **None** e salve. Isso é necessário para conseguir tornar o bot privado.
-3. Aba **Bot**:
-   - Desmarque **Public Bot** para que só você possa adicionar o bot a servidores.
-   - Clique em **Reset Token** e copie o token. **Não compartilhe com ninguém**: quem tem o token controla o bot.
-   - Nenhum *Privileged Gateway Intent* é necessário.
-4. Aba **OAuth2 → URL Generator**:
-   - Scopes: `bot` e `applications.commands` (para os comandos `/entrar` e `/sair`)
-   - Bot Permissions: `View Channels`, `Connect`, `Speak`, `Send Messages`, `Embed Links`, `Attach Files`
-   - Abra a URL gerada no navegador e escolha o servidor da mesa.
-5. No Discord, ative **Configurações → Avançado → Modo desenvolvedor**. Depois clique com o botão direito no seu próprio nome e escolha **Copiar ID do usuário**.
+Cada mestre usa o **próprio bot** (é de graça e leva uns 2 minutos). Um bot único compartilhado exigiria pôr o token dele dentro do app, onde qualquer um poderia extraí-lo e tomar o controle.
 
-## Configuração
+No app, clique em **⚙** e siga os três passos:
 
-Clique no **⚙** no topo do app e cole o token (passo 3) e o seu ID (passo 5). O token fica guardado **criptografado** pelo Windows, atrelado ao seu usuário.
+1. **Abrir o Discord Developer Portal** → *New Application* → dê um nome → aba **Bot** → **Reset Token** e copie. (Opcional: em *Installation*, deixe *Install Link* em "None" e desmarque *Public Bot* para que só você possa adicioná-lo.)
+2. **Cole o token** e clique em **Verificar**: o app confere o token e mostra o nome do bot e o dono.
+3. **Convidar o bot**: abre o convite já com as permissões certas (ver canais, conectar, falar, enviar mensagens, links e arquivos). Escolha o servidor da mesa e **Salvar**.
 
-Para desenvolvimento, dá também para usar um `.env` (copie `.env.example`); ele tem prioridade sobre a tela.
+Quem criou o bot é o mestre (só ele usa `/entrar`, `/sair` e `/canal`). Para outra pessoa mestrar com o seu bot, coloque o ID dela em **Avançado**. O token fica guardado **criptografado** pelo Windows; em desenvolvimento, um `.env` (veja `.env.example`) tem prioridade.
 
-## Instalador
+O convite também está no menu do ícone da bandeja.
+
+## Instalador e versão portátil
+
+Baixe em [Releases](https://github.com/paulo-vc/mestronomo/releases):
+
+- **Mestronomo-Setup-x.y.z.exe**: instalador. Os arquivos ficam em `Documentos\Mestrônomo`.
+- **Mestronomo-Portatil-x.y.z.zip**: descompacte em qualquer lugar (até num pendrive) e abra `Mestronomo.exe`. Tudo fica na pasta `Dados` ao lado do programa. O token do bot é criptografado para o seu usuário do Windows; em outro PC, cole de novo.
+
+Para gerar os dois:
 
 ```bash
 npm run dist
 ```
 
-Gera `release/Mestrônomo Setup <versão>.exe`, que já leva o capturador, o ffmpeg e o yt-dlp (copiados do seu PATH). Instalado:
+Gera os dois em `release/<versão>/`, que já levam o capturador, o ffmpeg e o yt-dlp (copiados do seu PATH). Instalado:
 
 - os sons ficam em `Documentos\Mestrônomo\sons`;
 - fechar a janela deixa o app na **bandeja** (o bot e os atalhos continuam funcionando); para sair, use **Sair** no ícone;
@@ -97,6 +98,10 @@ O cartão **Mesa** tem três abas:
 **Handouts**: o botão 🖼 no topo do app manda uma imagem (mapa, retrato, carta…) com legenda opcional para esse canal.
 
 > Se você convidou o bot antes destes recursos, dê a ele as permissões **Send Messages**, **Embed Links** e **Attach Files** (pelo cargo do bot no servidor, ou convidando de novo com a URL nova).
+
+## Backup
+
+Em **⚙ → Backup**, **Exportar…** gera um `.zip` com cenas, soundboard, volumes, combate e o resto das configurações, e (opcional) as pastas de sons, ambientes, músicas e tabelas. **Importar…** aplica o backup em outro PC (ou na versão portátil) e reinicia o app. O token do bot nunca vai no backup.
 
 ## Volumes
 

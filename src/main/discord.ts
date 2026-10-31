@@ -68,6 +68,7 @@ export class DiscordBot extends EventEmitter {
   private nowPlayingTimer: NodeJS.Timeout | undefined;
 
   constructor(private mixer: Mixer, private token: string, private ownerId: string) {
+    // ownerId vazio: descobrimos o dono da aplicação assim que o bot conecta.
     super();
     this.player = createAudioPlayer({
       // Toca mesmo sem ninguém ouvindo, e nunca desiste por falta de pacotes: silêncio é normal aqui.
@@ -80,7 +81,11 @@ export class DiscordBot extends EventEmitter {
 
   async start() {
     this.setStatus({ state: 'conectando' });
-    this.client.once('clientReady', () => {
+    this.client.once('clientReady', async () => {
+      if (!this.ownerId) {
+        const app = await this.client.application!.fetch();
+        this.ownerId = (app.owner && 'ownerId' in app.owner ? app.owner.ownerId : app.owner?.id) ?? '';
+      }
       this.setStatus({ state: 'aguardando', bot: this.client.user!.tag });
       for (const guild of this.client.guilds.cache.values()) this.registerCommands(guild);
     });

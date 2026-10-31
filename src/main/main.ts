@@ -17,13 +17,23 @@ import { SceneManager, type Scene, type SceneMusic } from './scenes';
 import { PACKAGED, ROOT } from './paths';
 import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
 import { createTray } from './tray';
+import { DEVELOPER_PORTAL, botIdFromToken, checkToken, inviteUrl } from './botSetup';
+import { exportBackup, importBackup } from './backup';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
 if (process.env.MESTRONOMO_USER_DATA) app.setPath('userData', process.env.MESTRONOMO_USER_DATA);
 
+// Versão portátil: um portatil.txt ao lado do executável faz tudo (configuração e arquivos)
+// ficar na pasta Dados ali do lado, para levar num pendrive ou entre PCs.
+const PORTABLE = PACKAGED && fs.existsSync(path.join(path.dirname(process.execPath), 'portatil.txt'));
 // Instalado, os arquivos ficam em Documentos\Mestrônomo, fácil de achar e fora da pasta do programa.
-const DATA_DIR = PACKAGED ? path.join(app.getPath('documents'), 'Mestrônomo') : ROOT;
+const DATA_DIR = PORTABLE
+  ? path.join(path.dirname(process.execPath), 'Dados')
+  : PACKAGED
+    ? path.join(app.getPath('documents'), 'Mestrônomo')
+    : ROOT;
+if (PORTABLE) app.setPath('userData', path.join(DATA_DIR, 'config'));
 const SOUNDS_DIR = path.join(DATA_DIR, 'sons');
 const AMBIENT_DIR = path.join(DATA_DIR, 'ambientes');
 const MUSIC_DIR = path.join(DATA_DIR, 'musicas');
@@ -45,6 +55,8 @@ let bot: DiscordBot | undefined;
 let window: BrowserWindow | undefined;
 let tray: ReturnType<typeof createTray> | undefined;
 let quitting = false;
+/** Problema ao abrir a API local, mostrado também quando a janela termina de carregar. */
+let apiError: string | undefined;
 const configFile = () => path.join(app.getPath('userData'), 'config.json');
 
 interface SavedConfig {
@@ -79,7 +91,11 @@ function loadConfig(): SavedConfig {
   }
 }
 
+/** Durante a importação de um backup, nada pode sobrescrever o config.json que acabou de chegar. */
+let importingBackup = false;
+
 function saveConfig() {
+  if (importingBackup) return;
   config.mixer = mixer.settings;
   config.youtube = { volume: youtube.volume, repetir: youtube.loop };
   fs.writeFileSync(configFile(), JSON.stringify(config, null, 2));
@@ -312,6 +328,11 @@ function registerIpc() {
   ipcMain.handle('tabela-rolar', (_e, nome: string) => rollTableSafe(nome));
   ipcMain.handle('discord-texto', (_e, texto: string) => postToDiscord(texto));
   ipcMain.handle('abrir-tabelas', () => shell.openPath(TABLES_DIR));
+  ipcMain.handle('bot-verificar', (_e, token: string) => checkToken(token));
+  ipcMain.handle('backup-exportar', (_e, includeFiles: boolean) => exportSettings(includeFiles));
+  ipcMain.handle('backup-importar', () => importSettings());
+  ipcMain.handle('bot-portal', () => shell.openExternal(DEVELOPER_PORTAL));
+  ipcMain.handle('bot-convidar', (_e, token?: string) => openInvite(token));
   ipcMain.handle('handout', async (_e, legenda: string) => {
     try {
       return await sendHandout(legenda);
@@ -320,6 +341,62 @@ function registerIpc() {
       return false;
     }
   });
+}
+
+async function exportSettings(includeFiles: boolean) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const escolha = await dialog.showSaveDialog(window!, {
+    title: 'Exportar configurações do Mestrônomo',
+    defaultPath: path.join(app.getPath('documents'), `Mestronomo-backup-${hoje}.zip`),
+    filters: [{ name: 'Backup do Mestrônomo', extensions: ['zip'] }],
+  });
+  if (escolha.canceled || !escolha.filePath) return;
+  saveConfig();
+  try {
+    const bytes = await exportBackup(escolha.filePath, { dataDir: DATA_DIR, configFile: configFile() }, includeFiles);
+    send('aviso', `Backup salvo (${(bytes / 1024 / 1024).toFixed(1)} MB) em ${escolha.filePath}`);
+  } catch (err) {
+    send('erro', `Não consegui exportar: ${(err as Error).message}`);
+  }
+}
+
+async function importSettings() {
+  const escolha = await dialog.showOpenDialog(window!, {
+    title: 'Importar backup do Mestrônomo',
+    properties: ['openFile'],
+    filters: [{ name: 'Backup do Mestrônomo', extensions: ['zip'] }],
+  });
+  if (escolha.canceled || !escolha.filePaths[0]) return;
+  const confirmacao = await dialog.showMessageBox(window!, {
+    type: 'warning',
+    title: 'Importar backup',
+    message: 'Substituir as configurações atuais?',
+    detail: 'Cenas, soundboard, volumes e o resto das configurações serão trocados pelos do backup. Arquivos com o mesmo nome serão sobrescritos. O token do bot continua o mesmo. O Mestrônomo reinicia em seguida.',
+    buttons: ['Importar e reiniciar', 'Cancelar'],
+    defaultId: 0,
+    cancelId: 1,
+  });
+  if (confirmacao.response !== 0) return;
+  importingBackup = true;
+  try {
+    await importBackup(escolha.filePaths[0], { dataDir: DATA_DIR, configFile: configFile() });
+    app.relaunch();
+    app.quit();
+  } catch (err) {
+    importingBackup = false;
+    send('erro', `Não consegui importar: ${(err as Error).message}`);
+  }
+}
+
+/** Abre o convite do bot: do token digitado na tela, ou do bot já configurado. */
+function openInvite(token?: string) {
+  const id = botIdFromToken(token || loadCredentials()?.token || '');
+  if (!id) {
+    send('erro', 'Configure o token do bot primeiro (botão ⚙).');
+    return false;
+  }
+  shell.openExternal(inviteUrl(id));
+  return true;
 }
 
 function isAutoStart() {
@@ -355,6 +432,7 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), autoplayPolicy: 'no-user-gesture-required' },
   });
   window.loadFile(path.join(ROOT, 'src', 'renderer', 'index.html'));
+  window.webContents.on('did-finish-load', () => apiError && send('erro', apiError));
 
   // Fechar a janela só esconde: o bot e os atalhos continuam funcionando pela bandeja.
   let avisou = false;
@@ -507,6 +585,9 @@ app.whenReady().then(() => {
     combat,
     timers,
     rollTable: (nome: string) => rollTable(TABLES_DIR, nome),
+  }, (message) => {
+    apiError = message;
+    send('erro', message);
   });
   startBot();
   createWindow();
@@ -518,6 +599,7 @@ app.whenReady().then(() => {
     stopEffects,
     isAutoStart,
     setAutoStart,
+    invite: () => openInvite(),
   });
 });
 
