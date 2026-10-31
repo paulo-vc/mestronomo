@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Versão para 16–32 px: traços grossos, sem detalhes internos. -->
+  <rect width="512" height="512" rx="112" fill="#1d1729"/>
+  <path d="M206 72 H306 Q320 72 324 88 L388 400 H124 L188 88 Q192 72 206 72 Z"
+        fill="#15121c" stroke="#e3ad4a" stroke-width="34" stroke-linejoin="round"/>
+  <rect x="96" y="388" width="320" height="56" rx="16" fill="#e3ad4a"/>
+  <g transform="rotate(22 256 372)">
+    <line x1="256" y1="372" x2="256" y2="110" stroke="#ece6f5" stroke-width="28" stroke-linecap="round"/>
+    <polygon transform="translate(256 220)" points="0,-70 60.6,-35 60.6,35 0,70 -60.6,35 -60.6,-35"
+             fill="#e3ad4a" stroke="#15121c" stroke-width="10" stroke-linejoin="round"/>
+  </g>
+</svg>

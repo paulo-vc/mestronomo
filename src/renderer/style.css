@@ -6,6 +6,7 @@
   --text: #ece6f5;
   --muted: #9d93ad;
   --accent: #d9a441;
+  --accent-2: #f0c262;
   --accent-ink: #1a1408;
   --ok: #5fbf85;
   --warn: #e0b04a;
@@ -38,8 +39,10 @@ header { border-bottom: 1px solid var(--border); }
 footer { margin-top: auto; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
 
 h1 { margin: 0; font-size: 20px; letter-spacing: 0.02em; }
+.marca { display: flex; align-items: center; gap: 10px; font-family: Constantia, 'Palatino Linotype', Georgia, serif; font-size: 24px; color: var(--accent); }
+.marca img { width: 32px; height: 32px; }
+h3 { margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 h2 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
-.sigil { color: var(--accent); }
 
 main {
   display: grid;
@@ -66,7 +69,7 @@ main {
 
 .row { display: flex; gap: 8px; align-items: center; }
 
-select, button, input[type='url'] {
+select, button, input[type='url'], #yt-url, .cena-form input {
   font: inherit;
   color: var(--text);
   background: var(--surface-2);
@@ -74,7 +77,7 @@ select, button, input[type='url'] {
   border-radius: 6px;
   padding: 7px 12px;
 }
-select, input[type='url'] { flex: 1; min-width: 0; }
+select, input[type='url'], #yt-url { flex: 1; min-width: 0; }
 input[type='url']::placeholder { color: var(--muted); }
 input[type='url']:focus, select:focus { outline: none; border-color: var(--accent); }
 button { cursor: pointer; white-space: nowrap; }
@@ -107,13 +110,41 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  height: 72px;
+  min-height: 72px;
   padding: 10px 12px;
   text-align: left;
   overflow: hidden;
 }
 .grid button .nome { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .grid button.flash { border-color: var(--accent); background: #3a2f1c; }
+.grid button.flash-previa { border-color: var(--muted); background: #2f2a3a; }
+dialog {
+  width: min(480px, calc(100vw - 32px));
+  padding: 20px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+dialog::backdrop { background: rgb(0 0 0 / 0.6); }
+dialog form { display: flex; flex-direction: column; gap: 14px; }
+.campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.campo input {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+}
+.campo input:focus { outline: none; border-color: var(--accent); }
+.campo small { color: var(--muted); font-size: 11px; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.check input { accent-color: var(--accent); }
+.row.fim { justify-content: flex-end; }
+.hidden { display: none !important; }
+button.icone-grande { font-size: 16px; padding: 5px 10px; }
+
 .vazio { color: var(--muted); grid-column: 1 / -1; padding: 20px 0; text-align: center; }
 
 .pill {
@@ -154,5 +185,101 @@ code { font: 12px Consolas, monospace; color: var(--text); }
 .tocando { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
 .tocando .titulo { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tocando .tempo { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.controles { flex-wrap: wrap; }
 .controles button { min-width: 36px; }
 #yt-repetir.ativo { color: var(--accent); border-color: var(--accent); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { padding: 5px 10px; font-size: 12px; border-radius: 999px; }
+.chips button.ativo { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.chips:empty::after { content: 'Nenhum arquivo na pasta de ambientes.'; color: var(--muted); font-size: 12px; }
+
+.ocasional-form { display: flex; flex-direction: column; gap: 6px; }
+.ocasional-form select {
+  font: inherit; font-size: 12px; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px;
+}
+.ocasional-form label { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.ocasional-form input[type='number'] {
+  width: 56px; font: inherit; font-size: 12px; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
+}
+.ocasional-form .row { flex-wrap: wrap; }
+.lista li.ocasional { grid-template-columns: 1fr auto auto; }
+.lista li .detalhe { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+.cenas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.cenas:empty::after { content: 'Monte o clima (ambiente + música) e salve como cena abaixo.'; color: var(--muted); font-size: 12px; grid-column: 1 / -1; }
+.cena {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 68px;
+  padding: 10px 12px;
+  text-align: left;
+}
+.cena .nome { font-weight: 600; font-family: Constantia, 'Palatino Linotype', Georgia, serif; font-size: 16px; }
+.cena .resumo { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.cena.ativa { border-color: var(--accent); background: #3a2f1c; }
+.cena.ativa .nome { color: var(--accent); }
+.cena .remover { position: absolute; top: 4px; right: 6px; padding: 0 4px; border: 0; background: none; color: var(--muted); font-size: 12px; visibility: hidden; }
+.cena:hover .remover { visibility: visible; }
+.cena-form { flex-wrap: wrap; }
+.cena-form input { flex: 1; min-width: 160px; }
+.cena-form input:focus { outline: none; border-color: var(--accent); }
+.slider.transicao { grid-template-columns: auto 120px 40px; flex: none; font-size: 12px; color: var(--muted); }
+
+.abas:empty { display: none; }
+.abas:empty::after { content: none; }
+.grid button { position: relative; }
+.grid button.com-cor { border-left: 4px solid var(--cor); }
+.grid button.em-loop { border-color: var(--accent); animation: pulsar 1.6s ease-in-out infinite; }
+@keyframes pulsar { 50% { box-shadow: 0 0 0 3px rgb(217 164 65 / 0.25); } }
+.grid .detalhes { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.grid .detalhes kbd { margin-left: 0; }
+.tag { font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+.grid .opcoes { position: absolute; top: 4px; right: 6px; color: var(--muted); padding: 0 4px; border-radius: 4px; visibility: hidden; }
+.grid button:hover .opcoes { visibility: visible; }
+.grid .opcoes:hover { color: var(--text); background: var(--surface); }
+button.cor { width: 26px; height: 26px; padding: 0; border-radius: 50%; background: var(--cor, var(--surface-2)); }
+button.cor.ativo { outline: 2px solid var(--text); outline-offset: 2px; }
+#som-opcoes .slider { grid-template-columns: 70px 1fr 40px; }
+
+#yt-url:focus { outline: none; border-color: var(--accent); }
+.resultados:empty { display: none; }
+.resultados:empty::after { content: none; }
+.resultados li { grid-template-columns: 1fr auto auto; cursor: pointer; }
+.resultados li:hover { border-color: var(--accent); }
+
+/* Mesa */
+#mesa .card-head .abas button { font-size: 12px; }
+.combate-barra { flex-wrap: wrap; }
+.combate-barra .status { flex: 1; font-size: 13px; }
+.combate-barra select { flex: 0 1 220px; }
+#mesa .row { flex-wrap: wrap; }
+.combatentes li { grid-template-columns: 56px 1fr auto auto; }
+.combatentes li.atual { border-color: var(--accent); background: #3a2f1c; }
+.combatentes li.jogador .nome { color: #9fd3ff; }
+.combatentes li.caido { opacity: 0.5; }
+.combatentes li.caido .nome { text-decoration: line-through; }
+.combatentes input, .combate-form input, .timer-form input, .timer-form select {
+  font: inherit; font-size: 13px; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; min-width: 0;
+}
+.combatentes input:focus, .combate-form input:focus, .timer-form input:focus { outline: none; border-color: var(--accent); }
+.combatentes .init { width: 56px; text-align: center; font-weight: 600; }
+.combatentes .hp-box { display: flex; align-items: center; gap: 4px; }
+.combatentes .hp { width: 64px; text-align: right; }
+.combatentes .hp-max { color: var(--muted); font-size: 12px; min-width: 36px; }
+.combatentes .hp-max.perigo { color: var(--danger); }
+.combate-form input[name='nome'] { flex: 1 1 140px; }
+.combate-form input[type='number'] { width: 84px; }
+.timer-form input[name='nome'] { flex: 1 1 160px; }
+.timer-form input[type='number'] { width: 60px; }
+.timer-form { color: var(--muted); font-size: 12px; }
+.lista li.timer { grid-template-columns: 1fr auto auto auto; }
+.timer .contagem { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); }
+.resultado { background: var(--surface-2); border: 1px solid var(--accent); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.resultado p { margin: 0; font-family: Constantia, 'Palatino Linotype', Georgia, serif; font-size: 17px; }

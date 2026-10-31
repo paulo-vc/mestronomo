@@ -1,11 +1,10 @@
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
 import { promisify } from 'node:util';
-import path from 'node:path';
 import { FRAME_BYTES, SAMPLE_RATE, CHANNELS, type Bus, type Source } from './mixer';
+import { CAPTURE_EXE, FFMPEG, YTDLP, YTDLP_JS_RUNTIME } from './paths';
 
 const execFileAsync = promisify(execFile);
 
-export const CAPTURE_EXE = path.join(__dirname, '..', '..', 'capture', 'target', 'release', 'mestronomo-capture.exe');
 
 /** Acumula PCM vindo de um processo e entrega um quadro por vez. */
 class PcmQueue {
@@ -55,12 +54,14 @@ export interface AudioApp {
 
 export async function listAudioApps(): Promise<AudioApp[]> {
   const { stdout } = await execFileAsync(CAPTURE_EXE, ['list']);
-  return JSON.parse(stdout);
+  // O próprio Mestrônomo fica de fora: capturar a si mesmo vira microfonia.
+  return (JSON.parse(stdout) as AudioApp[]).filter((a) => a.pid !== process.pid);
 }
 
 /** Áudio ao vivo de outro programa (Spotify, navegador...) via mestronomo-capture. */
 export class AppCaptureSource implements Source {
   readonly bus: Bus = 'musica';
+  readonly live = true;
   volume = 1;
   private queue = new PcmQueue();
   private proc: ChildProcess;
@@ -96,8 +97,9 @@ export class AppCaptureSource implements Source {
  * Áudio decodificado pelo ffmpeg a partir de um arquivo ou do stdin.
  * O ffmpeg decodifica bem mais rápido que o tempo real, então seguramos com ~1 s de folga.
  */
-class FfmpegSource implements Source {
+export class FfmpegSource implements Source {
   volume = 1;
+  ducks = true;
   paused = false;
   /** Quadros já tocados — dá a posição atual da faixa. */
   framesPlayed = 0;
@@ -106,10 +108,10 @@ class FfmpegSource implements Source {
   private decoded = false;
   private stopped = false;
 
-  constructor(readonly bus: Bus, input: string) {
+  constructor(readonly bus: Bus, input: string, inputArgs: string[] = []) {
     this.ffmpeg = spawn(
-      'ffmpeg',
-      ['-hide_banner', '-loglevel', 'error', '-i', input, '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
+      FFMPEG,
+      ['-hide_banner', '-loglevel', 'error', ...inputArgs, '-i', input, '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
       { windowsHide: true },
     );
     const stdout = this.ffmpeg.stdout!;
@@ -141,14 +143,13 @@ class FfmpegSource implements Source {
   }
 }
 
-/** Um arquivo local (efeitos da soundboard). */
+/** Um arquivo local (efeitos da soundboard). Com `preview`, toca só no monitor local. */
 export class FileSource extends FfmpegSource {
-  constructor(readonly file: string, bus: Bus) {
-    super(bus, file);
+  constructor(readonly file: string, bus: Bus, readonly preview = false, loop = false) {
+    // -stream_loop -1 repete o arquivo sem fim, sem o intervalo que reabrir o arquivo causaria.
+    super(bus, file, loop ? ['-stream_loop', '-1'] : []);
   }
 }
-
-export const YTDLP = process.env.YTDLP_PATH || 'yt-dlp';
 
 /**
  * Uma faixa do YouTube (ou outro site suportado pelo yt-dlp): yt-dlp baixa o áudio
@@ -159,9 +160,11 @@ export class StreamSource extends FfmpegSource {
 
   constructor(readonly url: string, bus: Bus = 'musica') {
     super(bus, 'pipe:0');
-    this.ytdlp = spawn(YTDLP, ['-q', '--no-warnings', '--no-playlist', '-f', 'bestaudio/best', '--js-runtimes', 'node', '-o', '-', url], {
-      windowsHide: true,
-    });
+    this.ytdlp = spawn(
+      YTDLP,
+      ['-q', '--no-warnings', '--no-playlist', '-f', 'bestaudio/best', ...YTDLP_JS_RUNTIME.args, '-o', '-', url],
+      { windowsHide: true, env: { ...process.env, ...YTDLP_JS_RUNTIME.env } },
+    );
     this.ytdlp.stdout!.pipe(this.ffmpeg.stdin!);
     // ffmpeg fechado antes do fim (faixa pulada) gera EPIPE no stdin; é esperado.
     this.ffmpeg.stdin!.on('error', () => {});
@@ -175,19 +178,40 @@ export class StreamSource extends FfmpegSource {
 }
 
 export interface TrackInfo {
+  /** Link (YouTube etc.) ou, para músicas locais, o caminho do arquivo. */
   url: string;
   title: string;
   /** Em segundos; ausente em lives. */
   duration?: number;
+  /** Faixa local: toca o arquivo direto com o ffmpeg, sem yt-dlp. */
+  local?: boolean;
 }
 
 /** Lê título e duração. Se for uma playlist, devolve todas as faixas dela. */
 export async function resolveTracks(url: string): Promise<TrackInfo[]> {
+  return parseTracks(await ytdlpPrint(url));
+}
+
+/** Busca no YouTube e devolve os primeiros resultados (sem tocar nada). */
+export async function searchTracks(query: string, count = 5): Promise<TrackInfo[]> {
+  return parseTracks(await ytdlpPrint(`ytsearch${count}:${query}`));
+}
+
+/** Um vídeo único (não playlist): dá para começar a tocar antes de saber o título. */
+export function isSingleVideo(url: string) {
+  return /youtu\.be\/|youtube\.com\/(watch|shorts\/)/.test(url) && !/[?&]list=/.test(url);
+}
+
+async function ytdlpPrint(target: string) {
   const { stdout } = await execFileAsync(
     YTDLP,
-    ['--flat-playlist', '--no-warnings', '--print', '%(webpage_url,url)s\t%(title)s\t%(duration)s', url],
-    { maxBuffer: 16 * 1024 * 1024, windowsHide: true },
+    ['--flat-playlist', '--no-warnings', ...YTDLP_JS_RUNTIME.args, '--print', '%(webpage_url,url)s\t%(title)s\t%(duration)s', target],
+    { maxBuffer: 16 * 1024 * 1024, windowsHide: true, env: { ...process.env, ...YTDLP_JS_RUNTIME.env } },
   );
+  return stdout;
+}
+
+function parseTracks(stdout: string): TrackInfo[] {
   return stdout
     .split('\n')
     .filter((line) => line.includes('\t'))
@@ -196,4 +220,13 @@ export async function resolveTracks(url: string): Promise<TrackInfo[]> {
       const seconds = Number(duration);
       return { url: trackUrl, title, duration: Number.isFinite(seconds) ? seconds : undefined };
     });
+}
+
+/** Duração de um arquivo local, lida do cabeçalho pelo ffmpeg ("Duration: 00:03:21.45"). */
+export async function probeDuration(file: string): Promise<number | undefined> {
+  const stderr = await new Promise<string>((resolve) => {
+    execFile(FFMPEG, ['-hide_banner', '-i', file], { windowsHide: true }, (_err, _out, err) => resolve(String(err)));
+  });
+  const m = stderr.match(/Duration: (\d+):(\d+):(\d+(?:\.\d+)?)/);
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : undefined;
 }

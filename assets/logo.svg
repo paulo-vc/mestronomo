@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 180">
+  <svg x="0" y="10" width="160" height="160" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2d2243"/>
+      <stop offset="1" stop-color="#120f18"/>
+    </linearGradient>
+    <linearGradient id="ouro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0c262"/>
+      <stop offset="1" stop-color="#c78f2e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#fundo)"/>
+
+  <!-- corpo do metrônomo -->
+  <path d="M214 92 H298 Q310 92 313 104 L372 404 H140 L199 104 Q202 92 214 92 Z"
+        fill="#1f1a29" stroke="url(#ouro)" stroke-width="14" stroke-linejoin="round"/>
+  <g stroke="#6b5734" stroke-width="6" stroke-linecap="round">
+    <line x1="240" y1="164" x2="272" y2="164"/>
+    <line x1="236" y1="204" x2="276" y2="204"/>
+    <line x1="232" y1="244" x2="280" y2="244"/>
+    <line x1="228" y1="284" x2="284" y2="284"/>
+    <line x1="224" y1="324" x2="288" y2="324"/>
+  </g>
+  <rect x="118" y="396" width="276" height="36" rx="12" fill="url(#ouro)"/>
+
+  <!-- pêndulo com o d20 como peso -->
+  <g transform="rotate(20 256 372)">
+    <line x1="256" y1="372" x2="256" y2="124" stroke="#ece6f5" stroke-width="12" stroke-linecap="round"/>
+    <g transform="translate(256 236)">
+      <polygon points="0,-46 39.8,-23 39.8,23 0,46 -39.8,23 -39.8,-23"
+               fill="url(#ouro)" stroke="#1a1408" stroke-width="5" stroke-linejoin="round"/>
+      <g stroke="#1a1408" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" fill="none">
+        <polygon points="0,-25 21.7,12.5 -21.7,12.5"/>
+        <path d="M0,-25 L-39.8,-23 M0,-25 L39.8,-23 M0,-25 L0,-46
+                 M21.7,12.5 L39.8,-23 M21.7,12.5 L0,46 M21.7,12.5 L39.8,23
+                 M-21.7,12.5 L0,46 M-21.7,12.5 L-39.8,-23 M-21.7,12.5 L-39.8,23"/>
+      </g>
+    </g>
+    <circle cx="256" cy="372" r="11" fill="url(#ouro)"/>
+  </g>
+</svg>
+  <text x="190" y="104" font-family="Constantia, 'Palatino Linotype', Georgia, serif" font-size="84" font-weight="700" fill="#d9a441" letter-spacing="1">Mestrônomo</text>
+  <text x="194" y="148" font-family="'Segoe UI', system-ui, sans-serif" font-size="24" fill="#9d93ad" letter-spacing="3">O RITMO DA SUA MESA</text>
+</svg>

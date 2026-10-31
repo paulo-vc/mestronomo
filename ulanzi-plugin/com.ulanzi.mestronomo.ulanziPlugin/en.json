@@ -1,0 +1,64 @@
+{
+  "Name": "Mestrônomo",
+  "Description": "Music, ambience and soundboard for tabletop RPG game masters on Discord",
+  "Actions": [
+    {
+      "Name": "Scene",
+      "Tooltip": "Switches to a scene (ambience + music) with a crossfade"
+    },
+    {
+      "Name": "Play Sound",
+      "Tooltip": "Plays a soundboard sound in the call (or only in your headphones)"
+    },
+    {
+      "Name": "YouTube Play/Pause",
+      "Tooltip": "Plays or pauses the YouTube queue"
+    },
+    {
+      "Name": "YouTube Next",
+      "Tooltip": "Skips to the next track in the queue"
+    },
+    {
+      "Name": "Stop Effects",
+      "Tooltip": "Stops every sound effect that is playing"
+    },
+    {
+      "Name": "Call / Dismiss Bot",
+      "Tooltip": "Brings the bot to your voice channel, or sends it away"
+    },
+    {
+      "Name": "Volume",
+      "Tooltip": "Raises or lowers a volume (music, effects, master...)"
+    },
+    {
+      "Name": "Capture App",
+      "Tooltip": "Starts or stops streaming the audio of an app"
+    },
+    {
+      "Name": "Next Turn",
+      "Tooltip": "Starts the combat, or passes to the next turn"
+    }
+  ],
+  "Localization": {
+    "Sound": "Sound",
+    "Refresh list": "Refresh list",
+    "Only in my headphones (preview)": "Only in my headphones (preview)",
+    "Volume": "Volume",
+    "Direction": "Direction",
+    "Raise": "Raise",
+    "Lower": "Lower",
+    "Step": "Step",
+    "Music": "Music",
+    "Effects": "Effects",
+    "Master": "Master",
+    "Headphones": "Headphones",
+    "App": "App",
+    "Loading...": "Loading...",
+    "Open Mestrônomo to load the list.": "Open Mestrônomo to load the list.",
+    "Files in the sons/ folder of Mestrônomo.": "Files in the sons/ folder of Mestrônomo.",
+    "Only apps that are playing or have played audio show up.": "Only apps that are playing or have played audio show up.",
+    "This key needs no settings.": "This key needs no settings.",
+    "Scene": "Scene",
+    "Scenes are created in Mestrônomo with \"Save current scene\".": "Scenes are created in Mestrônomo with \"Save current scene\"."
+  }
+}

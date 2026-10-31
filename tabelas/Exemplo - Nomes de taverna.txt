@@ -1,0 +1,9 @@
+# Exemplo de tabela: um nome por linha.
+O Javali Bêbado
+A Caneca de Ferro
+O Último Dragão
+O Pônei Saltitante do Norte
+A Sereia Rouca
+O Barril Sem Fundo
+A Coroa Torta
+O Goblin Dourado
