@@ -109,7 +109,7 @@ Também funciona por `/api/cena/Taverna` (ou `/api/cena/1`) e pela ação **Cena
 
 ## Ambiente
 
-Coloque sons contínuos (chuva, fogueira, vento, taverna…) na pasta `ambientes/` (instalado: `Documentos\Mestrônomombientes`). No cartão **Ambiente**:
+Coloque sons contínuos (chuva, fogueira, vento, taverna…) na pasta `ambientes/` (instalado: `Documentos\Mestrônomo\ambientes`). No cartão **Ambiente**:
 
 - clique num arquivo para ligar a camada em **loop** (entra e sai com fade); várias tocam juntas, cada uma com seu volume;
 - **sons ocasionais**: escolha um ou mais arquivos e um intervalo (ex.: a cada 30–90 s); um deles é sorteado a cada vez, com uma leve variação de volume.
