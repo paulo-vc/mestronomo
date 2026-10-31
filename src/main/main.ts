@@ -413,8 +413,17 @@ if (!app.requestSingleInstanceLock()) {
   app.on('second-instance', showWindow);
 }
 
+/** Instalado, a pasta de tabelas começa vazia em Documentos: copia os exemplos na primeira vez. */
+function seedExampleTables() {
+  if (!PACKAGED || fs.existsSync(TABLES_DIR)) return;
+  fs.mkdirSync(TABLES_DIR, { recursive: true });
+  const examples = path.join(ROOT, 'tabelas');
+  for (const file of fs.readdirSync(examples)) fs.copyFileSync(path.join(examples, file), path.join(TABLES_DIR, file));
+}
+
 app.whenReady().then(() => {
   if (!app.hasSingleInstanceLock()) return;
+  seedExampleTables();
   config = loadConfig();
   Object.assign(mixer.settings, config.mixer);
   if (config.youtube) {

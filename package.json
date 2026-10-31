@@ -40,6 +40,7 @@
       "dist/**",
       "src/renderer/**",
       "assets/**",
+      "tabelas/Exemplo*",
       "package.json",
       "!**/*.map"
     ],
