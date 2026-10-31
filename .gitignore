@@ -6,3 +6,5 @@ sons/*
 !sons/LEIA-ME.txt
 ulanzi-plugin/*/node_modules/
 ulanzi-plugin/*/runtime-icons/
+vendor/
+release/

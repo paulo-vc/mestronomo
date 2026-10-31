@@ -25,7 +25,7 @@ Ulanzi / Stream Deck ──► API local :7777 ───┘
 ## Requisitos
 
 - Windows 10 (2004) ou 11
-- Node.js 22+ e Rust (`cargo`)
+- Node.js 22+ e Rust (`cargo`) — só para compilar; o instalador não precisa de nada disso
 - `ffmpeg` e `yt-dlp` no PATH (`winget install yt-dlp.yt-dlp`)
 
 ## Criando o bot no Discord
@@ -44,12 +44,21 @@ Ulanzi / Stream Deck ──► API local :7777 ───┘
 
 ## Configuração
 
-Copie `.env.example` para `.env` e preencha:
+Clique no **⚙** no topo do app e cole o token (passo 3) e o seu ID (passo 5). O token fica guardado **criptografado** pelo Windows, atrelado ao seu usuário.
 
+Para desenvolvimento, dá também para usar um `.env` (copie `.env.example`); ele tem prioridade sobre a tela.
+
+## Instalador
+
+```bash
+npm run dist
 ```
-DISCORD_TOKEN=token-do-passo-3
-DISCORD_OWNER_ID=seu-id-do-passo-5
-```
+
+Gera `release/Mestrônomo Setup <versão>.exe`, que já leva o capturador, o ffmpeg e o yt-dlp (copiados do seu PATH). Instalado:
+
+- os sons ficam em `Documentos\Mestrônomo\sons`;
+- fechar a janela deixa o app na **bandeja** (o bot e os atalhos continuam funcionando); para sair, use **Sair** no ícone;
+- "Iniciar com o Windows" (no ⚙ ou no menu da bandeja) abre o app direto na bandeja.
 
 ## Rodando
 

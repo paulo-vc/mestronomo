@@ -12,8 +12,31 @@
       <div class="row">
         <div id="bot" class="pill">Bot desligado</div>
         <button id="bot-botao">Chamar bot</button>
+        <button id="abrir-config" class="ghost icone-grande" title="Configurações">⚙</button>
       </div>
     </header>
+
+    <dialog id="config">
+      <form method="dialog" id="config-form">
+        <h2>Configurações</h2>
+        <p id="config-env" class="hint hidden">O bot está configurado pelo arquivo .env (modo desenvolvimento).</p>
+        <label class="campo">
+          <span>Token do bot</span>
+          <input type="password" name="token" autocomplete="off" spellcheck="false" />
+          <small>Discord Developer Portal → sua aplicação → Bot → Reset Token. Fica guardado criptografado neste PC.</small>
+        </label>
+        <label class="campo">
+          <span>Seu ID de usuário do Discord</span>
+          <input type="text" name="ownerId" inputmode="numeric" autocomplete="off" />
+          <small>Ative o Modo desenvolvedor no Discord e clique com o botão direito no seu nome → Copiar ID.</small>
+        </label>
+        <label class="check"><input type="checkbox" name="autoStart" /> Iniciar com o Windows (abre na bandeja)</label>
+        <div class="row fim">
+          <button value="cancelar" class="ghost">Cancelar</button>
+          <button value="salvar" class="primary">Salvar</button>
+        </div>
+      </form>
+    </dialog>
 
     <main>
       <section class="card" id="programas">

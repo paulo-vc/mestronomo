@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('mestronomo', {
   monitorSaida: invoke('monitor-saida'),
   botEntrar: invoke('bot-entrar'),
   botSair: invoke('bot-sair'),
+  configInfo: invoke('config-info'),
+  configSalvar: invoke('config-salvar'),
   yt: {
     adicionar: invoke('yt-adicionar'),
     tocar: invoke('yt-tocar'),

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, Notification, globalShortcut, ipcMain, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
@@ -7,11 +7,16 @@ import { AppCaptureSource, FileSource, listAudioApps } from './sources';
 import { DiscordBot, type BotStatus } from './discord';
 import { YouTubePlayer, type LoopMode } from './youtube';
 import { startApi } from './api';
+import { PACKAGED, ROOT } from './paths';
+import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
+import { createTray } from './tray';
 
-const ROOT = path.join(__dirname, '..', '..');
-dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
+if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 
-const SOUNDS_DIR = path.join(ROOT, 'sons');
+// Instalado, os sons ficam em Documentos\Mestrônomo\sons, fácil de achar e fora da pasta do programa.
+const SOUNDS_DIR = PACKAGED ? path.join(app.getPath('documents'), 'Mestrônomo', 'sons') : path.join(ROOT, 'sons');
+/** Iniciado junto com o Windows: abre direto na bandeja, sem mostrar a janela. */
+const START_HIDDEN = process.argv.includes('--oculto');
 const AUDIO_EXT = new Set(['.mp3', '.ogg', '.wav', '.flac', '.m4a', '.opus', '.webm']);
 const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
 
@@ -21,6 +26,8 @@ const youtube = new YouTubePlayer(mixer);
 const captures = new Map<string, AppCaptureSource>();
 let bot: DiscordBot | undefined;
 let window: BrowserWindow | undefined;
+let tray: ReturnType<typeof createTray> | undefined;
+let quitting = false;
 const configFile = () => path.join(app.getPath('userData'), 'config.json');
 
 interface SavedConfig {
@@ -116,7 +123,7 @@ function setVolume(key: VolumeKey | 'youtube', value: number) {
 }
 
 function joinBot() {
-  if (!bot) send('erro', 'Configure DISCORD_TOKEN e DISCORD_OWNER_ID no arquivo .env');
+  if (!bot) send('erro', 'Configure o bot primeiro (botão ⚙ no topo).');
   return bot?.joinOwner() ?? false;
 }
 
@@ -126,7 +133,7 @@ function leaveBot() {
 
 function state() {
   return {
-    bot: bot?.status ?? ({ state: 'desligado', motivo: 'Configure o arquivo .env' } satisfies BotStatus),
+    bot: bot?.status ?? ({ state: 'desligado', motivo: 'Bot não configurado' } satisfies BotStatus),
     capturas: capturesState(),
     youtube: youtube.state(),
     mixer: mixer.settings,
@@ -170,6 +177,59 @@ function registerIpc() {
     youtube.setLoop(mode);
     saveConfig();
   });
+  ipcMain.handle('config-info', () => ({ ...credentialsInfo(), autoStart: isAutoStart() }));
+  ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean) => {
+    if (!credentialsInfo().fromEnv) saveCredentials(token, ownerId);
+    setAutoStart(autoStart);
+    await restartBot();
+  });
+}
+
+function isAutoStart() {
+  return app.getLoginItemSettings().openAtLogin;
+}
+
+function setAutoStart(enabled: boolean) {
+  // Em desenvolvimento o executável é o electron.exe, que precisa do caminho do projeto.
+  const args = PACKAGED ? ['--oculto'] : [ROOT, '--oculto'];
+  app.setLoginItemSettings({ openAtLogin: enabled, path: process.execPath, args });
+  tray?.rebuild();
+}
+
+function showWindow() {
+  if (!window) return;
+  if (window.isMinimized()) window.restore();
+  window.show();
+  window.focus();
+}
+
+function createWindow() {
+  window = new BrowserWindow({
+    width: 1100,
+    height: 820,
+    minWidth: 560,
+    minHeight: 480,
+    title: 'Mestrônomo',
+    show: !START_HIDDEN,
+    backgroundColor: '#15121c',
+    icon: path.join(ROOT, 'assets', 'icon.ico'),
+    autoHideMenuBar: true,
+    // Sem exigir clique antes do áudio: o monitor local precisa tocar assim que o app abre.
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), autoplayPolicy: 'no-user-gesture-required' },
+  });
+  window.loadFile(path.join(ROOT, 'src', 'renderer', 'index.html'));
+
+  // Fechar a janela só esconde: o bot e os atalhos continuam funcionando pela bandeja.
+  let avisou = false;
+  window.on('close', (event) => {
+    if (quitting) return;
+    event.preventDefault();
+    window?.hide();
+    if (!avisou && Notification.isSupported()) {
+      avisou = true;
+      new Notification({ title: 'Mestrônomo continua aberto', body: 'Ele fica na bandeja do Windows. Para sair, use "Sair" no ícone.' }).show();
+    }
+  });
 }
 
 /** Ctrl+Alt+1..9 tocam os primeiros sons; Ctrl+Alt+0 para os efeitos. Funcionam com o app em segundo plano. */
@@ -184,15 +244,33 @@ function registerShortcuts() {
 }
 
 function startBot() {
-  const { DISCORD_TOKEN, DISCORD_OWNER_ID } = process.env;
-  if (!DISCORD_TOKEN || !DISCORD_OWNER_ID) return;
-  bot = new DiscordBot(mixer, DISCORD_TOKEN, DISCORD_OWNER_ID);
-  bot.on('status', (status) => send('bot', status));
+  const credentials = loadCredentials();
+  if (!credentials) return send('bot', state().bot);
+  bot = new DiscordBot(mixer, credentials.token, credentials.ownerId);
+  bot.on('status', (status) => {
+    send('bot', status);
+    tray?.rebuild();
+  });
   bot.on('erro', (msg) => send('erro', msg));
   bot.start();
 }
 
+async function restartBot() {
+  const old = bot;
+  bot = undefined;
+  await old?.destroy();
+  startBot();
+}
+
+// Uma instância só: abrir o atalho de novo traz a janela que já está rodando.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', showWindow);
+}
+
 app.whenReady().then(() => {
+  if (!app.hasSingleInstanceLock()) return;
   config = loadConfig();
   Object.assign(mixer.settings, config.mixer);
   if (config.youtube) {
@@ -222,23 +300,22 @@ app.whenReady().then(() => {
     youtube,
   });
   startBot();
-
-  window = new BrowserWindow({
-    width: 1100,
-    height: 820,
-    minWidth: 560,
-    minHeight: 480,
-    title: 'Mestrônomo',
-    backgroundColor: '#15121c',
-    icon: path.join(ROOT, 'assets', 'icon.ico'),
-    autoHideMenuBar: true,
-    // Sem exigir clique antes do áudio: o monitor local precisa tocar assim que o app abre.
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), autoplayPolicy: 'no-user-gesture-required' },
+  createWindow();
+  tray = createTray({
+    show: showWindow,
+    quit: () => app.quit(),
+    isBotInCall: () => bot?.status.state === 'no-canal',
+    toggleBot: () => (bot?.status.state === 'no-canal' ? leaveBot() : joinBot()),
+    stopEffects,
+    isAutoStart,
+    setAutoStart,
   });
-  window.loadFile(path.join(ROOT, 'src', 'renderer', 'index.html'));
 });
 
-app.on('window-all-closed', async () => {
+app.on('before-quit', async (event) => {
+  if (quitting) return;
+  quitting = true;
+  event.preventDefault();
   globalShortcut.unregisterAll();
   mixer.stop();
   await bot?.destroy();

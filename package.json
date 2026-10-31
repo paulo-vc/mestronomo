@@ -9,9 +9,10 @@
     "start": "tsc && electron .",
     "typecheck": "tsc --noEmit",
     "icons": "electron scripts/render-icons.js",
-    "plugin:ulanzi": "node scripts/instalar-plugin-ulanzi.js"
+    "plugin:ulanzi": "node scripts/instalar-plugin-ulanzi.js",
+    "dist": "npm run build:capture && tsc && npm run icons && node scripts/preparar-vendor.js && electron-builder --win nsis"
   },
-  "author": "",
+  "author": "paulo-vc",
   "license": "MIT",
   "type": "commonjs",
   "dependencies": {
@@ -23,7 +24,42 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "electron": "^45.2.0",
+    "electron-builder": "^26.18.0",
     "typescript": "^7.0.2"
   },
-  "private": true
+  "private": true,
+  "productName": "Mestrônomo",
+  "build": {
+    "appId": "com.paulovc.mestronomo",
+    "productName": "Mestrônomo",
+    "executableName": "Mestronomo",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "src/renderer/**",
+      "assets/**",
+      "package.json",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor",
+        "to": "bin"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Mestrônomo",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    }
+  }
 }

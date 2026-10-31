@@ -72,15 +72,43 @@ function renderBot(status) {
     'no-canal': ['ok', `${status.bot} · ${status.servidor} › ${status.canal}`],
   };
   const [classe, texto] = textos[status.state];
+  // Sem bot configurado, o botão principal leva direto à configuração.
+  const semConfig = status.state === 'desligado';
   els.bot.className = `pill ${classe}`;
   els.bot.textContent = texto;
   botNoCanal = status.state === 'no-canal';
-  els.botBotao.textContent = botNoCanal ? 'Dispensar bot' : 'Chamar bot';
+  els.botBotao.textContent = semConfig ? 'Configurar bot' : botNoCanal ? 'Dispensar bot' : 'Chamar bot';
   els.botBotao.classList.toggle('primary', !botNoCanal);
   els.botBotao.disabled = status.state === 'conectando';
 }
 
-els.botBotao.addEventListener('click', () => (botNoCanal ? api.botSair() : api.botEntrar()));
+els.botBotao.addEventListener('click', () => {
+  if (els.botBotao.textContent === 'Configurar bot') return abrirConfig();
+  botNoCanal ? api.botSair() : api.botEntrar();
+});
+
+// --- Configurações -------------------------------------------------------
+
+const dialogo = $('#config');
+const configForm = $('#config-form');
+
+async function abrirConfig() {
+  const info = await api.configInfo();
+  configForm.token.value = '';
+  configForm.token.placeholder = info.hasToken ? '•••••••• (salvo; deixe vazio para manter)' : 'Cole o token aqui';
+  configForm.ownerId.value = info.ownerId ?? '';
+  configForm.autoStart.checked = info.autoStart;
+  configForm.token.disabled = configForm.ownerId.disabled = info.fromEnv;
+  $('#config-env').classList.toggle('hidden', !info.fromEnv);
+  dialogo.showModal();
+}
+
+$('#abrir-config').addEventListener('click', abrirConfig);
+dialogo.addEventListener('close', () => {
+  if (dialogo.returnValue !== 'salvar') return;
+  api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked);
+  configForm.token.value = '';
+});
 
 // --- Capturas ----------------------------------------------------------
 

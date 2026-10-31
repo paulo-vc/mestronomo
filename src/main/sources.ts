@@ -1,11 +1,10 @@
 import { spawn, execFile, type ChildProcess } from 'node:child_process';
 import { promisify } from 'node:util';
-import path from 'node:path';
 import { FRAME_BYTES, SAMPLE_RATE, CHANNELS, type Bus, type Source } from './mixer';
+import { CAPTURE_EXE, FFMPEG, YTDLP, YTDLP_JS_RUNTIME } from './paths';
 
 const execFileAsync = promisify(execFile);
 
-export const CAPTURE_EXE = path.join(__dirname, '..', '..', 'capture', 'target', 'release', 'mestronomo-capture.exe');
 
 /** Acumula PCM vindo de um processo e entrega um quadro por vez. */
 class PcmQueue {
@@ -55,7 +54,8 @@ export interface AudioApp {
 
 export async function listAudioApps(): Promise<AudioApp[]> {
   const { stdout } = await execFileAsync(CAPTURE_EXE, ['list']);
-  return JSON.parse(stdout);
+  // O próprio Mestrônomo fica de fora: capturar a si mesmo vira microfonia.
+  return (JSON.parse(stdout) as AudioApp[]).filter((a) => a.pid !== process.pid);
 }
 
 /** Áudio ao vivo de outro programa (Spotify, navegador...) via mestronomo-capture. */
@@ -109,7 +109,7 @@ class FfmpegSource implements Source {
 
   constructor(readonly bus: Bus, input: string) {
     this.ffmpeg = spawn(
-      'ffmpeg',
+      FFMPEG,
       ['-hide_banner', '-loglevel', 'error', '-i', input, '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
       { windowsHide: true },
     );
@@ -149,8 +149,6 @@ export class FileSource extends FfmpegSource {
   }
 }
 
-export const YTDLP = process.env.YTDLP_PATH || 'yt-dlp';
-
 /**
  * Uma faixa do YouTube (ou outro site suportado pelo yt-dlp): yt-dlp baixa o áudio
  * e passa direto para o ffmpeg. Pausado por muito tempo, o YouTube pode fechar a conexão.
@@ -160,9 +158,11 @@ export class StreamSource extends FfmpegSource {
 
   constructor(readonly url: string, bus: Bus = 'musica') {
     super(bus, 'pipe:0');
-    this.ytdlp = spawn(YTDLP, ['-q', '--no-warnings', '--no-playlist', '-f', 'bestaudio/best', '--js-runtimes', 'node', '-o', '-', url], {
-      windowsHide: true,
-    });
+    this.ytdlp = spawn(
+      YTDLP,
+      ['-q', '--no-warnings', '--no-playlist', '-f', 'bestaudio/best', ...YTDLP_JS_RUNTIME.args, '-o', '-', url],
+      { windowsHide: true, env: { ...process.env, ...YTDLP_JS_RUNTIME.env } },
+    );
     this.ytdlp.stdout!.pipe(this.ffmpeg.stdin!);
     // ffmpeg fechado antes do fim (faixa pulada) gera EPIPE no stdin; é esperado.
     this.ffmpeg.stdin!.on('error', () => {});
@@ -186,8 +186,8 @@ export interface TrackInfo {
 export async function resolveTracks(url: string): Promise<TrackInfo[]> {
   const { stdout } = await execFileAsync(
     YTDLP,
-    ['--flat-playlist', '--no-warnings', '--print', '%(webpage_url,url)s\t%(title)s\t%(duration)s', url],
-    { maxBuffer: 16 * 1024 * 1024, windowsHide: true },
+    ['--flat-playlist', '--no-warnings', ...YTDLP_JS_RUNTIME.args, '--print', '%(webpage_url,url)s\t%(title)s\t%(duration)s', url],
+    { maxBuffer: 16 * 1024 * 1024, windowsHide: true, env: { ...process.env, ...YTDLP_JS_RUNTIME.env } },
   );
   return stdout
     .split('\n')
