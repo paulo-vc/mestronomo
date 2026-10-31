@@ -355,3 +355,4 @@ dialog h3 { margin-top: 4px; }
 details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
 details.avancado { border-top: 1px solid var(--border); padding-top: 10px; }
 .campo select { font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; }
+.barra .aviso { color: var(--ok); font-size: 12px; max-width: 360px; text-align: right; }

@@ -18,6 +18,7 @@ import { PACKAGED, ROOT } from './paths';
 import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
 import { createTray } from './tray';
 import { DEVELOPER_PORTAL, botIdFromToken, checkToken, inviteUrl } from './botSetup';
+import { exportBackup, importBackup } from './backup';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
@@ -80,7 +81,11 @@ function loadConfig(): SavedConfig {
   }
 }
 
+/** Durante a importação de um backup, nada pode sobrescrever o config.json que acabou de chegar. */
+let importingBackup = false;
+
 function saveConfig() {
+  if (importingBackup) return;
   config.mixer = mixer.settings;
   config.youtube = { volume: youtube.volume, repetir: youtube.loop };
   fs.writeFileSync(configFile(), JSON.stringify(config, null, 2));
@@ -314,6 +319,8 @@ function registerIpc() {
   ipcMain.handle('discord-texto', (_e, texto: string) => postToDiscord(texto));
   ipcMain.handle('abrir-tabelas', () => shell.openPath(TABLES_DIR));
   ipcMain.handle('bot-verificar', (_e, token: string) => checkToken(token));
+  ipcMain.handle('backup-exportar', (_e, includeFiles: boolean) => exportSettings(includeFiles));
+  ipcMain.handle('backup-importar', () => importSettings());
   ipcMain.handle('bot-portal', () => shell.openExternal(DEVELOPER_PORTAL));
   ipcMain.handle('bot-convidar', (_e, token?: string) => openInvite(token));
   ipcMain.handle('handout', async (_e, legenda: string) => {
@@ -324,6 +331,51 @@ function registerIpc() {
       return false;
     }
   });
+}
+
+async function exportSettings(includeFiles: boolean) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const escolha = await dialog.showSaveDialog(window!, {
+    title: 'Exportar configurações do Mestrônomo',
+    defaultPath: path.join(app.getPath('documents'), `Mestronomo-backup-${hoje}.zip`),
+    filters: [{ name: 'Backup do Mestrônomo', extensions: ['zip'] }],
+  });
+  if (escolha.canceled || !escolha.filePath) return;
+  saveConfig();
+  try {
+    const bytes = await exportBackup(escolha.filePath, { dataDir: DATA_DIR, configFile: configFile() }, includeFiles);
+    send('aviso', `Backup salvo (${(bytes / 1024 / 1024).toFixed(1)} MB) em ${escolha.filePath}`);
+  } catch (err) {
+    send('erro', `Não consegui exportar: ${(err as Error).message}`);
+  }
+}
+
+async function importSettings() {
+  const escolha = await dialog.showOpenDialog(window!, {
+    title: 'Importar backup do Mestrônomo',
+    properties: ['openFile'],
+    filters: [{ name: 'Backup do Mestrônomo', extensions: ['zip'] }],
+  });
+  if (escolha.canceled || !escolha.filePaths[0]) return;
+  const confirmacao = await dialog.showMessageBox(window!, {
+    type: 'warning',
+    title: 'Importar backup',
+    message: 'Substituir as configurações atuais?',
+    detail: 'Cenas, soundboard, volumes e o resto das configurações serão trocados pelos do backup. Arquivos com o mesmo nome serão sobrescritos. O token do bot continua o mesmo. O Mestrônomo reinicia em seguida.',
+    buttons: ['Importar e reiniciar', 'Cancelar'],
+    defaultId: 0,
+    cancelId: 1,
+  });
+  if (confirmacao.response !== 0) return;
+  importingBackup = true;
+  try {
+    await importBackup(escolha.filePaths[0], { dataDir: DATA_DIR, configFile: configFile() });
+    app.relaunch();
+    app.quit();
+  } catch (err) {
+    importingBackup = false;
+    send('erro', `Não consegui importar: ${(err as Error).message}`);
+  }
 }
 
 /** Abre o convite do bot: do token digitado na tela, ou do bot já configurado. */

@@ -46,8 +46,9 @@ function tempo(segundos) {
   return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
-function mostrarErro(msg) {
+function mostrarErro(msg, tipo = 'erro') {
   els.erro.textContent = msg ?? '';
+  els.erro.className = tipo;
   clearTimeout(erroTimer);
   if (msg) erroTimer = setTimeout(() => (els.erro.textContent = ''), 8000);
 }
@@ -175,6 +176,8 @@ async function abrirConfig() {
 
 $('#abrir-config').addEventListener('click', abrirConfig);
 $('#bot-portal').addEventListener('click', () => api.botPortal());
+$('#backup-exportar').addEventListener('click', () => api.backupExportar($('#backup-arquivos').checked));
+$('#backup-importar').addEventListener('click', () => api.backupImportar());
 $('#bot-convidar').addEventListener('click', () => api.botConvidar(configForm.token.value));
 $('#bot-verificar').addEventListener('click', async () => {
   const token = configForm.token.value.trim();
@@ -815,6 +818,7 @@ api.onTimers(renderTimers);
 api.onTimerFim((t) => mostrarErro(`⏰ ${t.nome}: o tempo acabou!`));
 api.onMixer(renderMixer);
 api.onErro(mostrarErro);
+api.onAviso((msg) => mostrarErro(msg, 'aviso'));
 
 (async () => {
   const estado = await api.estado();
