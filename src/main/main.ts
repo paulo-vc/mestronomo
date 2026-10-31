@@ -1,10 +1,10 @@
-import { app, BrowserWindow, Notification, globalShortcut, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, Notification, dialog, globalShortcut, ipcMain, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
 import { Mixer, type MixerSettings, type MonitorMode, type VolumeKey } from './mixer';
 import { AppCaptureSource, listAudioApps, type TrackInfo } from './sources';
-import { DiscordBot, type BotStatus } from './discord';
+import { DiscordBot, type BotStatus, type NowPlaying } from './discord';
 import { YouTubePlayer, type LoopMode } from './youtube';
 import { startApi } from './api';
 import { Ambience, type Occasional } from './ambience';
@@ -51,6 +51,10 @@ interface SavedConfig {
   sons?: Record<string, SoundOptions>;
   /** Duração do crossfade entre cenas, em ms. */
   fadeMs?: number;
+  /** Canal de texto escolhido com /canal (tocando agora e handouts). */
+  canalTexto?: string;
+  /** Postar e atualizar a mensagem "tocando agora" no canal de texto. */
+  tocandoAgora?: boolean;
 }
 
 let config: SavedConfig = {};
@@ -138,6 +142,40 @@ function leaveBot() {
   bot?.leave();
 }
 
+function nowPlaying(): NowPlaying {
+  const yt = youtube.state();
+  const faixa = yt.fila[yt.atual];
+  const cenas = scenes.state();
+  return {
+    musica: faixa && !yt.pausado ? faixa.title : undefined,
+    cena: cenas.cenas.find((c) => c.id === cenas.ativa)?.nome,
+    ambiente: ambience.state().camadas.map((c) => c.arquivo.replace(/\.[^.]+$/, '')),
+  };
+}
+
+let lastNowPlaying = '';
+/** Chamado a cada mudança de música, cena ou ambiente; só posta quando o resumo muda de fato. */
+function refreshNowPlaying() {
+  if (!bot || config.tocandoAgora === false || !config.canalTexto) return;
+  const info = nowPlaying();
+  const assinatura = JSON.stringify(info);
+  if (assinatura === lastNowPlaying) return;
+  lastNowPlaying = assinatura;
+  bot.updateNowPlaying(info);
+}
+
+async function sendHandout(legenda: string) {
+  if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
+  const escolha = await dialog.showOpenDialog(window!, {
+    title: 'Escolha a imagem para mandar no Discord',
+    properties: ['openFile'],
+    filters: [{ name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+  });
+  if (escolha.canceled || !escolha.filePaths[0]) return false;
+  await bot.sendHandout(escolha.filePaths[0], legenda);
+  return true;
+}
+
 function state() {
   return {
     bot: bot?.status ?? ({ state: 'desligado', motivo: 'Bot não configurado' } satisfies BotStatus),
@@ -203,11 +241,26 @@ function registerIpc() {
   ipcMain.handle('cena-ativar', (_e, ref: string) => scenes.activate(ref));
   ipcMain.handle('cena-remover', (_e, id: string) => scenes.remove(id));
   ipcMain.handle('cena-fade', (_e, ms: number) => scenes.setFade(ms));
-  ipcMain.handle('config-info', () => ({ ...credentialsInfo(), autoStart: isAutoStart() }));
-  ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean) => {
+  ipcMain.handle('config-info', () => ({
+    ...credentialsInfo(),
+    autoStart: isAutoStart(),
+    tocandoAgora: config.tocandoAgora !== false,
+    canalTexto: Boolean(config.canalTexto),
+  }));
+  ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean, tocandoAgora: boolean) => {
     if (!credentialsInfo().fromEnv) saveCredentials(token, ownerId);
     setAutoStart(autoStart);
+    config.tocandoAgora = tocandoAgora;
+    saveConfig();
     await restartBot();
+  });
+  ipcMain.handle('handout', async (_e, legenda: string) => {
+    try {
+      return await sendHandout(legenda);
+    } catch (err) {
+      send('erro', (err as Error).message);
+      return false;
+    }
   });
 }
 
@@ -273,6 +326,13 @@ function startBot() {
   const credentials = loadCredentials();
   if (!credentials) return send('bot', state().bot);
   bot = new DiscordBot(mixer, credentials.token, credentials.ownerId);
+  bot.textChannelId = config.canalTexto;
+  bot.on('canal', (id: string) => {
+    config.canalTexto = id;
+    saveConfig();
+    lastNowPlaying = '';
+    refreshNowPlaying();
+  });
   bot.on('status', (status) => {
     send('bot', status);
     tray?.rebuild();
@@ -306,9 +366,15 @@ app.whenReady().then(() => {
   mixer.on('change', () => send('tocando', state().tocando));
   // ~50 mensagens por segundo de 3,8 KB: o IPC do Electron dá conta tranquilo.
   mixer.on('monitor', (pcm: Buffer) => window?.webContents.send('pcm', pcm));
-  youtube.on('change', (s) => send('youtube', s));
+  youtube.on('change', (s) => {
+    send('youtube', s);
+    refreshNowPlaying();
+  });
   youtube.on('erro', (msg) => send('erro', msg));
-  ambience.on('change', (s) => send('ambiente', s));
+  ambience.on('change', (s) => {
+    send('ambiente', s);
+    refreshNowPlaying();
+  });
   soundboard = new Soundboard(mixer, SOUNDS_DIR, config.sons);
   soundboard.on('change', (s) => send('soundboard', s));
   soundboard.on('options', (sons: Record<string, SoundOptions>) => {
@@ -316,7 +382,10 @@ app.whenReady().then(() => {
     saveConfig();
   });
   scenes = new SceneManager(ambience, youtube, config.cenas, config.fadeMs);
-  scenes.on('change', (s) => send('cenas', s));
+  scenes.on('change', (s) => {
+    send('cenas', s);
+    refreshNowPlaying();
+  });
   scenes.on('save', (cenas: Scene[], fadeMs: number) => {
     config.cenas = cenas;
     config.fadeMs = fadeMs;

@@ -39,6 +39,7 @@ contextBridge.exposeInMainWorld('mestronomo', {
   botSair: invoke('bot-sair'),
   configInfo: invoke('config-info'),
   configSalvar: invoke('config-salvar'),
+  handout: invoke('handout'),
   yt: {
     adicionar: invoke('yt-adicionar'),
     buscar: invoke('yt-buscar'),

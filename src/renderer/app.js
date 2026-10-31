@@ -87,6 +87,16 @@ els.botBotao.addEventListener('click', () => {
   botNoCanal ? api.botSair() : api.botEntrar();
 });
 
+// --- Handout -------------------------------------------------------------
+
+const dialogoHandout = $('#handout');
+$('#abrir-handout').addEventListener('click', () => dialogoHandout.showModal());
+dialogoHandout.addEventListener('close', async () => {
+  if (dialogoHandout.returnValue !== 'enviar') return;
+  const form = $('#handout-form');
+  if (await api.handout(form.legenda.value)) form.legenda.value = '';
+});
+
 // --- Configurações -------------------------------------------------------
 
 const dialogo = $('#config');
@@ -98,6 +108,10 @@ async function abrirConfig() {
   configForm.token.placeholder = info.hasToken ? '•••••••• (salvo; deixe vazio para manter)' : 'Cole o token aqui';
   configForm.ownerId.value = info.ownerId ?? '';
   configForm.autoStart.checked = info.autoStart;
+  configForm.tocandoAgora.checked = info.tocandoAgora;
+  $('#config-canal').textContent = info.canalTexto
+    ? 'Canal de texto definido. Para trocar, use /canal no canal desejado.'
+    : 'Para "tocando agora" e handouts, use /canal no canal de texto desejado.';
   configForm.token.disabled = configForm.ownerId.disabled = info.fromEnv;
   $('#config-env').classList.toggle('hidden', !info.fromEnv);
   dialogo.showModal();
@@ -106,7 +120,7 @@ async function abrirConfig() {
 $('#abrir-config').addEventListener('click', abrirConfig);
 dialogo.addEventListener('close', () => {
   if (dialogo.returnValue !== 'salvar') return;
-  api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked);
+  api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked, configForm.tocandoAgora.checked);
   configForm.token.value = '';
 });
 

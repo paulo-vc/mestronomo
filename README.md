@@ -38,7 +38,7 @@ Ulanzi / Stream Deck ──► API local :7777 ───┘
    - Nenhum *Privileged Gateway Intent* é necessário.
 4. Aba **OAuth2 → URL Generator**:
    - Scopes: `bot` e `applications.commands` (para os comandos `/entrar` e `/sair`)
-   - Bot Permissions: `View Channels`, `Connect`, `Speak`
+   - Bot Permissions: `View Channels`, `Connect`, `Speak`, `Send Messages`, `Embed Links`, `Attach Files`
    - Abra a URL gerada no navegador e escolha o servidor da mesa.
 5. No Discord, ative **Configurações → Avançado → Modo desenvolvedor**. Depois clique com o botão direito no seu próprio nome e escolha **Copiar ID do usuário**.
 
@@ -75,6 +75,20 @@ O bot fica online mas só entra na call quando você chama:
 - botão **Chamar bot** no app, ou `/api/bot/entrar` (Ulanzi).
 
 Ele sai sozinho quando não sobra nenhuma pessoa no canal.
+
+## Comandos no Discord
+
+| Comando | Quem pode | O que faz |
+| --- | --- | --- |
+| `/entrar` · `/sair` | Mestre | Chama o bot para o seu canal de voz, ou dispensa |
+| `/r 2d20kh1+5` | Todos | Rola dados. Aceita `NdM`, `kh`/`kl` (manter maiores/menores), `d%`, somas e subtrações, e os atalhos `vantagem` e `desvantagem`. Destaca 20 e 1 naturais no d20. Com `secreto: True`, só quem rolou vê |
+| `/canal` | Mestre | Escolhe o canal de texto para a mensagem **tocando agora** e para os **handouts** |
+
+**Tocando agora**: o bot mantém uma mensagem no canal escolhido mostrando a música, a cena e o ambiente, editada sozinha quando algo muda (dá para desligar no ⚙).
+
+**Handouts**: o botão 🖼 no topo do app manda uma imagem (mapa, retrato, carta…) com legenda opcional para esse canal.
+
+> Se você convidou o bot antes destes recursos, dê a ele as permissões **Send Messages**, **Embed Links** e **Attach Files** (pelo cargo do bot no servidor, ou convidando de novo com a URL nova).
 
 ## Volumes
 

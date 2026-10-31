@@ -12,6 +12,7 @@
       <div class="row">
         <div id="bot" class="pill">Bot desligado</div>
         <button id="bot-botao">Chamar bot</button>
+        <button id="abrir-handout" class="ghost icone-grande" title="Mandar uma imagem (mapa, retrato...) no Discord">🖼</button>
         <button id="abrir-config" class="ghost icone-grande" title="Configurações">⚙</button>
       </div>
     </header>
@@ -24,6 +25,18 @@
         <label class="check"><input type="checkbox" name="loop" /> Tocar em loop (clique liga e desliga; não abaixa a música)</label>
         <div class="campo"><span>Cor</span><div id="som-cores" class="row"></div></div>
         <div class="row fim"><button value="ok" class="primary">Pronto</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="handout">
+      <form method="dialog" id="handout-form">
+        <h2>Mandar imagem no Discord</h2>
+        <p class="hint">Vai para o canal de texto escolhido com <code>/canal</code>.</p>
+        <label class="campo"><span>Legenda (opcional)</span><input type="text" name="legenda" maxlength="200" placeholder="Ex.: O mapa encontrado no baú" /></label>
+        <div class="row fim">
+          <button value="cancelar" class="ghost">Cancelar</button>
+          <button value="enviar" class="primary">Escolher imagem e enviar</button>
+        </div>
       </form>
     </dialog>
 
@@ -42,6 +55,8 @@
           <small>Ative o Modo desenvolvedor no Discord e clique com o botão direito no seu nome → Copiar ID.</small>
         </label>
         <label class="check"><input type="checkbox" name="autoStart" /> Iniciar com o Windows (abre na bandeja)</label>
+        <label class="check"><input type="checkbox" name="tocandoAgora" /> Postar "tocando agora" no canal de texto</label>
+        <p id="config-canal" class="hint"></p>
         <div class="row fim">
           <button value="cancelar" class="ghost">Cancelar</button>
           <button value="salvar" class="primary">Salvar</button>
