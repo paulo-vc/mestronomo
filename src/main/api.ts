@@ -57,7 +57,7 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/timer?min=<minutos>&nome=<nome> começa um timer
  *   /api/volume/<musica|efeitos|master|ducking|youtube>/<0-100>
  */
-export function startApi(port: number, actions: ApiActions) {
+export function startApi(port: number, actions: ApiActions, onError: (message: string) => void) {
   const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes, loadPlaylist, combat, timers, rollTable } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
@@ -168,6 +168,14 @@ export function startApi(port: number, actions: ApiActions) {
         return reply(404, { erro: 'rota desconhecida' });
     }
   });
-  server.on('error', (err) => console.error(`[api] não consegui abrir a porta ${port}:`, err.message));
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    // Comum com duas cópias abertas (instalada + portátil): a segunda fica sem API, e o
+    // Ulanzi/Stream Deck continua falando com a primeira. Melhor avisar do que falhar calado.
+    onError(
+      err.code === 'EADDRINUSE'
+        ? `A porta ${port} da API já está em uso (outro Mestrônomo aberto?). O Ulanzi/Stream Deck vai controlar o outro.`
+        : `A API local não abriu: ${err.message}`,
+    );
+  });
   server.listen(port, '127.0.0.1');
 }

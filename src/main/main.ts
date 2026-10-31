@@ -55,6 +55,8 @@ let bot: DiscordBot | undefined;
 let window: BrowserWindow | undefined;
 let tray: ReturnType<typeof createTray> | undefined;
 let quitting = false;
+/** Problema ao abrir a API local, mostrado também quando a janela termina de carregar. */
+let apiError: string | undefined;
 const configFile = () => path.join(app.getPath('userData'), 'config.json');
 
 interface SavedConfig {
@@ -430,6 +432,7 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), autoplayPolicy: 'no-user-gesture-required' },
   });
   window.loadFile(path.join(ROOT, 'src', 'renderer', 'index.html'));
+  window.webContents.on('did-finish-load', () => apiError && send('erro', apiError));
 
   // Fechar a janela só esconde: o bot e os atalhos continuam funcionando pela bandeja.
   let avisou = false;
@@ -582,6 +585,9 @@ app.whenReady().then(() => {
     combat,
     timers,
     rollTable: (nome: string) => rollTable(TABLES_DIR, nome),
+  }, (message) => {
+    apiError = message;
+    send('erro', message);
   });
   startBot();
   createWindow();
