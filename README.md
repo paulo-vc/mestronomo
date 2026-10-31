@@ -104,3 +104,7 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 ## Aviso sobre Spotify e YouTube
 
 A captura e o player funcionam, mas retransmitir o Spotify ou o YouTube para outras pessoas vai contra os termos de uso dele. Para uso entre amigos o risco é baixo; se um dia quiser distribuir o Mestrônomo, prefira arquivos locais ou trilhas com licença livre.
+
+## Licença
+
+MIT. Veja [LICENSE](LICENSE).
