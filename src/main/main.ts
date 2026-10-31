@@ -24,8 +24,16 @@ if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
 if (process.env.MESTRONOMO_USER_DATA) app.setPath('userData', process.env.MESTRONOMO_USER_DATA);
 
+// Versão portátil: um portatil.txt ao lado do executável faz tudo (configuração e arquivos)
+// ficar na pasta Dados ali do lado, para levar num pendrive ou entre PCs.
+const PORTABLE = PACKAGED && fs.existsSync(path.join(path.dirname(process.execPath), 'portatil.txt'));
 // Instalado, os arquivos ficam em Documentos\Mestrônomo, fácil de achar e fora da pasta do programa.
-const DATA_DIR = PACKAGED ? path.join(app.getPath('documents'), 'Mestrônomo') : ROOT;
+const DATA_DIR = PORTABLE
+  ? path.join(path.dirname(process.execPath), 'Dados')
+  : PACKAGED
+    ? path.join(app.getPath('documents'), 'Mestrônomo')
+    : ROOT;
+if (PORTABLE) app.setPath('userData', path.join(DATA_DIR, 'config'));
 const SOUNDS_DIR = path.join(DATA_DIR, 'sons');
 const AMBIENT_DIR = path.join(DATA_DIR, 'ambientes');
 const MUSIC_DIR = path.join(DATA_DIR, 'musicas');

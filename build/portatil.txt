@@ -1,0 +1,11 @@
+Este arquivo deixa o Mestrônomo no modo portátil.
+
+Com ele aqui, tudo fica na pasta "Dados" ao lado do programa: configurações,
+cenas, soundboard e as pastas sons, ambientes, musicas e tabelas. Dá para
+levar a pasta inteira num pendrive ou copiar para outro PC.
+
+O token do bot é guardado criptografado para o seu usuário do Windows; em
+outro PC, cole o token de novo no botão ⚙.
+
+Apagar este arquivo faz o Mestrônomo usar Documentos\Mestrônomo, como a
+versão instalada.
