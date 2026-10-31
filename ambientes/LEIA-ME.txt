@@ -1,0 +1,2 @@
+Coloque aqui sons de ambiente em loop (chuva, fogueira, vento, taverna...).
+Arquivos .ogg ou .wav fazem loops sem emenda; .mp3 pode ter um pequeno silêncio no fim.

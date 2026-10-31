@@ -187,3 +187,22 @@ code { font: 12px Consolas, monospace; color: var(--text); }
 .tocando .tempo { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .controles button { min-width: 36px; }
 #yt-repetir.ativo { color: var(--accent); border-color: var(--accent); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { padding: 5px 10px; font-size: 12px; border-radius: 999px; }
+.chips button.ativo { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.chips:empty::after { content: 'Nenhum arquivo na pasta de ambientes.'; color: var(--muted); font-size: 12px; }
+
+.ocasional-form { display: flex; flex-direction: column; gap: 6px; }
+.ocasional-form select {
+  font: inherit; font-size: 12px; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px;
+}
+.ocasional-form label { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.ocasional-form input[type='number'] {
+  width: 56px; font: inherit; font-size: 12px; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px;
+}
+.ocasional-form .row { flex-wrap: wrap; }
+.lista li.ocasional { grid-template-columns: 1fr auto auto; }
+.lista li .detalhe { color: var(--muted); font-size: 12px; white-space: nowrap; }

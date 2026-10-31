@@ -107,10 +107,10 @@ class FfmpegSource implements Source {
   private decoded = false;
   private stopped = false;
 
-  constructor(readonly bus: Bus, input: string) {
+  constructor(readonly bus: Bus, input: string, inputArgs: string[] = []) {
     this.ffmpeg = spawn(
       FFMPEG,
-      ['-hide_banner', '-loglevel', 'error', '-i', input, '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
+      ['-hide_banner', '-loglevel', 'error', ...inputArgs, '-i', input, '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
       { windowsHide: true },
     );
     const stdout = this.ffmpeg.stdout!;
@@ -144,8 +144,9 @@ class FfmpegSource implements Source {
 
 /** Um arquivo local (efeitos da soundboard). Com `preview`, toca só no monitor local. */
 export class FileSource extends FfmpegSource {
-  constructor(readonly file: string, bus: Bus, readonly preview = false) {
-    super(bus, file);
+  constructor(readonly file: string, bus: Bus, readonly preview = false, loop = false) {
+    // -stream_loop -1 repete o arquivo sem fim, sem o intervalo que reabrir o arquivo causaria.
+    super(bus, file, loop ? ['-stream_loop', '-1'] : []);
   }
 }
 

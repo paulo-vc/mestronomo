@@ -220,6 +220,61 @@ $('#yt-parar').addEventListener('click', () => api.yt.parar());
 $('#yt-limpar').addEventListener('click', () => api.yt.limpar());
 els.ytRepetir.addEventListener('click', () => api.yt.repetir(REPETIR[yt?.repetir ?? 'nenhum'].proximo));
 
+// --- Ambiente ----------------------------------------------------------
+
+const semExtensao = (arquivo) => arquivo.replace(/\.[^.]+$/, '');
+
+function renderAmbiente(estado) {
+  const ativas = new Set(estado.camadas.map((c) => c.arquivo));
+  $('#amb-arquivos').replaceChildren(
+    ...estado.arquivos.map((arquivo) =>
+      el('button', {
+        className: ativas.has(arquivo) ? 'ativo' : '',
+        textContent: semExtensao(arquivo),
+        title: ativas.has(arquivo) ? 'Desligar' : 'Ligar',
+        onclick: () => api.amb.alternar(arquivo),
+      }),
+    ),
+  );
+  $('#amb-camadas').replaceChildren(
+    ...estado.camadas.map(({ arquivo, volume }) =>
+      el(
+        'li',
+        {},
+        el('span', { className: 'nome', textContent: semExtensao(arquivo) }),
+        ...slider(volume, (v) => api.amb.volume(arquivo, v)),
+        el('button', { className: 'ghost icone', textContent: '✕', title: 'Desligar', onclick: () => api.amb.alternar(arquivo) }),
+      ),
+    ),
+  );
+  $('#amb-ocasionais').replaceChildren(
+    ...estado.ocasionais.map((o) =>
+      el(
+        'li',
+        { className: 'ocasional' },
+        el('span', { className: 'nome', textContent: o.arquivos.map(semExtensao).join(', '), title: o.arquivos.join('\n') }),
+        el('span', { className: 'detalhe', textContent: `a cada ${o.min}–${o.max} s` }),
+        el('button', { className: 'ghost icone', textContent: '✕', title: 'Remover', onclick: () => api.amb.removerOcasional(o.id) }),
+      ),
+    ),
+  );
+  // Preserva a seleção do formulário ao re-renderizar.
+  const select = $('#amb-ocasional-form').arquivos;
+  const selecionados = new Set([...select.selectedOptions].map((o) => o.value));
+  select.replaceChildren(...estado.arquivos.map((a) => new Option(semExtensao(a), a, false, selecionados.has(a))));
+}
+
+$('#amb-pasta').addEventListener('click', () => api.amb.abrirPasta());
+$('#amb-parar').addEventListener('click', () => api.amb.parar());
+$('#amb-ocasional-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const arquivos = [...form.arquivos.selectedOptions].map((o) => o.value);
+  if (arquivos.length === 0) return mostrarErro('Escolha pelo menos um arquivo (Ctrl+clique para vários).');
+  api.amb.ocasional({ arquivos, min: Number(form.min.value), max: Number(form.max.value), volume: 0.8 });
+  form.arquivos.selectedIndex = -1;
+});
+
 // --- Mixer -------------------------------------------------------------
 
 // --- Monitor (seu fone) ----------------------------------------------
@@ -327,6 +382,7 @@ window.addEventListener('focus', async () => renderSons((await api.estado()).son
 api.onBot(renderBot);
 api.onCapturas(renderCapturas);
 api.onYoutube(renderYoutube);
+api.onAmbiente(renderAmbiente);
 api.onMixer(renderMixer);
 api.onErro(mostrarErro);
 
@@ -335,6 +391,7 @@ api.onErro(mostrarErro);
   renderBot(estado.bot);
   renderCapturas(estado.capturas);
   renderYoutube(estado.youtube);
+  renderAmbiente(estado.ambiente);
   await iniciarMonitor(estado.monitorDevice);
   renderMixer(estado.mixer);
   carregarSaidas(estado.monitorDevice);

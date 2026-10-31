@@ -13,7 +13,7 @@ export const FRAME_BYTES = FRAME_VALUES * 2;
 /** Quadros Opus esperando o Discord; acima disso descartamos para não acumular atraso. */
 const MAX_QUEUED_FRAMES = 3;
 
-export type Bus = 'musica' | 'efeitos';
+export type Bus = 'musica' | 'efeitos' | 'ambiente';
 
 export interface Source {
   readonly bus: Bus;
@@ -28,6 +28,9 @@ export interface Source {
   stop(): void;
 }
 
+/** Ajustes numéricos do mixer (os sliders). */
+export type VolumeKey = 'musica' | 'efeitos' | 'ambiente' | 'master' | 'ducking' | 'monitorVolume';
+
 /**
  * O que o mestre ouve no próprio fone:
  * - desligado: nada
@@ -35,14 +38,12 @@ export interface Source {
  * - sem-capturas: o que vai para o bot, menos os programas capturados (que você já ouve) + pré-escuta
  * - tudo: exatamente o que vai para o bot + pré-escuta
  */
-/** Ajustes numéricos do mixer (os sliders). */
-export type VolumeKey = 'musica' | 'efeitos' | 'master' | 'ducking' | 'monitorVolume';
-
 export type MonitorMode = 'desligado' | 'previa' | 'sem-capturas' | 'tudo';
 
 export interface MixerSettings {
   musica: number;
   efeitos: number;
+  ambiente: number;
   master: number;
   /** Volume da música enquanto um efeito toca (0–1). 1 desliga o ducking. */
   ducking: number;
@@ -56,9 +57,11 @@ export interface MixerSettings {
  * Roda num relógio próprio, então efeitos andam no tempo certo mesmo sem o bot conectado.
  */
 export class Mixer extends EventEmitter {
-  settings: MixerSettings = { musica: 0.8, efeitos: 1, master: 1, ducking: 0.35, monitor: 'sem-capturas', monitorVolume: 0.7 };
+  settings: MixerSettings = { musica: 0.8, efeitos: 1, ambiente: 0.7, master: 1, ducking: 0.35, monitor: 'sem-capturas', monitorVolume: 0.7 };
 
   private sources = new Set<Source>();
+  /** Fades em andamento: ganho atual, alvo, passo por quadro e se a fonte sai do mixer ao chegar em 0. */
+  private fades = new Map<Source, { gain: number; target: number; step: number; remove: boolean }>();
   private duckGain = 1;
   private scratch = new Int16Array(FRAME_VALUES);
   private acc = new Float32Array(FRAME_VALUES);
@@ -74,7 +77,26 @@ export class Mixer extends EventEmitter {
 
   remove(source: Source) {
     source.stop();
+    this.fades.delete(source);
     if (this.sources.delete(source)) this.emit('change');
+  }
+
+  /** Adiciona a fonte começando do silêncio e subindo em `ms`. */
+  fadeIn(source: Source, ms: number) {
+    this.add(source);
+    if (ms > 0) this.fades.set(source, { gain: 0, target: 1, step: FRAME_MS / ms, remove: false });
+  }
+
+  /** Abaixa até o silêncio em `ms` e então tira a fonte do mixer. */
+  fadeOut(source: Source, ms: number) {
+    if (!this.sources.has(source)) return;
+    if (ms <= 0) return this.remove(source);
+    const gain = this.fades.get(source)?.gain ?? 1;
+    this.fades.set(source, { gain, target: 0, step: FRAME_MS / ms, remove: true });
+  }
+
+  has(source: Source) {
+    return this.sources.has(source);
   }
 
   stopBus(bus: Bus) {
@@ -134,7 +156,8 @@ export class Mixer extends EventEmitter {
       this.duckGain = 1;
       return {};
     }
-    const { musica, efeitos, master, ducking, monitor: mode } = this.settings;
+    const { musica, efeitos, ambiente, master, ducking, monitor: mode } = this.settings;
+    const busGain = { musica, efeitos, ambiente };
     const duckFrom = this.duckGain;
     const target = this.isPlaying('efeitos') ? ducking : 1;
     // Abaixa rápido (~60 ms) e volta devagar (~500 ms), como um ducking de rádio.
@@ -145,19 +168,31 @@ export class Mixer extends EventEmitter {
     this.monitorAcc.fill(0);
     let botUsed = false;
     let monitorUsed = false;
+    const finished: Source[] = [];
     for (const source of [...this.sources]) {
       this.scratch.fill(0);
       const alive = source.read(this.scratch);
       const toBot = !source.preview;
       const toMonitor =
         mode !== 'desligado' && (source.preview || mode === 'tudo' || (mode === 'sem-capturas' && !source.live));
+      const fade = this.fades.get(source);
+      const fadeFrom = fade?.gain ?? 1;
+      if (fade) {
+        fade.gain = fade.target > fade.gain ? Math.min(fade.target, fade.gain + fade.step) : Math.max(fade.target, fade.gain - fade.step);
+        if (fade.gain === fade.target) {
+          this.fades.delete(source);
+          if (fade.remove) finished.push(source);
+        }
+      }
+      const fadeTo = fade?.gain ?? 1;
       if (toBot || toMonitor) {
-        const gain = (source.bus === 'efeitos' ? efeitos : musica) * source.volume;
+        const gain = busGain[source.bus] * source.volume;
         const ducked = source.bus === 'musica' && toBot;
         for (let i = 0; i < FRAME_VALUES; i++) {
-          // Interpola o ducking dentro do quadro para não gerar estalos.
-          const duck = ducked ? duckFrom + ((duckTo - duckFrom) * i) / FRAME_VALUES : 1;
-          const v = this.scratch[i] * gain * duck;
+          // Ducking e fade são interpolados dentro do quadro para não gerar estalos.
+          const t = i / FRAME_VALUES;
+          const duck = ducked ? duckFrom + (duckTo - duckFrom) * t : 1;
+          const v = this.scratch[i] * gain * duck * (fadeFrom + (fadeTo - fadeFrom) * t);
           if (toBot) this.acc[i] += v;
           if (toMonitor) this.monitorAcc[i] += v;
         }
@@ -169,6 +204,8 @@ export class Mixer extends EventEmitter {
         this.emit('ended', source);
       }
     }
+    // Fontes que terminaram um fade-out saem sem 'ended': foi o mestre que tirou, não a faixa que acabou.
+    for (const source of finished) this.remove(source);
     return {
       bot: botUsed ? toPcm(this.acc, master) : undefined,
       monitor: monitorUsed ? toPcm(this.monitorAcc, master) : undefined,

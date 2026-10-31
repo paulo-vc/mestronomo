@@ -7,21 +7,24 @@ import { AppCaptureSource, FileSource, listAudioApps } from './sources';
 import { DiscordBot, type BotStatus } from './discord';
 import { YouTubePlayer, type LoopMode } from './youtube';
 import { startApi } from './api';
+import { AUDIO_EXT, Ambience, type Occasional } from './ambience';
 import { PACKAGED, ROOT } from './paths';
 import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
 import { createTray } from './tray';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 
-// Instalado, os sons ficam em Documentos\Mestrônomo\sons, fácil de achar e fora da pasta do programa.
-const SOUNDS_DIR = PACKAGED ? path.join(app.getPath('documents'), 'Mestrônomo', 'sons') : path.join(ROOT, 'sons');
+// Instalado, os arquivos ficam em Documentos\Mestrônomo, fácil de achar e fora da pasta do programa.
+const DATA_DIR = PACKAGED ? path.join(app.getPath('documents'), 'Mestrônomo') : ROOT;
+const SOUNDS_DIR = path.join(DATA_DIR, 'sons');
+const AMBIENT_DIR = path.join(DATA_DIR, 'ambientes');
 /** Iniciado junto com o Windows: abre direto na bandeja, sem mostrar a janela. */
 const START_HIDDEN = process.argv.includes('--oculto');
-const AUDIO_EXT = new Set(['.mp3', '.ogg', '.wav', '.flac', '.m4a', '.opus', '.webm']);
 const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
 
 const mixer = new Mixer();
 const youtube = new YouTubePlayer(mixer);
+const ambience = new Ambience(mixer, AMBIENT_DIR);
 /** Capturas ativas, por nome do executável. Várias podem tocar juntas. */
 const captures = new Map<string, AppCaptureSource>();
 let bot: DiscordBot | undefined;
@@ -136,6 +139,7 @@ function state() {
     bot: bot?.status ?? ({ state: 'desligado', motivo: 'Bot não configurado' } satisfies BotStatus),
     capturas: capturesState(),
     youtube: youtube.state(),
+    ambiente: ambience.state(),
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
     sons: listSounds(),
@@ -177,6 +181,12 @@ function registerIpc() {
     youtube.setLoop(mode);
     saveConfig();
   });
+  ipcMain.handle('amb-alternar', (_e, arquivo: string) => ambience.toggle(arquivo));
+  ipcMain.handle('amb-volume', (_e, arquivo: string, volume: number) => ambience.setLayerVolume(arquivo, volume));
+  ipcMain.handle('amb-ocasional', (_e, config: Occasional) => ambience.addOccasional(config));
+  ipcMain.handle('amb-ocasional-remover', (_e, id: string) => ambience.removeOccasional(id));
+  ipcMain.handle('amb-parar', () => ambience.stopAll(1500));
+  ipcMain.handle('abrir-ambientes', () => shell.openPath(AMBIENT_DIR));
   ipcMain.handle('config-info', () => ({ ...credentialsInfo(), autoStart: isAutoStart() }));
   ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean) => {
     if (!credentialsInfo().fromEnv) saveCredentials(token, ownerId);
@@ -282,6 +292,7 @@ app.whenReady().then(() => {
   mixer.on('monitor', (pcm: Buffer) => window?.webContents.send('pcm', pcm));
   youtube.on('change', (s) => send('youtube', s));
   youtube.on('erro', (msg) => send('erro', msg));
+  ambience.on('change', (s) => send('ambiente', s));
   mixer.start();
 
   registerIpc();
@@ -298,6 +309,7 @@ app.whenReady().then(() => {
     joinBot,
     leaveBot,
     youtube,
+    ambience,
   });
   startBot();
   createWindow();

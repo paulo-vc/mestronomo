@@ -8,3 +8,5 @@ ulanzi-plugin/*/node_modules/
 ulanzi-plugin/*/runtime-icons/
 vendor/
 release/
+ambientes/*
+!ambientes/LEIA-ME.txt

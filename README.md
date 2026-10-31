@@ -101,6 +101,15 @@ Escolha o dispositivo de saída e o que ouvir:
 
 O volume do fone não muda o que vai para a call.
 
+## Ambiente
+
+Coloque sons contínuos (chuva, fogueira, vento, taverna…) na pasta `ambientes/` (instalado: `Documentos\Mestrônomombientes`). No cartão **Ambiente**:
+
+- clique num arquivo para ligar a camada em **loop** (entra e sai com fade); várias tocam juntas, cada uma com seu volume;
+- **sons ocasionais**: escolha um ou mais arquivos e um intervalo (ex.: a cada 30–90 s); um deles é sorteado a cada vez, com uma leve variação de volume.
+
+Prefira `.ogg` ou `.wav` para loops sem emenda. O volume do grupo é o slider **Ambiente** do mixer.
+
 ## Soundboard
 
 Coloque os efeitos na pasta `sons/`. A ordem alfabética define os atalhos, então use prefixos como `01 espada.mp3`.

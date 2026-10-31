@@ -72,6 +72,30 @@
         <button id="yt-limpar" class="ghost pequeno">Limpar fila</button>
       </section>
 
+      <section class="card" id="ambiente">
+        <div class="card-head">
+          <h2>Ambiente</h2>
+          <div class="row">
+            <button id="amb-pasta" class="ghost pequeno">Abrir pasta</button>
+            <button id="amb-parar" class="ghost pequeno">Parar tudo</button>
+          </div>
+        </div>
+        <p class="hint">Clique para ligar camadas em loop; várias tocam juntas.</p>
+        <div id="amb-arquivos" class="chips"></div>
+        <ul id="amb-camadas" class="lista" data-vazio="Nenhuma camada tocando."></ul>
+        <h3>Sons ocasionais</h3>
+        <p class="hint">Um som sorteado da lista de tempos em tempos (um corvo, um trovão distante…).</p>
+        <ul id="amb-ocasionais" class="lista" data-vazio="Nenhum som ocasional."></ul>
+        <form id="amb-ocasional-form" class="ocasional-form">
+          <select name="arquivos" multiple size="3" title="Ctrl+clique para escolher vários"></select>
+          <div class="row">
+            <label>a cada <input type="number" name="min" value="30" min="1" /></label>
+            <label>– <input type="number" name="max" value="90" min="1" /> s</label>
+            <button class="primary">Adicionar</button>
+          </div>
+        </form>
+      </section>
+
       <section class="card" id="mixer">
         <h2>Mixer</h2>
         <label class="slider">
@@ -85,6 +109,10 @@
         <label class="slider">
           <span>Efeitos<small>soundboard</small></span>
           <input type="range" data-volume="efeitos" min="0" max="100" /><output></output>
+        </label>
+        <label class="slider">
+          <span>Ambiente<small>camadas e sons ocasionais</small></span>
+          <input type="range" data-volume="ambiente" min="0" max="100" /><output></output>
         </label>
         <label class="slider">
           <span>Ducking<small>música enquanto um efeito toca</small></span>

@@ -1,6 +1,7 @@
 import http from 'node:http';
 import type { VolumeKey } from './mixer';
 import type { LoopMode, YouTubePlayer } from './youtube';
+import type { Ambience } from './ambience';
 
 export interface ApiActions {
   state(): unknown;
@@ -14,9 +15,10 @@ export interface ApiActions {
   joinBot(): Promise<boolean> | boolean;
   leaveBot(): void;
   youtube: YouTubePlayer;
+  ambience: Ambience;
 }
 
-const VOLUME_KEYS = ['musica', 'efeitos', 'master', 'ducking', 'monitorVolume', 'youtube'];
+const VOLUME_KEYS = ['musica', 'efeitos', 'ambiente', 'master', 'ducking', 'monitorVolume', 'youtube'];
 const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
 
 /**
@@ -35,10 +37,12 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/youtube/adicionar?url=<link>    adiciona vídeo ou playlist à fila
  *   /api/youtube/<pausar|proxima|anterior|parar|limpar>
  *   /api/youtube/repetir/<nenhum|fila|faixa>
+ *   /api/ambiente/<arquivo>              liga/desliga uma camada de ambiente
+ *   /api/ambiente/parar                  desliga todo o ambiente
  *   /api/volume/<musica|efeitos|master|ducking|youtube>/<0-100>
  */
 export function startApi(port: number, actions: ApiActions) {
-  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube } = actions;
+  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
     const parts = decodeURIComponent(url.pathname).split('/').filter(Boolean);
@@ -100,6 +104,11 @@ export function startApi(port: number, actions: ApiActions) {
           default:
             return reply(404, { erro: 'rota desconhecida' });
         }
+      case 'ambiente':
+        if (!a) return reply(400, { erro: 'use /api/ambiente/<arquivo> ou /api/ambiente/parar' });
+        if (a === 'parar') ambience.stopAll(1500);
+        else ambience.toggle(a);
+        return ok();
       case 'volume': {
         if (!VOLUME_KEYS.includes(a) || Number.isNaN(Number(b))) {
           return reply(400, { erro: `use /api/volume/<${VOLUME_KEYS.join('|')}>/<0-100>` });
