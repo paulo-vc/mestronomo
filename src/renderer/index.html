@@ -84,6 +84,66 @@
         </form>
       </section>
 
+      <section class="card wide" id="mesa">
+        <div class="card-head">
+          <h2>Mesa</h2>
+          <div class="chips abas" id="mesa-abas">
+            <button data-aba="iniciativa" class="ativo">Iniciativa</button>
+            <button data-aba="timers">Timers</button>
+            <button data-aba="tabelas">Tabelas</button>
+          </div>
+        </div>
+
+        <div data-painel="iniciativa">
+          <div class="row combate-barra">
+            <span id="combate-status" class="status"></span>
+            <select id="combate-cena" title="Cena ativada ao começar o combate (volta para a anterior ao encerrar)"></select>
+            <label class="check" title="Posta 'vez de Fulano' no canal do /canal"><input type="checkbox" id="combate-anunciar" /> Anunciar no Discord</label>
+          </div>
+          <div class="row">
+            <button id="combate-iniciar" class="primary">Começar combate</button>
+            <button id="combate-anterior" class="ghost" title="Turno anterior">◀</button>
+            <button id="combate-proximo" class="primary" title="Próximo turno">Próximo turno ▶</button>
+            <button id="combate-encerrar" class="ghost">Encerrar</button>
+            <button id="combate-limpar" class="ghost" title="Tira os NPCs e mantém os jogadores">Limpar NPCs</button>
+          </div>
+          <ol id="combatentes" class="lista combatentes" data-vazio="Adicione jogadores e criaturas abaixo."></ol>
+          <form id="combate-form" class="row combate-form">
+            <input name="nome" type="text" placeholder="Nome" required maxlength="40" />
+            <input name="iniciativa" type="number" placeholder="Iniciativa" title="Deixe vazio para rolar 1d20 + modificador" />
+            <input name="modificador" type="number" placeholder="Mod." title="Modificador de iniciativa (usado se a iniciativa estiver vazia)" />
+            <input name="hp" type="number" placeholder="HP" min="0" />
+            <label class="check"><input type="checkbox" name="jogador" /> Jogador</label>
+            <button class="primary">Adicionar</button>
+          </form>
+          <p class="hint">No campo de HP de cada linha: <b>-7</b> causa dano, <b>+5</b> cura, <b>30</b> define. Enter aplica.</p>
+        </div>
+
+        <div data-painel="timers" class="hidden">
+          <ul id="timers" class="lista" data-vazio="Nenhum timer rodando."></ul>
+          <form id="timer-form" class="row timer-form">
+            <input name="nome" type="text" placeholder="Ex.: A tocha apaga" maxlength="40" />
+            <input name="min" type="number" min="0" value="10" title="Minutos" /> min
+            <input name="seg" type="number" min="0" max="59" value="0" title="Segundos" /> s
+            <select name="som" title="Som tocado quando acabar"></select>
+            <button class="primary">Começar</button>
+          </form>
+        </div>
+
+        <div data-painel="tabelas" class="hidden">
+          <div class="row">
+            <select id="tabelas"></select>
+            <button id="tabela-rolar" class="primary">Rolar</button>
+            <button id="tabelas-pasta" class="ghost" title="Abrir a pasta de tabelas">📁</button>
+          </div>
+          <div id="tabela-resultado" class="resultado hidden">
+            <p id="tabela-texto"></p>
+            <button id="tabela-discord" class="ghost pequeno">Mandar no Discord</button>
+          </div>
+          <p class="hint">Cada .txt da pasta tabelas/ é uma tabela: uma opção por linha, "3x" no começo dá peso e [[1d6]] é rolado na hora.</p>
+        </div>
+      </section>
+
       <section class="card" id="programas">
         <h2>Música dos programas</h2>
         <p class="hint">Capture o áudio de um ou mais programas ao mesmo tempo (Spotify, navegador…).</p>

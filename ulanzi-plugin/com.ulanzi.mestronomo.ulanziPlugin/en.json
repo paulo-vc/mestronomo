@@ -33,6 +33,10 @@
     {
       "Name": "Capture App",
       "Tooltip": "Starts or stops streaming the audio of an app"
+    },
+    {
+      "Name": "Next Turn",
+      "Tooltip": "Starts the combat, or passes to the next turn"
     }
   ],
   "Localization": {

@@ -200,6 +200,13 @@ export class DiscordBot extends EventEmitter {
     this.nowPlayingMessage = await channel.send({ embeds: [embed] });
   }
 
+  /** Manda um texto no canal escolhido com /canal (turnos, tabelas...). */
+  async sendMessage(content: string) {
+    const channel = await this.textChannel();
+    if (!channel) throw new Error('Escolha o canal de texto antes: use /canal no Discord, dentro do canal desejado.');
+    await channel.send({ content });
+  }
+
   /** Manda uma imagem (mapa, retrato, carta...) para o canal escolhido com /canal. */
   async sendHandout(file: string, caption?: string) {
     const channel = await this.textChannel();

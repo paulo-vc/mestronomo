@@ -10,18 +10,24 @@ import { startApi } from './api';
 import { Ambience, type Occasional } from './ambience';
 import { Soundboard, type SoundOptions } from './soundboard';
 import { listPlaylists, loadPlaylist } from './library';
+import { Combat, type CombatState, type NewCombatant } from './combat';
+import { Timers, type TimerState } from './timers';
+import { listTables, rollTable } from './tables';
 import { SceneManager, type Scene, type SceneMusic } from './scenes';
 import { PACKAGED, ROOT } from './paths';
 import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
 import { createTray } from './tray';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
+// Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
+if (process.env.MESTRONOMO_USER_DATA) app.setPath('userData', process.env.MESTRONOMO_USER_DATA);
 
 // Instalado, os arquivos ficam em Documentos\Mestrônomo, fácil de achar e fora da pasta do programa.
 const DATA_DIR = PACKAGED ? path.join(app.getPath('documents'), 'Mestrônomo') : ROOT;
 const SOUNDS_DIR = path.join(DATA_DIR, 'sons');
 const AMBIENT_DIR = path.join(DATA_DIR, 'ambientes');
 const MUSIC_DIR = path.join(DATA_DIR, 'musicas');
+const TABLES_DIR = path.join(DATA_DIR, 'tabelas');
 /** Iniciado junto com o Windows: abre direto na bandeja, sem mostrar a janela. */
 const START_HIDDEN = process.argv.includes('--oculto');
 const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
@@ -30,6 +36,8 @@ const mixer = new Mixer();
 const youtube = new YouTubePlayer(mixer);
 const ambience = new Ambience(mixer, AMBIENT_DIR);
 let soundboard: Soundboard;
+let combat: Combat;
+const timers = new Timers();
 let scenes: SceneManager;
 /** Capturas ativas, por nome do executável. Várias podem tocar juntas. */
 const captures = new Map<string, AppCaptureSource>();
@@ -55,6 +63,10 @@ interface SavedConfig {
   canalTexto?: string;
   /** Postar e atualizar a mensagem "tocando agora" no canal de texto. */
   tocandoAgora?: boolean;
+  /** Combate em andamento (sobrevive a reiniciar o app). */
+  combate?: CombatState;
+  /** Anunciar "vez de Fulano" no canal de texto a cada turno. */
+  anunciarTurnos?: boolean;
 }
 
 let config: SavedConfig = {};
@@ -164,6 +176,27 @@ function refreshNowPlaying() {
   bot.updateNowPlaying(info);
 }
 
+/** Manda texto no canal do /canal, avisando na interface se algo der errado. */
+async function postToDiscord(content: string) {
+  try {
+    if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
+    await bot.sendMessage(content);
+    return true;
+  } catch (err) {
+    send('erro', (err as Error).message);
+    return false;
+  }
+}
+
+function rollTableSafe(nome: string) {
+  try {
+    return rollTable(TABLES_DIR, nome);
+  } catch (err) {
+    send('erro', (err as Error).message);
+    return undefined;
+  }
+}
+
 async function sendHandout(legenda: string) {
   if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
   const escolha = await dialog.showOpenDialog(window!, {
@@ -184,6 +217,10 @@ function state() {
     playlists: listPlaylists(MUSIC_DIR),
     ambiente: ambience.state(),
     cenas: scenes.state(),
+    combate: combat.state(),
+    anunciarTurnos: config.anunciarTurnos === true,
+    timers: timers.state(),
+    tabelas: listTables(TABLES_DIR),
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
     soundboard: soundboard.state(),
@@ -254,6 +291,27 @@ function registerIpc() {
     saveConfig();
     await restartBot();
   });
+  ipcMain.handle('combate-add', (_e, novo: NewCombatant) => combat.add(novo));
+  ipcMain.handle('combate-remover', (_e, id: string) => combat.remove(id));
+  ipcMain.handle('combate-hp', (_e, id: string, entrada: string) => combat.applyHp(id, entrada));
+  ipcMain.handle('combate-iniciativa', (_e, id: string, valor: number) => combat.setInitiative(id, valor));
+  ipcMain.handle('combate-cena', (_e, id: string) => combat.setCombatScene(id));
+  ipcMain.handle('combate-iniciar', () => combat.start());
+  ipcMain.handle('combate-proximo', () => combat.next());
+  ipcMain.handle('combate-anterior', () => combat.previous());
+  ipcMain.handle('combate-encerrar', () => combat.end());
+  ipcMain.handle('combate-limpar', () => combat.clearNpcs());
+  ipcMain.handle('combate-anunciar', (_e, sim: boolean) => {
+    config.anunciarTurnos = sim;
+    saveConfig();
+  });
+  ipcMain.handle('timer-add', (_e, nome: string, segundos: number, som?: string) => timers.add(nome, segundos, som));
+  ipcMain.handle('timer-pausar', (_e, id: string) => timers.togglePause(id));
+  ipcMain.handle('timer-remover', (_e, id: string) => timers.remove(id));
+  ipcMain.handle('tabelas', () => listTables(TABLES_DIR));
+  ipcMain.handle('tabela-rolar', (_e, nome: string) => rollTableSafe(nome));
+  ipcMain.handle('discord-texto', (_e, texto: string) => postToDiscord(texto));
+  ipcMain.handle('abrir-tabelas', () => shell.openPath(TABLES_DIR));
   ipcMain.handle('handout', async (_e, legenda: string) => {
     try {
       return await sendHandout(legenda);
@@ -386,6 +444,33 @@ app.whenReady().then(() => {
     send('cenas', s);
     refreshNowPlaying();
   });
+
+  // Combate: ao começar ativa a cena de combate; ao encerrar volta para a cena de antes.
+  combat = new Combat(config.combate);
+  let cenaAntesDoCombate: string | undefined;
+  combat.on('change', (s: CombatState) => {
+    config.combate = s;
+    saveConfig();
+    send('combate', s);
+  });
+  combat.on('inicio', (cena?: string) => {
+    cenaAntesDoCombate = scenes.state().ativa;
+    if (cena) scenes.activate(cena);
+  });
+  combat.on('fim', () => {
+    if (combat.state().cenaCombate && cenaAntesDoCombate) scenes.activate(cenaAntesDoCombate);
+    cenaAntesDoCombate = undefined;
+  });
+  combat.on('turno', (c: { nome: string; jogador: boolean }, rodada: number) => {
+    if (config.anunciarTurnos) postToDiscord(`⚔️ **Rodada ${rodada}** — vez de **${c.nome}**`);
+  });
+
+  timers.on('change', (s: TimerState[]) => send('timers', s));
+  timers.on('fim', (t: TimerState) => {
+    if (t.som) playSound(t.som);
+    send('timer-fim', t);
+    if (Notification.isSupported()) new Notification({ title: `⏰ ${t.nome}`, body: 'O tempo acabou.' }).show();
+  });
   scenes.on('save', (cenas: Scene[], fadeMs: number) => {
     config.cenas = cenas;
     config.fadeMs = fadeMs;
@@ -410,6 +495,9 @@ app.whenReady().then(() => {
     ambience,
     scenes,
     loadPlaylist: async (nome: string) => youtube.addTracks(await loadPlaylist(MUSIC_DIR, nome)),
+    combat,
+    timers,
+    rollTable: (nome: string) => rollTable(TABLES_DIR, nome),
   });
   startBot();
   createWindow();

@@ -76,6 +76,14 @@ O bot fica online mas só entra na call quando você chama:
 
 Ele sai sozinho quando não sobra nenhuma pessoa no canal.
 
+## Mesa (ferramentas do mestre)
+
+O cartão **Mesa** tem três abas:
+
+- **Iniciativa**: adicione jogadores e criaturas (deixe a iniciativa vazia para rolar 1d20 + modificador). A lista se ordena sozinha; no campo de HP, `-7` causa dano, `+5` cura e `30` define. **Começar combate** pode ativar uma cena (ex.: "Combate") e **Encerrar** volta para a cena de antes. Opcionalmente anuncia "vez de Fulano" no canal do `/canal`. O combate sobrevive a fechar o app.
+- **Timers**: contagens regressivas ("a tocha apaga em 10 min") que avisam e podem tocar um som da soundboard no fim.
+- **Tabelas**: cada `.txt` da pasta `tabelas/` é uma tabela aleatória, uma opção por linha. `3x` no começo dá peso e `[[1d6]]` é rolado na hora. O resultado pode ir para o Discord. Há dois exemplos na pasta.
+
 ## Comandos no Discord
 
 | Comando | Quem pode | O que faz |
@@ -156,6 +164,9 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 | `/api/previa/3` | Toca um efeito só no seu fone |
 | `/api/cena/Taverna` ou `/api/cena/1` | Ativa uma cena |
 | `/api/ambiente/chuva.ogg` · `/api/ambiente/parar` | Liga/desliga uma camada · para todo o ambiente |
+| `/api/combate/proximo` (`iniciar`, `anterior`, `encerrar`) | Controla o combate |
+| `/api/tabela/<nome>` | Rola uma tabela e devolve o resultado |
+| `/api/timer?min=10&nome=Tocha` | Começa um timer |
 | `/api/efeitos/parar` | Para todos os efeitos |
 | `/api/bot/entrar` · `/api/bot/sair` | Chama ou dispensa o bot |
 | `/api/musica/capturar/Spotify.exe` | Adiciona a captura de um app |
@@ -170,7 +181,7 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 
 ## Plugin do Ulanzi Studio
 
-A pasta `ulanzi-plugin/` tem um plugin para o Ulanzi Studio com oito ações, todas mostrando o estado ao vivo na tecla:
+A pasta `ulanzi-plugin/` tem um plugin para o Ulanzi Studio com nove ações, todas mostrando o estado ao vivo na tecla:
 
 | Ação | O que faz | Na tecla |
 | --- | --- | --- |
@@ -182,6 +193,7 @@ A pasta `ulanzi-plugin/` tem um plugin para o Ulanzi Studio com oito ações, to
 | Chamar / Dispensar Bot | Leva o bot para a sua call, ou dispensa | Nome do canal / "CHAMAR BOT" |
 | Volume | Sobe ou desce um volume (música, efeitos, geral, YouTube, fone) | Volume atual |
 | Capturar App | Liga ou desliga a captura de um app | Nome do app e ON quando ativo |
+| Próximo Turno | Começa o combate ou passa o turno | Quem está agindo e a rodada |
 
 Para instalar:
 

@@ -33,6 +33,10 @@
     {
       "Name": "Capturar App",
       "Tooltip": "Liga ou desliga a transmissão do áudio de um app"
+    },
+    {
+      "Name": "Próximo Turno",
+      "Tooltip": "Começa o combate, ou passa para o próximo turno"
     }
   ],
   "Localization": {

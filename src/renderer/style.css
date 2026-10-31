@@ -185,6 +185,7 @@ code { font: 12px Consolas, monospace; color: var(--text); }
 .tocando { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
 .tocando .titulo { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tocando .tempo { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.controles { flex-wrap: wrap; }
 .controles button { min-width: 36px; }
 #yt-repetir.ativo { color: var(--accent); border-color: var(--accent); }
 
@@ -251,3 +252,34 @@ button.cor.ativo { outline: 2px solid var(--text); outline-offset: 2px; }
 .resultados:empty::after { content: none; }
 .resultados li { grid-template-columns: 1fr auto auto; cursor: pointer; }
 .resultados li:hover { border-color: var(--accent); }
+
+/* Mesa */
+#mesa .card-head .abas button { font-size: 12px; }
+.combate-barra { flex-wrap: wrap; }
+.combate-barra .status { flex: 1; font-size: 13px; }
+.combate-barra select { flex: 0 1 220px; }
+#mesa .row { flex-wrap: wrap; }
+.combatentes li { grid-template-columns: 56px 1fr auto auto; }
+.combatentes li.atual { border-color: var(--accent); background: #3a2f1c; }
+.combatentes li.jogador .nome { color: #9fd3ff; }
+.combatentes li.caido { opacity: 0.5; }
+.combatentes li.caido .nome { text-decoration: line-through; }
+.combatentes input, .combate-form input, .timer-form input, .timer-form select {
+  font: inherit; font-size: 13px; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; min-width: 0;
+}
+.combatentes input:focus, .combate-form input:focus, .timer-form input:focus { outline: none; border-color: var(--accent); }
+.combatentes .init { width: 56px; text-align: center; font-weight: 600; }
+.combatentes .hp-box { display: flex; align-items: center; gap: 4px; }
+.combatentes .hp { width: 64px; text-align: right; }
+.combatentes .hp-max { color: var(--muted); font-size: 12px; min-width: 36px; }
+.combatentes .hp-max.perigo { color: var(--danger); }
+.combate-form input[name='nome'] { flex: 1 1 140px; }
+.combate-form input[type='number'] { width: 84px; }
+.timer-form input[name='nome'] { flex: 1 1 160px; }
+.timer-form input[type='number'] { width: 60px; }
+.timer-form { color: var(--muted); font-size: 12px; }
+.lista li.timer { grid-template-columns: 1fr auto auto auto; }
+.timer .contagem { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); }
+.resultado { background: var(--surface-2); border: 1px solid var(--accent); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.resultado p { margin: 0; font-family: Constantia, 'Palatino Linotype', Georgia, serif; font-size: 17px; }

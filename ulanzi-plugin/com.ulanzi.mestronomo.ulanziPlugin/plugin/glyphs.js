@@ -56,6 +56,11 @@ export const GLYPHS = {
     <path d="M12 34 L84 16 L88 30 L16 48 Z" fill="${c}"/>
     <path d="M30 29 L40 41 M50 24 L60 36 M70 19 L80 31" stroke="${COLORS.background}" stroke-width="6"/>`,
 
+  // Espadas cruzadas: o turno do combate.
+  turno: (c) => `<path d="M18 14 L72 68 M82 14 L28 68" stroke="${c}" stroke-width="9" stroke-linecap="round"/>
+    <path d="M60 64 L76 80 M40 64 L24 80" stroke="${c}" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="80" cy="84" r="7" fill="${c}"/><circle cx="20" cy="84" r="7" fill="${c}"/>`,
+
   aviso: (c) => `<path d="M50 12 L92 86 H8 Z" fill="none" stroke="${c}" stroke-width="7" stroke-linejoin="round"/>
     <path d="M50 38 V60" stroke="${c}" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="73" r="5" fill="${c}"/>`,
 };

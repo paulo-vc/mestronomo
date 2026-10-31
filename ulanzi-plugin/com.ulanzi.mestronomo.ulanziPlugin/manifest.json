@@ -154,6 +154,24 @@
         "Keypad"
       ],
       "SupportedInMultiActions": true
+    },
+    {
+      "Name": "Next Turn",
+      "Icon": "assets/icons/turno.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.turno",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Starts the combat, or passes to the next turn",
+      "state": 0,
+      "States": [
+        {
+          "Name": "Next Turn",
+          "Image": "assets/icons/turno.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
     }
   ],
   "OS": [

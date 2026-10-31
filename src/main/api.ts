@@ -3,6 +3,9 @@ import type { VolumeKey } from './mixer';
 import type { LoopMode, YouTubePlayer } from './youtube';
 import type { Ambience } from './ambience';
 import type { SceneManager } from './scenes';
+import type { Combat } from './combat';
+import type { Timers } from './timers';
+import type { TableResult } from './tables';
 
 export interface ApiActions {
   state(): unknown;
@@ -19,6 +22,9 @@ export interface ApiActions {
   ambience: Ambience;
   scenes: SceneManager;
   loadPlaylist(nome: string): Promise<void>;
+  combat: Combat;
+  timers: Timers;
+  rollTable(nome: string): TableResult;
 }
 
 const VOLUME_KEYS = ['musica', 'efeitos', 'ambiente', 'master', 'ducking', 'monitorVolume', 'youtube'];
@@ -46,10 +52,13 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/cena/<nome ou número>           ativa uma cena (crossfade)
  *   /api/ambiente/<arquivo>              liga/desliga uma camada de ambiente
  *   /api/ambiente/parar                  desliga todo o ambiente
+ *   /api/combate/<iniciar|proximo|anterior|encerrar>
+ *   /api/tabela/<nome>                   rola uma tabela e devolve o resultado
+ *   /api/timer?min=<minutos>&nome=<nome> começa um timer
  *   /api/volume/<musica|efeitos|master|ducking|youtube>/<0-100>
  */
 export function startApi(port: number, actions: ApiActions) {
-  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes, loadPlaylist } = actions;
+  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes, loadPlaylist, combat, timers, rollTable } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
     // Divide antes de decodificar: ids de som têm "/" (ex.: Combate%2Fespada).
@@ -129,6 +138,25 @@ export function startApi(port: number, actions: ApiActions) {
         if (a === 'parar') ambience.stopAll(1500);
         else ambience.toggle(a);
         return ok();
+      case 'combate': {
+        const acoes = { iniciar: () => combat.start(), proximo: () => combat.next(), anterior: () => combat.previous(), encerrar: () => combat.end() };
+        const acao = acoes[a as keyof typeof acoes];
+        if (!acao) return reply(400, { erro: 'use iniciar, proximo, anterior ou encerrar' });
+        acao();
+        return reply(200, combat.state());
+      }
+      case 'tabela':
+        try {
+          return reply(200, rollTable(a ?? ''));
+        } catch (err) {
+          return reply(404, { erro: (err as Error).message });
+        }
+      case 'timer': {
+        const minutos = Number(url.searchParams.get('min'));
+        if (!(minutos > 0)) return reply(400, { erro: 'use /api/timer?min=<minutos>&nome=<nome>' });
+        timers.add(url.searchParams.get('nome') ?? 'Timer', minutos * 60, url.searchParams.get('som') ?? undefined);
+        return ok();
+      }
       case 'volume': {
         if (!VOLUME_KEYS.includes(a) || Number.isNaN(Number(b))) {
           return reply(400, { erro: `use /api/volume/<${VOLUME_KEYS.join('|')}>/<0-100>` });

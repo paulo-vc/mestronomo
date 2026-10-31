@@ -1,0 +1,9 @@
+# Uma opção por linha. "3x" no começo dá peso; [[1d6]] é rolado na hora.
+# Apague ou edite à vontade — cada .txt desta pasta vira uma tabela no Mestrônomo.
+3x Nada acontece, só o vento nas árvores.
+2x [[1d4+1]] lobos famintos seguem o grupo à distância.
+Um mercador com a carroça quebrada pede ajuda.
+[[2d4]] bandidos bloqueiam a estrada exigindo pedágio.
+Um corvo pousa perto e fica observando. Ele parece entender o que vocês dizem.
+Uma patrulha da guarda real, desconfiada.
+Ruínas de uma torre antiga, a [[1d10]] minutos fora da estrada.

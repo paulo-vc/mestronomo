@@ -14,8 +14,8 @@ let estado = null;
 let online = false;
 
 const MESSAGES = {
-  en: { offline: 'Open Mestrônomo', noScene: 'Pick a scene', noSound: 'Pick a sound', noApp: 'Pick an app', inCall: 'IN CALL', outCall: 'CALL BOT', nothing: 'Nothing playing', preview: 'PREVIEW' },
-  pt: { offline: 'Abra o Mestrônomo', noScene: 'Escolha uma cena', noSound: 'Escolha um som', noApp: 'Escolha um app', inCall: 'NA CALL', outCall: 'CHAMAR BOT', nothing: 'Nada tocando', preview: 'PRÉVIA' },
+  en: { noCombat: 'No combat', offline: 'Open Mestrônomo', noScene: 'Pick a scene', noSound: 'Pick a sound', noApp: 'Pick an app', inCall: 'IN CALL', outCall: 'CALL BOT', nothing: 'Nothing playing', preview: 'PREVIEW' },
+  pt: { noCombat: 'Sem combate', offline: 'Abra o Mestrônomo', noScene: 'Escolha uma cena', noSound: 'Escolha um som', noApp: 'Escolha um app', inCall: 'NA CALL', outCall: 'CHAMAR BOT', nothing: 'Nada tocando', preview: 'PRÉVIA' },
 };
 
 function t(key) {
@@ -100,6 +100,12 @@ function keyFace(action) {
         badge: valor === undefined ? undefined : `${Math.round(valor * 100)}%`,
       };
     }
+    case 'turno': {
+      const combate = estado.combate;
+      const atual = combate.ativo ? combate.combatentes[combate.turno] : undefined;
+      if (!atual) return { glyph: 'turno', text: t('noCombat'), color: COLORS.muted };
+      return { glyph: 'turno', text: atual.nome, badge: `R${combate.rodada}`, background: COLORS.backgroundOn };
+    }
     case 'cena': {
       const cena = estado.cenas.cenas.find((c) => c.id === settings.cena);
       if (!cena) return { glyph: 'cena', text: t('noScene'), color: COLORS.muted };
@@ -176,6 +182,12 @@ async function run(context, action) {
       const novo = Math.round(Math.min(1, Math.max(0, atual + delta)) * 100);
       return api(`volume/${settings.alvo}/${novo}`);
     }
+    case 'turno': {
+      const combate = estado.combate;
+      const atual = combate.ativo ? combate.combatentes[combate.turno] : undefined;
+      if (!atual) return { glyph: 'turno', text: t('noCombat'), color: COLORS.muted };
+      return { glyph: 'turno', text: atual.nome, badge: `R${combate.rodada}`, background: COLORS.backgroundOn };
+    }
     case 'cena': {
       const cena = estado.cenas.cenas.find((c) => c.id === settings.cena);
       if (!cena) return { glyph: 'cena', text: t('noScene'), color: COLORS.muted };
@@ -187,6 +199,8 @@ async function run(context, action) {
         background: ativa ? COLORS.backgroundOn : COLORS.background,
       };
     }
+    case 'turno':
+      return api(estado?.combate.ativo ? 'combate/proximo' : 'combate/iniciar');
     case 'cena':
       if (!settings.cena) throw new Error('nenhuma cena escolhida');
       return api(`cena/${encode(settings.cena)}`);

@@ -555,14 +555,192 @@ $('#abrir-sons').addEventListener('click', () => api.abrirSons());
 // Ao voltar para a janela, relê a pasta de sons (você pode ter adicionado arquivos).
 window.addEventListener('focus', async () => renderSoundboard((await api.estado()).soundboard));
 
+// --- Mesa: iniciativa, timers e tabelas -----------------------------------
+
+let abaMesa = 'iniciativa';
+try {
+  abaMesa = localStorage.getItem('abaMesa') || 'iniciativa';
+} catch {}
+
+function mostrarAbaMesa(aba) {
+  abaMesa = aba;
+  for (const b of document.querySelectorAll('#mesa-abas button')) b.classList.toggle('ativo', b.dataset.aba === aba);
+  for (const p of document.querySelectorAll('[data-painel]')) p.classList.toggle('hidden', p.dataset.painel !== aba);
+  try {
+    localStorage.setItem('abaMesa', aba);
+  } catch {}
+}
+for (const b of document.querySelectorAll('#mesa-abas button')) b.addEventListener('click', () => mostrarAbaMesa(b.dataset.aba));
+mostrarAbaMesa(abaMesa);
+
+// Iniciativa
+
+let combate = null;
+
+function renderCombate(estado) {
+  combate = estado;
+  $('#combate-status').textContent = estado.ativo
+    ? `Rodada ${estado.rodada} · vez de ${estado.combatentes[estado.turno]?.nome ?? '—'}`
+    : 'Fora de combate';
+  $('#combate-status').classList.toggle('on', estado.ativo);
+  $('#combate-iniciar').classList.toggle('hidden', estado.ativo);
+  for (const id of ['#combate-anterior', '#combate-proximo', '#combate-encerrar']) $(id).classList.toggle('hidden', !estado.ativo);
+  $('#combate-cena').value = estado.cenaCombate ?? '';
+
+  $('#combatentes').replaceChildren(
+    ...estado.combatentes.map((c, i) => {
+      const hp = el('input', {
+        type: 'text',
+        className: 'hp',
+        placeholder: 'HP',
+        value: c.hp ?? '',
+        title: '-7 dano · +5 cura · 30 define',
+      });
+      hp.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        api.combate.hp(c.id, hp.value);
+        hp.blur();
+      });
+      const iniciativa = el('input', { type: 'number', className: 'init', value: c.iniciativa, title: 'Iniciativa' });
+      iniciativa.addEventListener('change', () => api.combate.iniciativa(c.id, Number(iniciativa.value)));
+      const baixo = c.hp !== undefined && c.hpMax ? c.hp / c.hpMax : 1;
+      return el(
+        'li',
+        { className: `${estado.ativo && i === estado.turno ? 'atual' : ''}${c.jogador ? ' jogador' : ''}${c.hp !== undefined && c.hp <= 0 ? ' caido' : ''}` },
+        iniciativa,
+        el('span', { className: 'nome', textContent: c.nome }),
+        el(
+          'span',
+          { className: 'hp-box' },
+          hp,
+          el('span', { className: `hp-max${baixo <= 0.25 ? ' perigo' : ''}`, textContent: c.hpMax ? `/ ${c.hpMax}` : '' }),
+        ),
+        el('button', { className: 'ghost icone', textContent: '✕', title: 'Remover', onclick: () => api.combate.remover(c.id) }),
+      );
+    }),
+  );
+}
+
+function preencherCenasCombate(cenas) {
+  const select = $('#combate-cena');
+  const atual = combate?.cenaCombate ?? '';
+  select.replaceChildren(new Option('Sem trocar de cena', ''), ...cenas.cenas.map((c) => new Option(`Cena: ${c.nome}`, c.id)));
+  select.value = atual;
+}
+
+$('#combate-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const f = e.target;
+  api.combate.add({
+    nome: f.nome.value,
+    iniciativa: f.iniciativa.value === '' ? undefined : Number(f.iniciativa.value),
+    modificador: Number(f.modificador.value) || 0,
+    hp: f.hp.value === '' ? undefined : Number(f.hp.value),
+    jogador: f.jogador.checked,
+  });
+  f.nome.value = f.iniciativa.value = f.modificador.value = f.hp.value = '';
+  f.nome.focus();
+});
+$('#combate-iniciar').addEventListener('click', () => api.combate.iniciar());
+$('#combate-proximo').addEventListener('click', () => api.combate.proximo());
+$('#combate-anterior').addEventListener('click', () => api.combate.anterior());
+$('#combate-encerrar').addEventListener('click', () => api.combate.encerrar());
+$('#combate-limpar').addEventListener('click', () => api.combate.limpar());
+$('#combate-cena').addEventListener('change', (e) => api.combate.cena(e.target.value));
+$('#combate-anunciar').addEventListener('change', (e) => api.combate.anunciar(e.target.checked));
+
+// Timers
+
+let timers = [];
+
+function renderTimers(lista) {
+  timers = lista;
+  $('#timers').replaceChildren(
+    ...lista.map((t) => {
+      const item = el(
+        'li',
+        { className: 'timer' },
+        el('span', { className: 'nome', textContent: t.nome }),
+        el('span', { className: 'contagem' }),
+        el('button', { className: 'ghost icone', textContent: t.fim ? '⏸' : '▶', title: t.fim ? 'Pausar' : 'Continuar', onclick: () => api.timers.pausar(t.id) }),
+        el('button', { className: 'ghost icone', textContent: '✕', title: 'Remover', onclick: () => api.timers.remover(t.id) }),
+      );
+      item.dataset.id = t.id;
+      return item;
+    }),
+  );
+  atualizarContagens();
+}
+
+function atualizarContagens() {
+  for (const t of timers) {
+    const span = document.querySelector(`.timer[data-id="${t.id}"] .contagem`);
+    if (!span) continue;
+    const restante = t.fim ? Math.max(0, (t.fim - Date.now()) / 1000) : (t.restante ?? t.total);
+    span.textContent = tempo(Math.ceil(restante)) + (t.fim ? '' : ' (pausado)');
+  }
+}
+setInterval(atualizarContagens, 250);
+
+function preencherSonsTimer(estadoSoundboard) {
+  const select = $('#timer-form').som;
+  const atual = select.value;
+  select.replaceChildren(new Option('Sem som', ''), ...estadoSoundboard.sons.map((s) => new Option(`🔔 ${s.id}`, s.id)));
+  select.value = atual;
+}
+
+$('#timer-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const segundos = (Number(f.min.value) || 0) * 60 + (Number(f.seg.value) || 0);
+  if (segundos <= 0) return mostrarErro('Defina um tempo maior que zero.');
+  api.timers.add(f.nome.value, segundos, f.som.value);
+  f.nome.value = '';
+});
+
+// Tabelas
+
+let ultimoResultado = null;
+
+async function carregarTabelas() {
+  const nomes = await api.tabelas.listar();
+  const select = $('#tabelas');
+  const atual = select.value;
+  select.replaceChildren(...(nomes.length ? nomes.map((n) => new Option(n, n)) : [new Option('Nenhuma tabela em tabelas/', '')]));
+  if (nomes.includes(atual)) select.value = atual;
+}
+
+$('#tabela-rolar').addEventListener('click', async () => {
+  const nome = $('#tabelas').value;
+  if (!nome) return;
+  ultimoResultado = await api.tabelas.rolar(nome);
+  if (!ultimoResultado) return;
+  $('#tabela-texto').textContent = ultimoResultado.texto;
+  $('#tabela-resultado').classList.remove('hidden');
+});
+$('#tabela-discord').addEventListener('click', () => {
+  if (ultimoResultado) api.discordTexto(`🎲 **${ultimoResultado.tabela}**: ${ultimoResultado.texto}`);
+});
+$('#tabelas-pasta').addEventListener('click', () => api.tabelas.abrirPasta());
+window.addEventListener('focus', carregarTabelas);
+
 // --- Início ------------------------------------------------------------
 
 api.onBot(renderBot);
 api.onCapturas(renderCapturas);
 api.onYoutube(renderYoutube);
 api.onAmbiente(renderAmbiente);
-api.onCenas(renderCenas);
-api.onSoundboard(renderSoundboard);
+api.onCenas((s) => {
+  renderCenas(s);
+  preencherCenasCombate(s);
+});
+api.onSoundboard((s) => {
+  renderSoundboard(s);
+  preencherSonsTimer(s);
+});
+api.onCombate(renderCombate);
+api.onTimers(renderTimers);
+api.onTimerFim((t) => mostrarErro(`⏰ ${t.nome}: o tempo acabou!`));
 api.onMixer(renderMixer);
 api.onErro(mostrarErro);
 
@@ -577,6 +755,12 @@ api.onErro(mostrarErro);
   renderMixer(estado.mixer);
   carregarSaidas(estado.monitorDevice);
   renderSoundboard(estado.soundboard);
+  preencherSonsTimer(estado.soundboard);
+  renderCombate(estado.combate);
+  preencherCenasCombate(estado.cenas);
+  $('#combate-anunciar').checked = estado.anunciarTurnos;
+  renderTimers(estado.timers);
+  carregarTabelas();
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();
   carregarPlaylists();
