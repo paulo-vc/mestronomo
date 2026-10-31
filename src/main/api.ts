@@ -1,21 +1,21 @@
 import http from 'node:http';
-import type { MixerSettings } from './mixer';
+import type { VolumeKey } from './mixer';
 import type { LoopMode, YouTubePlayer } from './youtube';
 
 export interface ApiActions {
   state(): unknown;
   listSounds(): string[];
-  playSound(name: string): boolean;
+  playSound(name: string, preview?: boolean): boolean;
   stopEffects(): void;
   startCapture(appName: string): void;
   stopCapture(appName?: string): void;
-  setVolume(key: keyof MixerSettings | 'youtube', value: number): void;
+  setVolume(key: VolumeKey | 'youtube', value: number): void;
   joinBot(): Promise<boolean> | boolean;
   leaveBot(): void;
   youtube: YouTubePlayer;
 }
 
-const VOLUME_KEYS = ['musica', 'efeitos', 'master', 'ducking', 'youtube'];
+const VOLUME_KEYS = ['musica', 'efeitos', 'master', 'ducking', 'monitorVolume', 'youtube'];
 const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
 
 /**
@@ -26,6 +26,7 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/bot/entrar | /api/bot/sair      chama ou dispensa o bot
  *   /api/sons                            lista da soundboard
  *   /api/som/<arquivo ou número>         toca um efeito (número começa em 1)
+ *   /api/previa/<arquivo ou número>      toca um efeito só no fone do mestre
  *   /api/efeitos/parar                   para todos os efeitos
  *   /api/musica/capturar/<app.exe>       adiciona a captura de um app
  *   /api/musica/parar[/<app.exe>]        para uma captura (ou todas)
@@ -56,10 +57,13 @@ export function startApi(port: number, actions: ApiActions) {
         return ok();
       case 'sons':
         return reply(200, listSounds());
-      case 'som': {
+      case 'som':
+      case 'previa': {
         const sounds = listSounds();
         const name = /^\d+$/.test(a ?? '') ? sounds[Number(a) - 1] : a;
-        return name && playSound(name) ? reply(200, { tocando: name }) : reply(404, { erro: 'som não encontrado' });
+        return name && playSound(name, route === 'previa')
+          ? reply(200, { tocando: name })
+          : reply(404, { erro: 'som não encontrado' });
       }
       case 'efeitos':
         stopEffects();
@@ -92,7 +96,7 @@ export function startApi(port: number, actions: ApiActions) {
         if (!VOLUME_KEYS.includes(a) || Number.isNaN(Number(b))) {
           return reply(400, { erro: `use /api/volume/<${VOLUME_KEYS.join('|')}>/<0-100>` });
         }
-        setVolume(a as keyof MixerSettings | 'youtube', Number(b) / 100);
+        setVolume(a as VolumeKey | 'youtube', Number(b) / 100);
         return ok();
       }
       default:

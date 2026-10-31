@@ -194,7 +194,52 @@ els.ytRepetir.addEventListener('click', () => api.yt.repetir(REPETIR[yt?.repetir
 
 // --- Mixer -------------------------------------------------------------
 
+// --- Monitor (seu fone) ----------------------------------------------
+
+const monitor = { ctx: null, node: null, gain: null };
+
+async function iniciarMonitor(deviceId) {
+  monitor.ctx = new AudioContext({ sampleRate: 48000, latencyHint: 'interactive' });
+  await monitor.ctx.audioWorklet.addModule('monitor-worklet.js');
+  monitor.node = new AudioWorkletNode(monitor.ctx, 'monitor', { outputChannelCount: [2] });
+  monitor.gain = monitor.ctx.createGain();
+  monitor.node.connect(monitor.gain).connect(monitor.ctx.destination);
+  await escolherSaida(deviceId);
+  api.onPcm((pcm) => {
+    // Copia para um ArrayBuffer próprio e transfere para o worklet sem cópia extra.
+    const amostras = new Int16Array(pcm.buffer.slice(pcm.byteOffset, pcm.byteOffset + pcm.byteLength));
+    monitor.node.port.postMessage(amostras.buffer, [amostras.buffer]);
+  });
+}
+
+async function escolherSaida(deviceId) {
+  try {
+    await monitor.ctx.setSinkId(deviceId === 'default' ? '' : deviceId);
+  } catch {
+    mostrarErro('Não consegui usar esse dispositivo de saída; voltando para o padrão.');
+    await monitor.ctx.setSinkId('');
+  }
+}
+
+async function carregarSaidas(atual) {
+  const select = $('#monitor-saida');
+  const saidas = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audiooutput');
+  select.replaceChildren(
+    ...saidas.map((d) => new Option(d.deviceId === 'default' ? 'Saída padrão do Windows' : d.label || 'Dispositivo sem nome', d.deviceId)),
+  );
+  select.value = saidas.some((d) => d.deviceId === atual) ? atual : 'default';
+}
+
+$('#monitor-modo').addEventListener('change', (e) => api.monitor(e.target.value));
+$('#monitor-saida').addEventListener('change', (e) => {
+  escolherSaida(e.target.value);
+  api.monitorSaida(e.target.value);
+});
+navigator.mediaDevices.addEventListener('devicechange', () => carregarSaidas($('#monitor-saida').value));
+
 function renderMixer(settings) {
+  $('#monitor-modo').value = settings.monitor;
+  if (monitor.gain) monitor.gain.gain.value = settings.monitorVolume;
   for (const input of document.querySelectorAll('[data-volume]')) {
     const chave = input.dataset.volume;
     if (!(chave in settings)) continue;
@@ -207,6 +252,7 @@ for (const input of document.querySelectorAll('[data-volume]')) {
   input.addEventListener('input', () => {
     input.nextElementSibling.textContent = `${input.value}%`;
     api.volume(input.dataset.volume, input.value / 100);
+    if (input.dataset.volume === 'monitorVolume' && monitor.gain) monitor.gain.gain.value = input.value / 100;
   });
 }
 
@@ -227,10 +273,15 @@ function renderSons(sons) {
         el('span', { className: 'nome', textContent: arquivo.replace(/\.[^.]+$/, '').replace(/^\d+[\s._-]*/, '') }),
       );
       if (i < 9) botao.append(el('kbd', { textContent: `Ctrl+Alt+${i + 1}` }));
-      botao.addEventListener('click', () => {
-        api.som(arquivo);
-        botao.classList.add('flash');
-        setTimeout(() => botao.classList.remove('flash'), 200);
+      const tocar = (previa) => {
+        api.som(arquivo, previa);
+        botao.classList.add(previa ? 'flash-previa' : 'flash');
+        setTimeout(() => botao.classList.remove('flash', 'flash-previa'), 200);
+      };
+      botao.addEventListener('click', () => tocar(false));
+      botao.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        tocar(true);
       });
       return botao;
     }),
@@ -256,7 +307,9 @@ api.onErro(mostrarErro);
   renderBot(estado.bot);
   renderCapturas(estado.capturas);
   renderYoutube(estado.youtube);
+  await iniciarMonitor(estado.monitorDevice);
   renderMixer(estado.mixer);
+  carregarSaidas(estado.monitorDevice);
   renderSons(estado.sons);
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();

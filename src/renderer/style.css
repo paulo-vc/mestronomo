@@ -41,6 +41,7 @@ footer { margin-top: auto; border-top: 1px solid var(--border); color: var(--mut
 h1 { margin: 0; font-size: 20px; letter-spacing: 0.02em; }
 .marca { display: flex; align-items: center; gap: 10px; font-family: Constantia, 'Palatino Linotype', Georgia, serif; font-size: 24px; color: var(--accent); }
 .marca img { width: 32px; height: 32px; }
+h3 { margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 h2 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
 
 main {
@@ -116,6 +117,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
 }
 .grid button .nome { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .grid button.flash { border-color: var(--accent); background: #3a2f1c; }
+.grid button.flash-previa { border-color: var(--muted); background: #2f2a3a; }
 .vazio { color: var(--muted); grid-column: 1 / -1; padding: 20px 0; text-align: center; }
 
 .pill {

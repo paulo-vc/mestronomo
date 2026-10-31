@@ -61,6 +61,7 @@ export async function listAudioApps(): Promise<AudioApp[]> {
 /** Áudio ao vivo de outro programa (Spotify, navegador...) via mestronomo-capture. */
 export class AppCaptureSource implements Source {
   readonly bus: Bus = 'musica';
+  readonly live = true;
   volume = 1;
   private queue = new PcmQueue();
   private proc: ChildProcess;
@@ -141,9 +142,9 @@ class FfmpegSource implements Source {
   }
 }
 
-/** Um arquivo local (efeitos da soundboard). */
+/** Um arquivo local (efeitos da soundboard). Com `preview`, toca só no monitor local. */
 export class FileSource extends FfmpegSource {
-  constructor(readonly file: string, bus: Bus) {
+  constructor(readonly file: string, bus: Bus, readonly preview = false) {
     super(bus, file);
   }
 }

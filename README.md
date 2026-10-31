@@ -5,7 +5,8 @@ Ferramentas de áudio para mestres de RPG online. Um bot do Discord entra no seu
 - **Música capturada de um ou mais programas ao mesmo tempo** (Spotify, navegador…), cada um com seu volume, sem VB-Cable nem conta secundária;
 - **Player de YouTube** com fila, playlists, pausa e repetição;
 - **Soundboard** com atalhos globais (`Ctrl+Alt+1..9`, `Ctrl+Alt+0` para parar os efeitos);
-- **Ducking**: a música abaixa sozinha enquanto um efeito toca.
+- **Ducking**: a música abaixa sozinha enquanto um efeito toca;
+- **Monitor no seu fone** e **pré-escuta** (botão direito num som toca só para você).
 
 ## Como funciona
 
@@ -80,6 +81,17 @@ volume da fonte  ×  volume do grupo  ×  Geral
 - **Efeitos**: a soundboard.
 - **Ducking**: para quanto a música cai enquanto um efeito toca. Com 35%, a música abaixa para 35% do volume e volta sozinha. 100% desliga o ducking.
 
+### Seu fone (monitor)
+
+Escolha o dispositivo de saída e o que ouvir:
+
+- **Ouvir efeitos e YouTube** (padrão): tudo que vai para a call, menos os programas capturados, que você já ouve direto no PC.
+- **Ouvir tudo**: exatamente o que os jogadores ouvem.
+- **Só pré-escuta**: apenas os sons que você testa com o botão direito.
+- **Não ouvir**.
+
+O volume do fone não muda o que vai para a call.
+
 ## Soundboard
 
 Coloque os efeitos na pasta `sons/`. A ordem alfabética define os atalhos, então use prefixos como `01 espada.mp3`.
@@ -91,6 +103,7 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 | Rota | O que faz |
 | --- | --- |
 | `/api/som/3` ou `/api/som/espada.mp3` | Toca um efeito |
+| `/api/previa/3` | Toca um efeito só no seu fone |
 | `/api/efeitos/parar` | Para todos os efeitos |
 | `/api/bot/entrar` · `/api/bot/sair` | Chama ou dispensa o bot |
 | `/api/musica/capturar/Spotify.exe` | Adiciona a captura de um app |
@@ -98,7 +111,7 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 | `/api/youtube/adicionar?url=<link>` | Adiciona vídeo ou playlist à fila |
 | `/api/youtube/pausar` · `proxima` · `anterior` · `parar` · `limpar` | Controles do player |
 | `/api/youtube/repetir/fila` | Repetição: `nenhum`, `fila` ou `faixa` |
-| `/api/volume/musica/60` | Volume (`musica`, `efeitos`, `master`, `ducking`, `youtube`) de 0 a 100 |
+| `/api/volume/musica/60` | Volume (`musica`, `efeitos`, `master`, `ducking`, `youtube`, `monitorVolume`) de 0 a 100 |
 | `/api/estado` | Estado atual em JSON |
 
 ## Aviso sobre Spotify e YouTube

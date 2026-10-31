@@ -67,6 +67,20 @@
           <span>Ducking<small>música enquanto um efeito toca</small></span>
           <input type="range" data-volume="ducking" min="0" max="100" /><output></output>
         </label>
+        <h3>Seu fone</h3>
+        <div class="row">
+          <select id="monitor-modo" title="O que você ouve no seu fone">
+            <option value="sem-capturas">Ouvir efeitos e YouTube</option>
+            <option value="tudo">Ouvir tudo (inclui programas)</option>
+            <option value="previa">Só pré-escuta</option>
+            <option value="desligado">Não ouvir</option>
+          </select>
+          <select id="monitor-saida" title="Dispositivo de saída"></select>
+        </div>
+        <label class="slider">
+          <span>Volume no fone<small>só para você</small></span>
+          <input type="range" data-volume="monitorVolume" min="0" max="100" /><output></output>
+        </label>
       </section>
 
       <section class="card wide" id="soundboard">
@@ -77,6 +91,7 @@
             <button id="parar-efeitos" class="danger">Parar efeitos <kbd>Ctrl+Alt+0</kbd></button>
           </div>
         </div>
+        <p class="hint">Clique para tocar na call. Botão direito: ouvir só no seu fone.</p>
         <div id="sons" class="grid"></div>
       </section>
     </main>

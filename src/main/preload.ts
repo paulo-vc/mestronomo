@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('mestronomo', {
   volumeCaptura: invoke('volume-captura'),
   volume: invoke('volume'),
   abrirSons: invoke('abrir-sons'),
+  monitor: invoke('monitor'),
+  monitorSaida: invoke('monitor-saida'),
   botEntrar: invoke('bot-entrar'),
   botSair: invoke('bot-sair'),
   yt: {
@@ -37,4 +39,5 @@ contextBridge.exposeInMainWorld('mestronomo', {
   onMixer: on('mixer'),
   onTocando: on('tocando'),
   onErro: on('erro'),
+  onPcm: on('pcm'),
 });

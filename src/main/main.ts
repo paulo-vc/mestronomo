@@ -2,7 +2,7 @@ import { app, BrowserWindow, globalShortcut, ipcMain, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
-import { Mixer, type MixerSettings } from './mixer';
+import { Mixer, type MixerSettings, type MonitorMode, type VolumeKey } from './mixer';
 import { AppCaptureSource, FileSource, listAudioApps } from './sources';
 import { DiscordBot, type BotStatus } from './discord';
 import { YouTubePlayer, type LoopMode } from './youtube';
@@ -28,6 +28,8 @@ interface SavedConfig {
   /** Último volume usado para cada app capturado. */
   appVolumes?: Record<string, number>;
   youtube?: { volume: number; repetir: LoopMode };
+  /** deviceId da saída de áudio do monitor local. */
+  monitorDevice?: string;
 }
 
 let config: SavedConfig = {};
@@ -58,10 +60,11 @@ function listSounds(): string[] {
     .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
 }
 
-function playSound(name: string) {
+/** Com `preview`, o som toca só no seu fone (pré-escuta), sem ir para o bot. */
+function playSound(name: string, preview = false) {
   const file = path.join(SOUNDS_DIR, path.basename(name));
   if (!fs.existsSync(file)) return false;
-  mixer.add(new FileSource(file, 'efeitos'));
+  mixer.add(new FileSource(file, 'efeitos', preview));
   return true;
 }
 
@@ -105,7 +108,7 @@ function setCaptureVolume(appName: string, value: number) {
   saveConfig();
 }
 
-function setVolume(key: keyof MixerSettings | 'youtube', value: number) {
+function setVolume(key: VolumeKey | 'youtube', value: number) {
   if (key === 'youtube') youtube.setVolume(value);
   else mixer.settings[key] = Math.min(1, Math.max(0, value));
   send('mixer', mixer.settings);
@@ -129,6 +132,7 @@ function state() {
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
     sons: listSounds(),
+    monitorDevice: config.monitorDevice ?? 'default',
     apiPort: API_PORT,
   };
 }
@@ -136,12 +140,21 @@ function state() {
 function registerIpc() {
   ipcMain.handle('estado', () => state());
   ipcMain.handle('apps', () => listAudioApps());
-  ipcMain.handle('som', (_e, name: string) => playSound(name));
+  ipcMain.handle('som', (_e, name: string, preview?: boolean) => playSound(name, preview));
+  ipcMain.handle('monitor', (_e, mode: MonitorMode) => {
+    mixer.settings.monitor = mode;
+    send('mixer', mixer.settings);
+    saveConfig();
+  });
+  ipcMain.handle('monitor-saida', (_e, deviceId: string) => {
+    config.monitorDevice = deviceId;
+    saveConfig();
+  });
   ipcMain.handle('parar-efeitos', () => stopEffects());
   ipcMain.handle('capturar', (_e, appName: string) => startCapture(appName));
   ipcMain.handle('parar-captura', (_e, appName?: string) => stopCapture(appName));
   ipcMain.handle('volume-captura', (_e, appName: string, value: number) => setCaptureVolume(appName, value));
-  ipcMain.handle('volume', (_e, key: keyof MixerSettings | 'youtube', value: number) => setVolume(key, value));
+  ipcMain.handle('volume', (_e, key: VolumeKey | 'youtube', value: number) => setVolume(key, value));
   ipcMain.handle('abrir-sons', () => shell.openPath(SOUNDS_DIR));
   ipcMain.handle('bot-entrar', () => joinBot());
   ipcMain.handle('bot-sair', () => leaveBot());
@@ -187,6 +200,8 @@ app.whenReady().then(() => {
     youtube.loop = config.youtube.repetir;
   }
   mixer.on('change', () => send('tocando', state().tocando));
+  // ~50 mensagens por segundo de 3,8 KB: o IPC do Electron dá conta tranquilo.
+  mixer.on('monitor', (pcm: Buffer) => window?.webContents.send('pcm', pcm));
   youtube.on('change', (s) => send('youtube', s));
   youtube.on('erro', (msg) => send('erro', msg));
   mixer.start();
@@ -216,7 +231,8 @@ app.whenReady().then(() => {
     backgroundColor: '#15121c',
     icon: path.join(ROOT, 'assets', 'icon.ico'),
     autoHideMenuBar: true,
-    webPreferences: { preload: path.join(__dirname, 'preload.js') },
+    // Sem exigir clique antes do áudio: o monitor local precisa tocar assim que o app abre.
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), autoplayPolicy: 'no-user-gesture-required' },
   });
   window.loadFile(path.join(ROOT, 'src', 'renderer', 'index.html'));
 });
