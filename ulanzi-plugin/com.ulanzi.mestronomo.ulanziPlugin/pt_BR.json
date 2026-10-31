@@ -3,6 +3,10 @@
   "Description": "Música, ambiente e soundboard para mestres de RPG no Discord",
   "Actions": [
     {
+      "Name": "Cena",
+      "Tooltip": "Troca para uma cena (ambiente + música) com crossfade"
+    },
+    {
       "Name": "Tocar Som",
       "Tooltip": "Toca um som da soundboard na call (ou só no seu fone)"
     },
@@ -49,6 +53,8 @@
     "Open Mestrônomo to load the list.": "Abra o Mestrônomo para carregar a lista.",
     "Files in the sons/ folder of Mestrônomo.": "Arquivos da pasta sons/ do Mestrônomo.",
     "Only apps that are playing or have played audio show up.": "Só aparecem apps que estão tocando ou já tocaram áudio.",
-    "This key needs no settings.": "Esta tecla não precisa de configuração."
+    "This key needs no settings.": "Esta tecla não precisa de configuração.",
+    "Scene": "Cena",
+    "Scenes are created in Mestrônomo with \"Save current scene\".": "As cenas são criadas no Mestrônomo em \"Salvar cena atual\"."
   }
 }

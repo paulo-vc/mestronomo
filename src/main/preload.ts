@@ -18,6 +18,12 @@ contextBridge.exposeInMainWorld('mestronomo', {
   volumeCaptura: invoke('volume-captura'),
   volume: invoke('volume'),
   abrirSons: invoke('abrir-sons'),
+  cenas: {
+    salvar: invoke('cena-salvar'),
+    ativar: invoke('cena-ativar'),
+    remover: invoke('cena-remover'),
+    fade: invoke('cena-fade'),
+  },
   amb: {
     alternar: invoke('amb-alternar'),
     volume: invoke('amb-volume'),
@@ -47,6 +53,7 @@ contextBridge.exposeInMainWorld('mestronomo', {
   onCapturas: on('capturas'),
   onYoutube: on('youtube'),
   onAmbiente: on('ambiente'),
+  onCenas: on('cenas'),
   onMixer: on('mixer'),
   onTocando: on('tocando'),
   onErro: on('erro'),

@@ -101,6 +101,12 @@ Escolha o dispositivo de saída e o que ouvir:
 
 O volume do fone não muda o que vai para a call.
 
+## Cenas
+
+Monte o clima (camadas de ambiente, sons ocasionais e, se quiser, a fila do YouTube) e clique em **Salvar cena atual**. Depois, um clique na cena troca tudo com **crossfade** (duração ajustável em "Transição"). Para cada cena você escolhe o que fazer com a música: usar a fila atual do YouTube, parar a música ou não mexer nela.
+
+Também funciona por `/api/cena/Taverna` (ou `/api/cena/1`) e pela ação **Cena** do plugin do Ulanzi, que acende a tecla da cena ativa.
+
 ## Ambiente
 
 Coloque sons contínuos (chuva, fogueira, vento, taverna…) na pasta `ambientes/` (instalado: `Documentos\Mestrônomombientes`). No cartão **Ambiente**:
@@ -122,6 +128,8 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 | --- | --- |
 | `/api/som/3` ou `/api/som/espada.mp3` | Toca um efeito |
 | `/api/previa/3` | Toca um efeito só no seu fone |
+| `/api/cena/Taverna` ou `/api/cena/1` | Ativa uma cena |
+| `/api/ambiente/chuva.ogg` · `/api/ambiente/parar` | Liga/desliga uma camada · para todo o ambiente |
 | `/api/efeitos/parar` | Para todos os efeitos |
 | `/api/bot/entrar` · `/api/bot/sair` | Chama ou dispensa o bot |
 | `/api/musica/capturar/Spotify.exe` | Adiciona a captura de um app |
@@ -134,10 +142,11 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 
 ## Plugin do Ulanzi Studio
 
-A pasta `ulanzi-plugin/` tem um plugin para o Ulanzi Studio com sete ações, todas mostrando o estado ao vivo na tecla:
+A pasta `ulanzi-plugin/` tem um plugin para o Ulanzi Studio com oito ações, todas mostrando o estado ao vivo na tecla:
 
 | Ação | O que faz | Na tecla |
 | --- | --- | --- |
+| Cena | Troca para uma cena com crossfade | Nome da cena; acesa quando ativa |
 | Tocar Som | Toca um som da soundboard (ou só no seu fone, com "pré-escuta") | Nome do som |
 | YouTube Tocar/Pausar | Toca ou pausa a fila | ▶/⏸ e o título da faixa |
 | YouTube Próxima | Pula para a próxima faixa | Título da próxima |

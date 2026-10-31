@@ -14,8 +14,8 @@ let estado = null;
 let online = false;
 
 const MESSAGES = {
-  en: { offline: 'Open Mestrônomo', noSound: 'Pick a sound', noApp: 'Pick an app', inCall: 'IN CALL', outCall: 'CALL BOT', nothing: 'Nothing playing', preview: 'PREVIEW' },
-  pt: { offline: 'Abra o Mestrônomo', noSound: 'Escolha um som', noApp: 'Escolha um app', inCall: 'NA CALL', outCall: 'CHAMAR BOT', nothing: 'Nada tocando', preview: 'PRÉVIA' },
+  en: { offline: 'Open Mestrônomo', noScene: 'Pick a scene', noSound: 'Pick a sound', noApp: 'Pick an app', inCall: 'IN CALL', outCall: 'CALL BOT', nothing: 'Nothing playing', preview: 'PREVIEW' },
+  pt: { offline: 'Abra o Mestrônomo', noScene: 'Escolha uma cena', noSound: 'Escolha um som', noApp: 'Escolha um app', inCall: 'NA CALL', outCall: 'CHAMAR BOT', nothing: 'Nada tocando', preview: 'PRÉVIA' },
 };
 
 function t(key) {
@@ -40,6 +40,8 @@ function normalize(kind, param = {}) {
       };
     case 'captura':
       return { app: param.app || '' };
+    case 'cena':
+      return { cena: param.cena || '' };
     default:
       return {};
   }
@@ -96,6 +98,17 @@ function keyFace(action) {
         glyph: settings.direcao === 'menos' ? 'volumeMenos' : 'volumeMais',
         text: TARGETS[settings.alvo],
         badge: valor === undefined ? undefined : `${Math.round(valor * 100)}%`,
+      };
+    }
+    case 'cena': {
+      const cena = estado.cenas.cenas.find((c) => c.id === settings.cena);
+      if (!cena) return { glyph: 'cena', text: t('noScene'), color: COLORS.muted };
+      const ativa = estado.cenas.ativa === cena.id;
+      return {
+        glyph: 'cena',
+        text: cena.nome,
+        color: ativa ? COLORS.gold : COLORS.muted,
+        background: ativa ? COLORS.backgroundOn : COLORS.background,
       };
     }
     case 'captura': {
@@ -163,6 +176,20 @@ async function run(context, action) {
       const novo = Math.round(Math.min(1, Math.max(0, atual + delta)) * 100);
       return api(`volume/${settings.alvo}/${novo}`);
     }
+    case 'cena': {
+      const cena = estado.cenas.cenas.find((c) => c.id === settings.cena);
+      if (!cena) return { glyph: 'cena', text: t('noScene'), color: COLORS.muted };
+      const ativa = estado.cenas.ativa === cena.id;
+      return {
+        glyph: 'cena',
+        text: cena.nome,
+        color: ativa ? COLORS.gold : COLORS.muted,
+        background: ativa ? COLORS.backgroundOn : COLORS.background,
+      };
+    }
+    case 'cena':
+      if (!settings.cena) throw new Error('nenhuma cena escolhida');
+      return api(`cena/${encode(settings.cena)}`);
     case 'captura': {
       if (!settings.app) throw new Error('nenhum app escolhido');
       const ativa = estado?.capturas.some((c) => c.app === settings.app);
@@ -220,9 +247,11 @@ $UD.onRun(async (jsn) => {
 // O property inspector pede a lista de sons ou de apps para preencher o select.
 $UD.onSendToPlugin(async (jsn) => {
   const { cmd } = jsn.payload || {};
-  if (cmd !== 'getSons' && cmd !== 'getApps') return;
+  const rotas = { getSons: 'sons', getApps: 'apps', getCenas: 'cenas' };
+  if (!rotas[cmd]) return;
   try {
-    const lista = await api(cmd === 'getSons' ? 'sons' : 'apps');
+    const resposta = await api(rotas[cmd]);
+    const lista = cmd === 'getCenas' ? resposta.cenas : resposta;
     $UD.sendToPropertyInspector({ cmd, lista }, jsn.context);
   } catch (err) {
     $UD.sendToPropertyInspector({ cmd, lista: [], erro: t('offline') }, jsn.context);

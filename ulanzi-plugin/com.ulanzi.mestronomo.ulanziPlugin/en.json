@@ -3,6 +3,10 @@
   "Description": "Music, ambience and soundboard for tabletop RPG game masters on Discord",
   "Actions": [
     {
+      "Name": "Scene",
+      "Tooltip": "Switches to a scene (ambience + music) with a crossfade"
+    },
+    {
       "Name": "Play Sound",
       "Tooltip": "Plays a soundboard sound in the call (or only in your headphones)"
     },
@@ -49,6 +53,8 @@
     "Open Mestrônomo to load the list.": "Open Mestrônomo to load the list.",
     "Files in the sons/ folder of Mestrônomo.": "Files in the sons/ folder of Mestrônomo.",
     "Only apps that are playing or have played audio show up.": "Only apps that are playing or have played audio show up.",
-    "This key needs no settings.": "This key needs no settings."
+    "This key needs no settings.": "This key needs no settings.",
+    "Scene": "Scene",
+    "Scenes are created in Mestrônomo with \"Save current scene\".": "Scenes are created in Mestrônomo with \"Save current scene\"."
   }
 }

@@ -39,6 +39,25 @@
     </dialog>
 
     <main>
+      <section class="card wide" id="cenas">
+        <div class="card-head">
+          <h2>Cenas</h2>
+          <label class="slider compacto transicao" title="Duração do crossfade ao trocar de cena">
+            <span>Transição</span><input type="range" id="cena-fade" min="0" max="10" step="0.5" /><output></output>
+          </label>
+        </div>
+        <div id="cenas-lista" class="cenas"></div>
+        <form id="cena-form" class="row cena-form">
+          <input name="nome" type="text" placeholder="Nome da cena (ex.: Taverna, Combate)" required maxlength="40" />
+          <select name="musica" title="O que a cena faz com a música">
+            <option value="youtube">Com a fila atual do YouTube</option>
+            <option value="manter">Sem mexer na música</option>
+            <option value="parar">Parando a música</option>
+          </select>
+          <button class="primary">Salvar cena atual</button>
+        </form>
+      </section>
+
       <section class="card" id="programas">
         <h2>Música dos programas</h2>
         <p class="hint">Capture o áudio de um ou mais programas ao mesmo tempo (Spotify, navegador…).</p>

@@ -1,5 +1,5 @@
 // Property inspector de todas as ações: mostra só a seção da ação aberta.
-const WITH_SETTINGS = ['som', 'volume', 'captura'];
+const WITH_SETTINGS = ['som', 'volume', 'captura', 'cena'];
 
 let KIND = 'none';
 let SETTINGS = {};
@@ -19,6 +19,7 @@ $UD.onConnected(() => {
   form.querySelectorAll('button.refresh').forEach((b) => b.addEventListener('click', () => requestList(b.dataset.cmd)));
   if (KIND === 'som') requestList('getSons');
   if (KIND === 'captura') requestList('getApps');
+  if (KIND === 'cena') requestList('getCenas');
   applySettings();
 });
 
@@ -28,14 +29,18 @@ $UD.onParamFromApp((jsn) => jsn && jsn.param && loadSettings(jsn.param));
 
 $UD.onSendToPropertyInspector((jsn) => {
   const { cmd, lista = [], erro } = jsn.payload || jsn.param || {};
-  if (cmd !== 'getSons' && cmd !== 'getApps') return;
+  const LISTAS = {
+    getSons: { campo: 'som', opcao: (f) => ({ value: f, text: f.replace(/\.[^.]+$/, '') }) },
+    getApps: { campo: 'app', opcao: (a) => ({ value: a.name, text: a.name + (a.active ? '  ♪' : '') }) },
+    getCenas: { campo: 'cena', opcao: (c) => ({ value: c.id, text: c.nome }) },
+  };
+  const config = LISTAS[cmd];
+  if (!config) return;
   form.querySelector('.uspi-item.erro').classList.toggle('hidden', !erro);
-  const select = form.querySelector(cmd === 'getSons' ? 'select[name="som"]' : 'select[name="app"]');
-  const opcoes = cmd === 'getSons'
-    ? lista.map((f) => ({ value: f, text: f.replace(/\.[^.]+$/, '') }))
-    : lista.map((a) => ({ value: a.name, text: a.name + (a.active ? '  ♪' : '') }));
-  // Mantém a escolha salva mesmo que o som/app não esteja na lista agora.
-  const salvo = cmd === 'getSons' ? SETTINGS.som : SETTINGS.app;
+  const select = form.querySelector(`select[name="${config.campo}"]`);
+  const opcoes = lista.map(config.opcao);
+  // Mantém a escolha salva mesmo que ela não esteja na lista agora.
+  const salvo = SETTINGS[config.campo];
   if (salvo && !opcoes.some((o) => o.value === salvo)) opcoes.unshift({ value: salvo, text: salvo });
   select.replaceChildren(...opcoes.map((o) => new Option(o.text, o.value)));
   applySettings();

@@ -220,6 +220,43 @@ $('#yt-parar').addEventListener('click', () => api.yt.parar());
 $('#yt-limpar').addEventListener('click', () => api.yt.limpar());
 els.ytRepetir.addEventListener('click', () => api.yt.repetir(REPETIR[yt?.repetir ?? 'nenhum'].proximo));
 
+// --- Cenas -------------------------------------------------------------
+
+function renderCenas(estado) {
+  $('#cenas-lista').replaceChildren(
+    ...estado.cenas.map((c, i) =>
+      el(
+        'button',
+        { className: `cena${c.id === estado.ativa ? ' ativa' : ''}`, title: `Ativar (API: /api/cena/${i + 1})`, onclick: () => api.cenas.ativar(c.id) },
+        el('span', { className: 'nome', textContent: c.nome }),
+        el('span', { className: 'resumo', textContent: c.resumo }),
+        el('span', {
+          className: 'remover',
+          textContent: '✕',
+          title: 'Apagar cena',
+          onclick: (e) => {
+            e.stopPropagation();
+            if (confirm(`Apagar a cena "${c.nome}"?`)) api.cenas.remover(c.id);
+          },
+        }),
+      ),
+    ),
+  );
+  const fade = $('#cena-fade');
+  fade.value = estado.fadeMs / 1000;
+  fade.nextElementSibling.textContent = `${fade.value} s`;
+}
+
+$('#cena-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  api.cenas.salvar(e.target.nome.value, e.target.musica.value);
+  e.target.nome.value = '';
+});
+$('#cena-fade').addEventListener('input', (e) => {
+  e.target.nextElementSibling.textContent = `${e.target.value} s`;
+  api.cenas.fade(e.target.value * 1000);
+});
+
 // --- Ambiente ----------------------------------------------------------
 
 const semExtensao = (arquivo) => arquivo.replace(/\.[^.]+$/, '');
@@ -383,6 +420,7 @@ api.onBot(renderBot);
 api.onCapturas(renderCapturas);
 api.onYoutube(renderYoutube);
 api.onAmbiente(renderAmbiente);
+api.onCenas(renderCenas);
 api.onMixer(renderMixer);
 api.onErro(mostrarErro);
 
@@ -392,6 +430,7 @@ api.onErro(mostrarErro);
   renderCapturas(estado.capturas);
   renderYoutube(estado.youtube);
   renderAmbiente(estado.ambiente);
+  renderCenas(estado.cenas);
   await iniciarMonitor(estado.monitorDevice);
   renderMixer(estado.mixer);
   carregarSaidas(estado.monitorDevice);

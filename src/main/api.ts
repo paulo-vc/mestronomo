@@ -2,6 +2,7 @@ import http from 'node:http';
 import type { VolumeKey } from './mixer';
 import type { LoopMode, YouTubePlayer } from './youtube';
 import type { Ambience } from './ambience';
+import type { SceneManager } from './scenes';
 
 export interface ApiActions {
   state(): unknown;
@@ -16,6 +17,7 @@ export interface ApiActions {
   leaveBot(): void;
   youtube: YouTubePlayer;
   ambience: Ambience;
+  scenes: SceneManager;
 }
 
 const VOLUME_KEYS = ['musica', 'efeitos', 'ambiente', 'master', 'ducking', 'monitorVolume', 'youtube'];
@@ -37,12 +39,14 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/youtube/adicionar?url=<link>    adiciona vídeo ou playlist à fila
  *   /api/youtube/<pausar|proxima|anterior|parar|limpar>
  *   /api/youtube/repetir/<nenhum|fila|faixa>
+ *   /api/cenas                           lista de cenas
+ *   /api/cena/<nome ou número>           ativa uma cena (crossfade)
  *   /api/ambiente/<arquivo>              liga/desliga uma camada de ambiente
  *   /api/ambiente/parar                  desliga todo o ambiente
  *   /api/volume/<musica|efeitos|master|ducking|youtube>/<0-100>
  */
 export function startApi(port: number, actions: ApiActions) {
-  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience } = actions;
+  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
     const parts = decodeURIComponent(url.pathname).split('/').filter(Boolean);
@@ -104,6 +108,10 @@ export function startApi(port: number, actions: ApiActions) {
           default:
             return reply(404, { erro: 'rota desconhecida' });
         }
+      case 'cenas':
+        return reply(200, scenes.state());
+      case 'cena':
+        return a && scenes.activate(a) ? ok() : reply(404, { erro: 'cena não encontrada' });
       case 'ambiente':
         if (!a) return reply(400, { erro: 'use /api/ambiente/<arquivo> ou /api/ambiente/parar' });
         if (a === 'parar') ambience.stopAll(1500);

@@ -12,6 +12,24 @@
   "UUID": "com.ulanzi.ulanzistudio.mestronomo",
   "Actions": [
     {
+      "Name": "Scene",
+      "Icon": "assets/icons/cena.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.cena",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Switches to a scene (ambience + music) with a crossfade",
+      "state": 0,
+      "States": [
+        {
+          "Name": "Scene",
+          "Image": "assets/icons/cena.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    },
+    {
       "Name": "Play Sound",
       "Icon": "assets/icons/som.png",
       "UUID": "com.ulanzi.ulanzistudio.mestronomo.som",

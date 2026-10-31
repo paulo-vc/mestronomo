@@ -8,6 +8,7 @@ import { DiscordBot, type BotStatus } from './discord';
 import { YouTubePlayer, type LoopMode } from './youtube';
 import { startApi } from './api';
 import { AUDIO_EXT, Ambience, type Occasional } from './ambience';
+import { SceneManager, type Scene, type SceneMusic } from './scenes';
 import { PACKAGED, ROOT } from './paths';
 import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
 import { createTray } from './tray';
@@ -25,6 +26,7 @@ const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
 const mixer = new Mixer();
 const youtube = new YouTubePlayer(mixer);
 const ambience = new Ambience(mixer, AMBIENT_DIR);
+let scenes: SceneManager;
 /** Capturas ativas, por nome do executável. Várias podem tocar juntas. */
 const captures = new Map<string, AppCaptureSource>();
 let bot: DiscordBot | undefined;
@@ -40,6 +42,9 @@ interface SavedConfig {
   youtube?: { volume: number; repetir: LoopMode };
   /** deviceId da saída de áudio do monitor local. */
   monitorDevice?: string;
+  cenas?: Scene[];
+  /** Duração do crossfade entre cenas, em ms. */
+  fadeMs?: number;
 }
 
 let config: SavedConfig = {};
@@ -140,6 +145,7 @@ function state() {
     capturas: capturesState(),
     youtube: youtube.state(),
     ambiente: ambience.state(),
+    cenas: scenes.state(),
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
     sons: listSounds(),
@@ -187,6 +193,10 @@ function registerIpc() {
   ipcMain.handle('amb-ocasional-remover', (_e, id: string) => ambience.removeOccasional(id));
   ipcMain.handle('amb-parar', () => ambience.stopAll(1500));
   ipcMain.handle('abrir-ambientes', () => shell.openPath(AMBIENT_DIR));
+  ipcMain.handle('cena-salvar', (_e, nome: string, musica: SceneMusic['modo']) => scenes.saveCurrent(nome, musica));
+  ipcMain.handle('cena-ativar', (_e, ref: string) => scenes.activate(ref));
+  ipcMain.handle('cena-remover', (_e, id: string) => scenes.remove(id));
+  ipcMain.handle('cena-fade', (_e, ms: number) => scenes.setFade(ms));
   ipcMain.handle('config-info', () => ({ ...credentialsInfo(), autoStart: isAutoStart() }));
   ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean) => {
     if (!credentialsInfo().fromEnv) saveCredentials(token, ownerId);
@@ -293,6 +303,13 @@ app.whenReady().then(() => {
   youtube.on('change', (s) => send('youtube', s));
   youtube.on('erro', (msg) => send('erro', msg));
   ambience.on('change', (s) => send('ambiente', s));
+  scenes = new SceneManager(ambience, youtube, config.cenas, config.fadeMs);
+  scenes.on('change', (s) => send('cenas', s));
+  scenes.on('save', (cenas: Scene[], fadeMs: number) => {
+    config.cenas = cenas;
+    config.fadeMs = fadeMs;
+    saveConfig();
+  });
   mixer.start();
 
   registerIpc();
@@ -310,6 +327,7 @@ app.whenReady().then(() => {
     leaveBot,
     youtube,
     ambience,
+    scenes,
   });
   startBot();
   createWindow();

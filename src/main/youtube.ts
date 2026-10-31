@@ -51,8 +51,9 @@ export class YouTubePlayer extends EventEmitter {
     }
   }
 
-  play(index: number) {
-    this.stopSource();
+  /** Com `fadeMs`, a faixa atual sai e a nova entra suavemente (usado pelas cenas). */
+  play(index: number, fadeMs = 0) {
+    this.stopSource(fadeMs);
     if (index < 0 || index >= this.queue.length) {
       this.current = -1;
       return this.changed();
@@ -61,8 +62,14 @@ export class YouTubePlayer extends EventEmitter {
     const source = new StreamSource(this.queue[index].url);
     source.volume = this.volume;
     this.source = source;
-    this.mixer.add(source);
+    this.mixer.fadeIn(source, fadeMs);
     this.changed();
+  }
+
+  /** Troca a fila inteira de uma vez (cenas), com crossfade da faixa atual para a nova. */
+  replaceQueue(tracks: TrackInfo[], start: number, fadeMs: number) {
+    this.queue = [...tracks];
+    this.play(Math.min(Math.max(0, start), tracks.length - 1), fadeMs);
   }
 
   next() {
@@ -82,8 +89,8 @@ export class YouTubePlayer extends EventEmitter {
     this.changed();
   }
 
-  stop() {
-    this.stopSource();
+  stop(fadeMs = 0) {
+    this.stopSource(fadeMs);
     this.changed();
   }
 
@@ -144,11 +151,11 @@ export class YouTubePlayer extends EventEmitter {
     else this.next();
   }
 
-  private stopSource() {
+  private stopSource(fadeMs = 0) {
     if (!this.source) return;
     const old = this.source;
     this.source = undefined;
-    this.mixer.remove(old);
+    this.mixer.fadeOut(old, fadeMs);
   }
 
   private changed() {

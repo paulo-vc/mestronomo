@@ -51,6 +51,11 @@ export const GLYPHS = {
     <path d="M24 60 Q32 44 40 60 T56 60 T72 60" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/>
     <path d="M36 88 H64" stroke="${c}" stroke-width="7" stroke-linecap="round"/>`,
 
+  // Claquete: a cena.
+  cena: (c) => `<path d="M12 40 H88 V82 Q88 88 82 88 H18 Q12 88 12 82 Z" fill="${c}"/>
+    <path d="M12 34 L84 16 L88 30 L16 48 Z" fill="${c}"/>
+    <path d="M30 29 L40 41 M50 24 L60 36 M70 19 L80 31" stroke="${COLORS.background}" stroke-width="6"/>`,
+
   aviso: (c) => `<path d="M50 12 L92 86 H8 Z" fill="none" stroke="${c}" stroke-width="7" stroke-linejoin="round"/>
     <path d="M50 38 V60" stroke="${c}" stroke-width="8" stroke-linecap="round"/><circle cx="50" cy="73" r="5" fill="${c}"/>`,
 };
