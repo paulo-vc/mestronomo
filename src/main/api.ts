@@ -31,7 +31,7 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/bot/entrar | /api/bot/sair      chama ou dispensa o bot
  *   /api/sons                            lista da soundboard
  *   /api/apps                            apps com áudio que dá para capturar
- *   /api/som/<arquivo ou número>         toca um efeito (número começa em 1)
+ *   /api/som/<id, nome ou número>        toca um efeito (número começa em 1)
  *   /api/previa/<arquivo ou número>      toca um efeito só no fone do mestre
  *   /api/efeitos/parar                   para todos os efeitos
  *   /api/musica/capturar/<app.exe>       adiciona a captura de um app
@@ -49,7 +49,8 @@ export function startApi(port: number, actions: ApiActions) {
   const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
-    const parts = decodeURIComponent(url.pathname).split('/').filter(Boolean);
+    // Divide antes de decodificar: ids de som têm "/" (ex.: Combate%2Fespada).
+    const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     const reply = (code: number, body: unknown) => {
       res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(body));
@@ -74,13 +75,9 @@ export function startApi(port: number, actions: ApiActions) {
           return reply(500, { erro: 'capturador não encontrado (npm run build:capture)' });
         }
       case 'som':
-      case 'previa': {
-        const sounds = listSounds();
-        const name = /^\d+$/.test(a ?? '') ? sounds[Number(a) - 1] : a;
-        return name && playSound(name, route === 'previa')
-          ? reply(200, { tocando: name })
-          : reply(404, { erro: 'som não encontrado' });
-      }
+      case 'previa':
+        // Aceita id ("Combate/espada"), nome, arquivo ou posição (1 = primeiro).
+        return a && playSound(a, route === 'previa') ? reply(200, { tocando: a }) : reply(404, { erro: 'som não encontrado' });
       case 'efeitos':
         stopEffects();
         return ok();

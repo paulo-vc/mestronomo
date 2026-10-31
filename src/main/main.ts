@@ -3,11 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
 import { Mixer, type MixerSettings, type MonitorMode, type VolumeKey } from './mixer';
-import { AppCaptureSource, FileSource, listAudioApps } from './sources';
+import { AppCaptureSource, listAudioApps } from './sources';
 import { DiscordBot, type BotStatus } from './discord';
 import { YouTubePlayer, type LoopMode } from './youtube';
 import { startApi } from './api';
-import { AUDIO_EXT, Ambience, type Occasional } from './ambience';
+import { Ambience, type Occasional } from './ambience';
+import { Soundboard, type SoundOptions } from './soundboard';
 import { SceneManager, type Scene, type SceneMusic } from './scenes';
 import { PACKAGED, ROOT } from './paths';
 import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
@@ -26,6 +27,7 @@ const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
 const mixer = new Mixer();
 const youtube = new YouTubePlayer(mixer);
 const ambience = new Ambience(mixer, AMBIENT_DIR);
+let soundboard: Soundboard;
 let scenes: SceneManager;
 /** Capturas ativas, por nome do executável. Várias podem tocar juntas. */
 const captures = new Map<string, AppCaptureSource>();
@@ -43,6 +45,8 @@ interface SavedConfig {
   /** deviceId da saída de áudio do monitor local. */
   monitorDevice?: string;
   cenas?: Scene[];
+  /** Volume, loop e cor de cada som da soundboard, pelo id. */
+  sons?: Record<string, SoundOptions>;
   /** Duração do crossfade entre cenas, em ms. */
   fadeMs?: number;
 }
@@ -68,23 +72,16 @@ function send(channel: string, payload: unknown) {
 }
 
 function listSounds(): string[] {
-  fs.mkdirSync(SOUNDS_DIR, { recursive: true });
-  return fs
-    .readdirSync(SOUNDS_DIR)
-    .filter((f) => AUDIO_EXT.has(path.extname(f).toLowerCase()))
-    .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+  return soundboard.list().map((s) => s.id);
 }
 
 /** Com `preview`, o som toca só no seu fone (pré-escuta), sem ir para o bot. */
-function playSound(name: string, preview = false) {
-  const file = path.join(SOUNDS_DIR, path.basename(name));
-  if (!fs.existsSync(file)) return false;
-  mixer.add(new FileSource(file, 'efeitos', preview));
-  return true;
+function playSound(ref: string, preview = false) {
+  return soundboard.play(ref, preview);
 }
 
 function stopEffects() {
-  mixer.stopBus('efeitos');
+  soundboard.stopAll();
 }
 
 function capturesState() {
@@ -148,7 +145,7 @@ function state() {
     cenas: scenes.state(),
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
-    sons: listSounds(),
+    soundboard: soundboard.state(),
     monitorDevice: config.monitorDevice ?? 'default',
     apiPort: API_PORT,
   };
@@ -157,7 +154,8 @@ function state() {
 function registerIpc() {
   ipcMain.handle('estado', () => state());
   ipcMain.handle('apps', () => listAudioApps());
-  ipcMain.handle('som', (_e, name: string, preview?: boolean) => playSound(name, preview));
+  ipcMain.handle('som', (_e, ref: string, preview?: boolean) => playSound(ref, preview));
+  ipcMain.handle('som-opcoes', (_e, id: string, changes: Partial<SoundOptions>) => soundboard.setOptions(id, changes));
   ipcMain.handle('monitor', (_e, mode: MonitorMode) => {
     mixer.settings.monitor = mode;
     send('mixer', mixer.settings);
@@ -303,6 +301,12 @@ app.whenReady().then(() => {
   youtube.on('change', (s) => send('youtube', s));
   youtube.on('erro', (msg) => send('erro', msg));
   ambience.on('change', (s) => send('ambiente', s));
+  soundboard = new Soundboard(mixer, SOUNDS_DIR, config.sons);
+  soundboard.on('change', (s) => send('soundboard', s));
+  soundboard.on('options', (sons: Record<string, SoundOptions>) => {
+    config.sons = sons;
+    saveConfig();
+  });
   scenes = new SceneManager(ambience, youtube, config.cenas, config.fadeMs);
   scenes.on('change', (s) => send('cenas', s));
   scenes.on('save', (cenas: Scene[], fadeMs: number) => {

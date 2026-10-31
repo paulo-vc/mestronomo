@@ -16,6 +16,17 @@
       </div>
     </header>
 
+    <dialog id="som-opcoes">
+      <form method="dialog" id="som-opcoes-form">
+        <h2 id="som-opcoes-titulo">Som</h2>
+        <p id="som-opcoes-arquivos" class="hint"></p>
+        <label class="slider"><span>Volume</span><input type="range" name="volume" min="0" max="100" /><output></output></label>
+        <label class="check"><input type="checkbox" name="loop" /> Tocar em loop (clique liga e desliga; não abaixa a música)</label>
+        <div class="campo"><span>Cor</span><div id="som-cores" class="row"></div></div>
+        <div class="row fim"><button value="ok" class="primary">Pronto</button></div>
+      </form>
+    </dialog>
+
     <dialog id="config">
       <form method="dialog" id="config-form">
         <h2>Configurações</h2>
@@ -161,7 +172,8 @@
             <button id="parar-efeitos" class="danger">Parar efeitos <kbd>Ctrl+Alt+0</kbd></button>
           </div>
         </div>
-        <p class="hint">Clique para tocar na call. Botão direito: ouvir só no seu fone.</p>
+        <p class="hint">Clique para tocar na call · botão direito: ouvir só no seu fone · ⋯ para volume, loop e cor. Subpastas viram abas; "espada 1", "espada 2"… viram um botão que sorteia.</p>
+        <div id="sons-abas" class="chips abas"></div>
         <div id="sons" class="grid"></div>
       </section>
     </main>

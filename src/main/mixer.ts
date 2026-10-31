@@ -23,6 +23,8 @@ export interface Source {
   readonly live?: boolean;
   /** Pré-escuta: toca só no monitor local, nunca vai para o bot. */
   readonly preview?: boolean;
+  /** Efeitos abaixam a música (ducking) por padrão; loops de fundo desligam isso. */
+  ducks?: boolean;
   /** Preenche `out` (s16 intercalado, um quadro). Retorna false quando acabou e pode sair do mixer. */
   read(out: Int16Array): boolean;
   stop(): void;
@@ -109,6 +111,11 @@ export class Mixer extends EventEmitter {
     return false;
   }
 
+  private isDucking() {
+    for (const s of this.sources) if (s.bus === 'efeitos' && !s.preview && s.ducks !== false) return true;
+    return false;
+  }
+
   start() {
     let next = performance.now();
     const tick = () => {
@@ -159,7 +166,7 @@ export class Mixer extends EventEmitter {
     const { musica, efeitos, ambiente, master, ducking, monitor: mode } = this.settings;
     const busGain = { musica, efeitos, ambiente };
     const duckFrom = this.duckGain;
-    const target = this.isPlaying('efeitos') ? ducking : 1;
+    const target = this.isDucking() ? ducking : 1;
     // Abaixa rápido (~60 ms) e volta devagar (~500 ms), como um ducking de rádio.
     this.duckGain += (target - this.duckGain) * (target < this.duckGain ? 0.3 : 0.04);
     const duckTo = this.duckGain;

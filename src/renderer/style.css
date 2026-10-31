@@ -110,7 +110,7 @@ input[type='range'] { accent-color: var(--accent); width: 100%; }
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  height: 72px;
+  min-height: 72px;
   padding: 10px 12px;
   text-align: left;
   overflow: hidden;
@@ -229,3 +229,19 @@ code { font: 12px Consolas, monospace; color: var(--text); }
 .cena-form input { flex: 1; min-width: 160px; }
 .cena-form input:focus { outline: none; border-color: var(--accent); }
 .slider.transicao { grid-template-columns: auto 120px 40px; flex: none; font-size: 12px; color: var(--muted); }
+
+.abas:empty { display: none; }
+.abas:empty::after { content: none; }
+.grid button { position: relative; }
+.grid button.com-cor { border-left: 4px solid var(--cor); }
+.grid button.em-loop { border-color: var(--accent); animation: pulsar 1.6s ease-in-out infinite; }
+@keyframes pulsar { 50% { box-shadow: 0 0 0 3px rgb(217 164 65 / 0.25); } }
+.grid .detalhes { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.grid .detalhes kbd { margin-left: 0; }
+.tag { font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+.grid .opcoes { position: absolute; top: 4px; right: 6px; color: var(--muted); padding: 0 4px; border-radius: 4px; visibility: hidden; }
+.grid button:hover .opcoes { visibility: visible; }
+.grid .opcoes:hover { color: var(--text); background: var(--surface); }
+button.cor { width: 26px; height: 26px; padding: 0; border-radius: 50%; background: var(--cor, var(--surface-2)); }
+button.cor.ativo { outline: 2px solid var(--text); outline-offset: 2px; }
+#som-opcoes .slider { grid-template-columns: 70px 1fr 40px; }

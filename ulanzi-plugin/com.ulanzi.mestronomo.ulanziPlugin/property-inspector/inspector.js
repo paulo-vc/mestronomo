@@ -30,7 +30,7 @@ $UD.onParamFromApp((jsn) => jsn && jsn.param && loadSettings(jsn.param));
 $UD.onSendToPropertyInspector((jsn) => {
   const { cmd, lista = [], erro } = jsn.payload || jsn.param || {};
   const LISTAS = {
-    getSons: { campo: 'som', opcao: (f) => ({ value: f, text: f.replace(/\.[^.]+$/, '') }) },
+    getSons: { campo: 'som', opcao: (id) => ({ value: id, text: id }) },
     getApps: { campo: 'app', opcao: (a) => ({ value: a.name, text: a.name + (a.active ? '  ♪' : '') }) },
     getCenas: { campo: 'cena', opcao: (c) => ({ value: c.id, text: c.nome }) },
   };

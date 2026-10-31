@@ -378,41 +378,130 @@ for (const input of document.querySelectorAll('[data-volume]')) {
 
 // --- Soundboard --------------------------------------------------------
 
-function renderSons(sons) {
-  if (sons.length === 0) {
+const CORES = ['', '#d9605a', '#e0b04a', '#5fbf85', '#5a9bd9', '#a77bd9', '#d97bb4'];
+let soundboard = { categorias: [], sons: [], loops: [] };
+let categoria = 'Todos';
+try {
+  categoria = localStorage.getItem('categoria') || 'Todos';
+} catch {}
+
+function renderSoundboard(estado) {
+  soundboard = estado;
+  if (categoria !== 'Todos' && !estado.categorias.includes(categoria)) categoria = 'Todos';
+  const abas = estado.categorias.length > 1 ? ['Todos', ...estado.categorias] : [];
+  $('#sons-abas').replaceChildren(
+    ...abas.map((c) =>
+      el('button', {
+        className: c === categoria ? 'ativo' : '',
+        textContent: c,
+        onclick: () => {
+          categoria = c;
+          try {
+            localStorage.setItem('categoria', c);
+          } catch {}
+          renderSoundboard(soundboard);
+        },
+      }),
+    ),
+  );
+
+  if (estado.sons.length === 0) {
     els.sons.replaceChildren(
-      el('p', { className: 'vazio', textContent: 'Nenhum som ainda. Clique em "Abrir pasta" e coloque seus efeitos lá (mp3, ogg, wav…).' }),
+      el('p', {
+        className: 'vazio',
+        textContent: 'Nenhum som ainda. Clique em "Abrir pasta" e coloque seus efeitos lá. Subpastas viram categorias.',
+      }),
     );
     return;
   }
+  const loops = new Set(estado.loops);
   els.sons.replaceChildren(
-    ...sons.map((arquivo, i) => {
-      const botao = el(
-        'button',
-        { title: arquivo },
-        el('span', { className: 'nome', textContent: arquivo.replace(/\.[^.]+$/, '').replace(/^\d+[\s._-]*/, '') }),
-      );
-      if (i < 9) botao.append(el('kbd', { textContent: `Ctrl+Alt+${i + 1}` }));
-      const tocar = (previa) => {
-        api.som(arquivo, previa);
-        botao.classList.add(previa ? 'flash-previa' : 'flash');
-        setTimeout(() => botao.classList.remove('flash', 'flash-previa'), 200);
-      };
-      botao.addEventListener('click', () => tocar(false));
-      botao.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        tocar(true);
+    ...estado.sons
+      .map((som, i) => ({ som, i }))
+      .filter(({ som }) => categoria === 'Todos' || som.categoria === categoria)
+      .map(({ som, i }) => {
+        const botao = el(
+          'button',
+          { title: som.arquivos.length > 1 ? `${som.arquivos.length} variações, sorteadas a cada clique` : som.arquivos[0] },
+          el('span', { className: 'nome', textContent: som.nome }),
+        );
+        const detalhes = el('span', { className: 'detalhes' });
+        if (i < 9) detalhes.append(el('kbd', { textContent: `Ctrl+Alt+${i + 1}` }));
+        if (som.arquivos.length > 1) detalhes.append(el('span', { className: 'tag', textContent: `×${som.arquivos.length}` }));
+        if (som.loop) detalhes.append(el('span', { className: 'tag', textContent: '↻ loop' }));
+        if (som.volume < 1) detalhes.append(el('span', { className: 'tag', textContent: `${Math.round(som.volume * 100)}%` }));
+        botao.append(detalhes);
+        botao.append(
+          el('span', {
+            className: 'opcoes',
+            textContent: '⋯',
+            title: 'Volume, loop e cor',
+            onclick: (e) => {
+              e.stopPropagation();
+              abrirOpcoesSom(som);
+            },
+          }),
+        );
+        if (som.cor) botao.style.setProperty('--cor', som.cor);
+        botao.classList.toggle('com-cor', Boolean(som.cor));
+        botao.classList.toggle('em-loop', loops.has(som.id));
+        const tocar = (previa) => {
+          api.som(som.id, previa);
+          botao.classList.add(previa ? 'flash-previa' : 'flash');
+          setTimeout(() => botao.classList.remove('flash', 'flash-previa'), 200);
+        };
+        botao.addEventListener('click', () => tocar(false));
+        botao.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          tocar(true);
+        });
+        return botao;
+      }),
+  );
+}
+
+const dialogoSom = $('#som-opcoes');
+const formSom = $('#som-opcoes-form');
+let somEditado = null;
+
+function abrirOpcoesSom(som) {
+  somEditado = som;
+  $('#som-opcoes-titulo').textContent = som.nome;
+  $('#som-opcoes-arquivos').textContent = som.arquivos.join(' · ');
+  formSom.volume.value = Math.round(som.volume * 100);
+  formSom.volume.nextElementSibling.textContent = `${formSom.volume.value}%`;
+  formSom.loop.checked = som.loop;
+  $('#som-cores').replaceChildren(
+    ...CORES.map((cor) => {
+      const botao = el('button', {
+        type: 'button',
+        className: `cor${(som.cor ?? '') === cor ? ' ativo' : ''}`,
+        title: cor || 'Sem cor',
+        onclick: () => {
+          api.somOpcoes(som.id, { cor: cor || undefined });
+          for (const b of $('#som-cores').children) b.classList.toggle('ativo', b === botao);
+        },
       });
+      if (cor) botao.style.setProperty('--cor', cor);
       return botao;
     }),
   );
+  dialogoSom.showModal();
 }
+
+formSom.volume.addEventListener('input', (e) => {
+  e.target.nextElementSibling.textContent = `${e.target.value}%`;
+  if (somEditado) api.somOpcoes(somEditado.id, { volume: e.target.value / 100 });
+});
+formSom.loop.addEventListener('change', (e) => {
+  if (somEditado) api.somOpcoes(somEditado.id, { loop: e.target.checked });
+});
 
 $('#parar-efeitos').addEventListener('click', () => api.pararEfeitos());
 $('#abrir-sons').addEventListener('click', () => api.abrirSons());
 
 // Ao voltar para a janela, relê a pasta de sons (você pode ter adicionado arquivos).
-window.addEventListener('focus', async () => renderSons((await api.estado()).sons));
+window.addEventListener('focus', async () => renderSoundboard((await api.estado()).soundboard));
 
 // --- Início ------------------------------------------------------------
 
@@ -421,6 +510,7 @@ api.onCapturas(renderCapturas);
 api.onYoutube(renderYoutube);
 api.onAmbiente(renderAmbiente);
 api.onCenas(renderCenas);
+api.onSoundboard(renderSoundboard);
 api.onMixer(renderMixer);
 api.onErro(mostrarErro);
 
@@ -434,7 +524,7 @@ api.onErro(mostrarErro);
   await iniciarMonitor(estado.monitorDevice);
   renderMixer(estado.mixer);
   carregarSaidas(estado.monitorDevice);
-  renderSons(estado.sons);
+  renderSoundboard(estado.soundboard);
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();
 })();

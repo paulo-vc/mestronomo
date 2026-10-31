@@ -99,6 +99,7 @@ export class AppCaptureSource implements Source {
  */
 class FfmpegSource implements Source {
   volume = 1;
+  ducks = true;
   paused = false;
   /** Quadros já tocados — dá a posição atual da faixa. */
   framesPlayed = 0;

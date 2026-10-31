@@ -25,8 +25,8 @@ function t(key) {
 
 const TARGETS = { musica: 'Música', efeitos: 'Efeitos', master: 'Geral', youtube: 'YouTube', monitorVolume: 'Fone' };
 
-/** Nome bonito de um arquivo da soundboard: sem número na frente nem extensão. */
-const soundName = (file) => String(file || '').replace(/\.[^.]+$/, '').replace(/^\d+[\s._-]*/, '');
+/** Nome bonito de um som: sem categoria ("Combate/espada" → "espada"), número na frente nem extensão. */
+const soundName = (id) => String(id || '').split('/').pop().replace(/\.[^.]+$/, '').replace(/^\d+[\s._-]*/, '');
 
 function normalize(kind, param = {}) {
   switch (kind) {

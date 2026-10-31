@@ -118,7 +118,13 @@ Prefira `.ogg` ou `.wav` para loops sem emenda. O volume do grupo é o slider **
 
 ## Soundboard
 
-Coloque os efeitos na pasta `sons/`. A ordem alfabética define os atalhos, então use prefixos como `01 espada.mp3`.
+Coloque os efeitos na pasta `sons/` (instalado: `Documentos\Mestrônomo\sons`):
+
+- **Subpastas viram abas** (`sons/Combate`, `sons/Magia`…); arquivos soltos ficam em "Geral".
+- **Variações**: arquivos com o mesmo nome e um número no fim (`espada 1.mp3`, `espada 2.mp3`, `espada (3).ogg`) viram **um botão** que sorteia entre eles, sem repetir o último.
+- **⋯ em cada botão**: volume próprio, **loop** (clique liga e desliga; loops não abaixam a música) e cor.
+- **Botão direito**: pré-escuta, só no seu fone.
+- **Atalhos**: `Ctrl+Alt+1..9` tocam os nove primeiros; `Ctrl+Alt+0` para todos os efeitos (inclusive loops). Use prefixos como `01 `, `02 ` para controlar a ordem.
 
 ## API local (Ulanzi Studio / Stream Deck)
 
@@ -126,7 +132,7 @@ Escuta só em `127.0.0.1:7777`. Todas as rotas aceitam GET, então funcionam com
 
 | Rota | O que faz |
 | --- | --- |
-| `/api/som/3` ou `/api/som/espada.mp3` | Toca um efeito |
+| `/api/som/3`, `/api/som/espada` ou `/api/som/Combate%2Fespada` | Toca um efeito (posição, nome ou id) |
 | `/api/previa/3` | Toca um efeito só no seu fone |
 | `/api/cena/Taverna` ou `/api/cena/1` | Ativa uma cena |
 | `/api/ambiente/chuva.ogg` · `/api/ambiente/parar` | Liga/desliga uma camada · para todo o ambiente |
