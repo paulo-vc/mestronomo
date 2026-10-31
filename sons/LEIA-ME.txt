@@ -1,0 +1,3 @@
+Coloque aqui os efeitos da soundboard (mp3, ogg, wav, flac, m4a).
+A ordem alfabética define os atalhos: o 1º arquivo é Ctrl+Alt+1, o 2º é Ctrl+Alt+2...
+Dica: prefixe com números (01 espada.mp3, 02 rugido.ogg) para controlar a ordem.

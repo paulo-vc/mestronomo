@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+    <title>Mestrônomo</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1><span class="sigil">♪</span> Mestrônomo</h1>
+      <div id="bot" class="pill">Bot desligado</div>
+    </header>
+
+    <main>
+      <section class="card" id="musica">
+        <h2>Música</h2>
+        <p class="hint">Captura o áudio de um programa (Spotify, navegador…) e manda pelo bot.</p>
+        <div class="row">
+          <select id="apps"><option value="">Carregando apps…</option></select>
+          <button id="recarregar" class="ghost" title="Atualizar lista">⟳</button>
+          <button id="capturar">Capturar</button>
+        </div>
+        <p id="captura-status" class="status"></p>
+        <label class="slider">Volume da música <input type="range" data-volume="musica" min="0" max="100" /><output></output></label>
+      </section>
+
+      <section class="card" id="mixer">
+        <h2>Mixer</h2>
+        <label class="slider">Efeitos <input type="range" data-volume="efeitos" min="0" max="100" /><output></output></label>
+        <label class="slider">Geral <input type="range" data-volume="master" min="0" max="100" /><output></output></label>
+        <label class="slider" title="Volume da música enquanto um efeito toca. 100% desliga o ducking.">
+          Música durante efeitos <input type="range" data-volume="ducking" min="0" max="100" /><output></output>
+        </label>
+      </section>
+
+      <section class="card wide" id="soundboard">
+        <div class="card-head">
+          <h2>Soundboard</h2>
+          <div class="row">
+            <button id="abrir-sons" class="ghost">Abrir pasta</button>
+            <button id="parar-efeitos" class="danger">Parar efeitos <kbd>Ctrl+Alt+0</kbd></button>
+          </div>
+        </div>
+        <div id="sons" class="grid"></div>
+      </section>
+    </main>
+
+    <footer>
+      <span id="erro" class="erro"></span>
+      <span>API para Ulanzi/Stream Deck: <code id="api"></code></span>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

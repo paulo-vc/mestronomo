@@ -1,0 +1,6 @@
+node_modules/
+dist/
+capture/target/
+.env
+sons/*
+!sons/LEIA-ME.txt

@@ -1,0 +1,9 @@
+[package]
+name = "mestronomo-capture"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.104"
+sysinfo = "0.40.1"
+wasapi = "0.26.0"
