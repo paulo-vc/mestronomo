@@ -1,4 +1,4 @@
-# Mede CPU e memória do Mestrônomo (dev) com uma mesa típica tocando:
+﻿# Mede CPU e memória do Mestrônomo (dev) com uma mesa típica tocando:
 # 3 camadas de ambiente, 1 música local e 1 efeito em loop, monitor ligado.
 # Roda isolado (porta e configuração próprias) para não mexer numa cópia que esteja aberta.
 # Uso: powershell -File scripts/medir-app.ps1 [-Segundos 20]
@@ -30,7 +30,9 @@ foreach ($n in 1..3) { Invoke-RestMethod "$api/ambiente/zz-camada$n.wav" | Out-N
 Invoke-RestMethod "$api/youtube/pasta/zz-teste" | Out-Null
 Start-Sleep 3
 
-function Amostra { $ids = Arvore; Get-Process -Id $ids -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, @{n='cpu';e={$_.TotalProcessorTime.TotalMilliseconds}}, @{n='mem';e={$_.WorkingSet64}} }
+# Nome com o tipo do processo do Electron (principal, renderer, gpu-process, utility...).
+function Tipo($id) { $c = (Get-CimInstance Win32_Process -Filter "ProcessId=$id").CommandLine; if ($c -match '--type=([\w-]+)') { $t = $Matches[1]; if ($c -match '--utility-sub-type=([\w.]+)') { $t += ':' + ($Matches[1] -split '\.')[-1] }; $t } else { 'principal' } }
+function Amostra { $ids = Arvore; Get-Process -Id $ids -ErrorAction SilentlyContinue | Select-Object Id, @{n='ProcessName';e={ if ($_.ProcessName -eq 'electron') { 'electron ' + (Tipo $_.Id) } else { $_.ProcessName } }}, @{n='cpu';e={$_.TotalProcessorTime.TotalMilliseconds}}, @{n='mem';e={$_.WorkingSet64}} }
 $a = Amostra; $t0 = Get-Date
 Start-Sleep $Segundos
 $b = Amostra; $dt = ((Get-Date) - $t0).TotalMilliseconds

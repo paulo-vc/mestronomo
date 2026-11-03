@@ -25,10 +25,14 @@ import { Updater } from './updater';
 import { Scripts, type Moment, type ScriptState } from './script';
 import { FILTERS, type FilterName } from './dsp';
 import { Requests, type PlayerRequest } from './requests';
+import { PcmCache } from './pcmCache';
 import { SessionLog, type SessionLogState } from './sessionLog';
 import type { BotHooks } from './discord';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
+// A interface é simples (sem vídeo nem 3D): sem aceleração de GPU o processo de GPU fica
+// ~36 MB menor e a janela praticamente igual (medido com scripts/medir-app.ps1).
+app.disableHardwareAcceleration();
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
 if (process.env.MESTRONOMO_USER_DATA) app.setPath('userData', process.env.MESTRONOMO_USER_DATA);
 
@@ -53,7 +57,9 @@ const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
 
 const mixer = new Mixer();
 const youtube = new YouTubePlayer(mixer);
-const ambience = new Ambience(mixer, AMBIENT_DIR);
+/** Efeitos e loops curtos decodificados uma vez e tocados da memória (ver pcmCache.ts). */
+const pcmCache = new PcmCache();
+const ambience = new Ambience(mixer, AMBIENT_DIR, pcmCache);
 let soundboard: Soundboard;
 let combat: Combat;
 let scripts: Scripts;
@@ -324,6 +330,7 @@ function state() {
     timers: timers.state(),
     tabelas: listTables(TABLES_DIR),
     versao: app.getVersion(),
+    cache: pcmCache.stats(),
     pedidos: requests.state(),
     sessao: sessionLog.state(),
     roteiro: scripts.state(),
@@ -673,7 +680,7 @@ app.whenReady().then(() => {
     send('ambiente', s);
     refreshNowPlaying();
   });
-  soundboard = new Soundboard(mixer, SOUNDS_DIR, config.sons);
+  soundboard = new Soundboard(mixer, SOUNDS_DIR, config.sons, pcmCache);
   soundboard.on('change', (s) => send('soundboard', s));
   soundboard.on('options', (sons: Record<string, SoundOptions>) => {
     config.sons = sons;
@@ -792,6 +799,12 @@ app.whenReady().then(() => {
   startBot();
   createWindow();
   updater.on('change', (s) => send('atualizacao', s));
+  // Com o app já de pé, pré-carrega os efeitos (e depois os ambientes) um por vez.
+  setTimeout(() => {
+    const sons = soundboard.list().flatMap((s) => s.arquivos.map((a) => path.join(SOUNDS_DIR, a)));
+    const ambientes = ambience.files().map((a) => path.join(AMBIENT_DIR, a));
+    pcmCache.warm([...sons, ...ambientes]);
+  }, 3000);
   updater.start();
   tray = createTray({
     show: showWindow,

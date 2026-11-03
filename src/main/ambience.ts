@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Mixer } from './mixer';
-import { FileSource } from './sources';
+import { playFile, type PcmCache } from './pcmCache';
 
 export const AUDIO_EXT = new Set(['.mp3', '.ogg', '.wav', '.flac', '.m4a', '.opus', '.webm']);
 
@@ -32,10 +32,10 @@ export interface AmbienceState {
  * Arquivos vêm da pasta de ambientes. Emite 'change' com o estado.
  */
 export class Ambience extends EventEmitter {
-  private layers = new Map<string, FileSource>();
+  private layers = new Map<string, ReturnType<typeof playFile>>();
   private occasionals = new Map<string, { config: Occasional; timer: NodeJS.Timeout }>();
 
-  constructor(private mixer: Mixer, readonly dir: string) {
+  constructor(private mixer: Mixer, readonly dir: string, private cache?: PcmCache) {
     super();
   }
 
@@ -118,7 +118,7 @@ export class Ambience extends EventEmitter {
   private startLayer(arquivo: string, volume: number, fadeMs: number) {
     const file = path.join(this.dir, path.basename(arquivo));
     if (!fs.existsSync(file) || this.layers.has(arquivo)) return;
-    const source = new FileSource(file, 'ambiente', false, true);
+    const source = playFile(this.cache, file, 'ambiente', false, true);
     source.volume = clamp(volume);
     this.layers.set(arquivo, source);
     this.mixer.fadeIn(source, fadeMs);
@@ -139,7 +139,7 @@ export class Ambience extends EventEmitter {
       const arquivo = config.arquivos[Math.floor(Math.random() * config.arquivos.length)];
       const file = path.join(this.dir, path.basename(arquivo));
       if (fs.existsSync(file)) {
-        const source = new FileSource(file, 'ambiente');
+        const source = playFile(this.cache, file, 'ambiente');
         // Pequena variação de volume para o mesmo som não soar sempre igual.
         source.volume = clamp(config.volume * (0.75 + Math.random() * 0.25));
         this.mixer.add(source);

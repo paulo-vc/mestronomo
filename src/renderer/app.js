@@ -70,8 +70,13 @@ function pedirTexto(titulo, valor = '') {
 
 const PAGINAS = ['roteiro', 'cenas', 'musica', 'ambiente', 'soundboard', 'mesa', 'audio'];
 
+let paginaAtual = 'roteiro';
+
 function irPara(pagina) {
   if (!PAGINAS.includes(pagina)) pagina = 'roteiro';
+  paginaAtual = pagina;
+  // A lista de saídas do fone só é montada aqui (ver carregarSaidas).
+  if (pagina === 'audio') carregarSaidas($('#monitor-saida').value);
   for (const p of document.querySelectorAll('.pagina')) p.classList.toggle('ativa', p.dataset.pagina === pagina);
   for (const b of document.querySelectorAll('.menu button')) b.classList.toggle('ativo', b.dataset.ir === pagina);
   $('.conteudo').scrollTop = 0;
@@ -500,6 +505,10 @@ async function escolherSaida(deviceId) {
   }
 }
 
+/**
+ * Lista os dispositivos de saída. enumerateDevices() liga também o serviço de captura de vídeo
+ * do Chromium (~110 MB que ninguém usa), então só chamamos ao abrir a página Áudio.
+ */
 async function carregarSaidas(atual) {
   const select = $('#monitor-saida');
   const saidas = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audiooutput');
@@ -509,12 +518,16 @@ async function carregarSaidas(atual) {
   select.value = saidas.some((d) => d.deviceId === atual) ? atual : 'default';
 }
 
+/** Antes de abrir a página Áudio, mostra só o dispositivo salvo (sem enumerar). */
+function mostrarSaidaSalva(atual) {
+  $('#monitor-saida').replaceChildren(new Option(atual && atual !== 'default' ? 'Dispositivo escolhido' : 'Saída padrão do Windows', atual || 'default'));
+}
+
 $('#monitor-modo').addEventListener('change', (e) => api.monitor(e.target.value));
 $('#monitor-saida').addEventListener('change', (e) => {
   escolherSaida(e.target.value);
   api.monitorSaida(e.target.value);
 });
-navigator.mediaDevices.addEventListener('devicechange', () => carregarSaidas($('#monitor-saida').value));
 
 for (const b of document.querySelectorAll('[data-filtro]')) b.addEventListener('click', () => api.filtro(b.dataset.filtro));
 
@@ -1139,7 +1152,8 @@ api.onSessao(renderSessao);
   renderCenas(estado.cenas);
   await iniciarMonitor(estado.monitorDevice);
   renderMixer(estado.mixer);
-  carregarSaidas(estado.monitorDevice);
+  mostrarSaidaSalva(estado.monitorDevice);
+  if (paginaAtual === 'audio') carregarSaidas(estado.monitorDevice);
   renderSoundboard(estado.soundboard);
   preencherSonsTimer(estado.soundboard);
   preencherDestinosFreesound(estado.soundboard);
