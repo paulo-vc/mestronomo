@@ -512,7 +512,10 @@ $('#monitor-saida').addEventListener('change', (e) => {
 });
 navigator.mediaDevices.addEventListener('devicechange', () => carregarSaidas($('#monitor-saida').value));
 
+for (const b of document.querySelectorAll('[data-filtro]')) b.addEventListener('click', () => api.filtro(b.dataset.filtro));
+
 function renderMixer(settings) {
+  for (const b of document.querySelectorAll('[data-filtro]')) b.classList.toggle('ativo', Boolean(settings.filtros?.[b.dataset.filtro]));
   $('#monitor-modo').value = settings.monitor;
   if (monitor.gain) monitor.gain.gain.value = settings.monitorVolume;
   for (const input of document.querySelectorAll('[data-volume]')) {

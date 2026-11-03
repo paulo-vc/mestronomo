@@ -273,6 +273,13 @@
               <span>Ducking<small>música enquanto um efeito toca</small></span>
               <input type="range" data-volume="ducking" min="0" max="100" /><output></output>
             </label>
+            <h3>Filtros de ambiente</h3>
+            <p class="hint">Mudam todo o som da mesa (também na barra de baixo). Salvar uma cena guarda os filtros ligados.</p>
+            <div class="chips filtros">
+              <button data-filtro="abafado">Abafado</button>
+              <button data-filtro="caverna">Caverna</button>
+              <button data-filtro="eco">Eco</button>
+            </div>
           </section>
 
           <section class="card">
@@ -310,6 +317,11 @@
       </div>
       <span id="erro" class="erro" role="status"></span>
       <div class="barra-acoes">
+        <div class="chips filtros" title="Filtros de ambiente sobre todo o som da mesa">
+          <button data-filtro="abafado" title="Atrás da porta, debaixo d'água">Abafado</button>
+          <button data-filtro="caverna" title="Reverberação de masmorra">Caverna</button>
+          <button data-filtro="eco" title="Eco de abismo">Eco</button>
+        </div>
         <button id="parar-efeitos" class="ghost" title="Para todos os efeitos, inclusive loops (Ctrl+Alt+0)">⏹ Efeitos</button>
         <label class="slider compacto barra-volume" title="Volume geral">
           <span>🔊</span><input type="range" data-volume="master" min="0" max="100" /><output></output>

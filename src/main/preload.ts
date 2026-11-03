@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld('mestronomo', {
   backupExportar: invoke('backup-exportar'),
   backupImportar: invoke('backup-importar'),
   atualizar: invoke('atualizar'),
+  filtro: invoke('filtro'),
   roteiro: {
     criar: invoke('roteiro-criar'),
     renomear: invoke('roteiro-renomear'),

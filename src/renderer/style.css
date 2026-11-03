@@ -395,3 +395,4 @@ textarea:focus, .campo select:focus { outline: none; border-color: var(--accent)
   border-radius: 6px; padding: 8px 10px;
 }
 #pergunta input:focus { outline: none; border-color: var(--accent); }
+.barra .filtros button { padding: 4px 9px; }

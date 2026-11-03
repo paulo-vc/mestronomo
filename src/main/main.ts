@@ -22,6 +22,7 @@ import { DEVELOPER_PORTAL, botIdFromToken, checkToken, inviteUrl } from './botSe
 import { exportBackup, importBackup } from './backup';
 import { Updater } from './updater';
 import { Scripts, type Moment, type ScriptState } from './script';
+import { FILTERS, type FilterName } from './dsp';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
@@ -165,6 +166,14 @@ function setCaptureVolume(appName: string, value: number) {
 function setVolume(key: VolumeKey | 'youtube', value: number) {
   if (key === 'youtube') youtube.setVolume(value);
   else mixer.settings[key] = Math.min(1, Math.max(0, value));
+  send('mixer', mixer.settings);
+  saveConfig();
+}
+
+/** Liga/desliga um filtro de ambiente; sem `ligado`, alterna. */
+function setFilter(nome: FilterName, ligado?: boolean) {
+  if (!FILTERS.includes(nome)) return;
+  mixer.settings.filtros = { ...mixer.settings.filtros, [nome]: ligado ?? !mixer.settings.filtros[nome] };
   send('mixer', mixer.settings);
   saveConfig();
 }
@@ -374,6 +383,7 @@ function registerIpc() {
     return arquivo ? scripts.importHandout(arquivo) : undefined;
   });
   ipcMain.handle('momento-handout', (_e, id: string) => sendMomentHandout(id));
+  ipcMain.handle('filtro', (_e, nome: FilterName, ligado?: boolean) => setFilter(nome, ligado));
   ipcMain.handle('atualizar', () => {
     if (updater.state.estado === 'disponivel') shell.openExternal(updater.state.url);
     else updater.installNow();
@@ -553,6 +563,8 @@ app.whenReady().then(() => {
   seedExampleTables();
   config = loadConfig();
   Object.assign(mixer.settings, config.mixer);
+  // Configs antigas não têm filtros.
+  mixer.settings.filtros = { abafado: false, caverna: false, eco: false, ...config.mixer?.filtros };
   if (config.youtube) {
     youtube.volume = config.youtube.volume;
     youtube.loop = config.youtube.repetir;
@@ -575,7 +587,14 @@ app.whenReady().then(() => {
     config.sons = sons;
     saveConfig();
   });
-  scenes = new SceneManager(ambience, youtube, config.cenas, config.fadeMs);
+  scenes = new SceneManager(ambience, youtube, config.cenas, config.fadeMs, {
+    get: () => mixer.settings.filtros,
+    set: (filtros) => {
+      mixer.settings.filtros = filtros;
+      send('mixer', mixer.settings);
+      saveConfig();
+    },
+  });
   scenes.on('change', (s) => {
     send('cenas', s);
     refreshNowPlaying();
@@ -644,6 +663,7 @@ app.whenReady().then(() => {
     timers,
     rollTable: (nome: string) => rollTable(TABLES_DIR, nome),
     scripts,
+    setFilter,
   }, (message) => {
     apiError = message;
     send('erro', message);

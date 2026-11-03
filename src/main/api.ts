@@ -7,6 +7,7 @@ import type { Combat } from './combat';
 import type { Timers } from './timers';
 import type { TableResult } from './tables';
 import type { Scripts } from './script';
+import type { FilterName } from './dsp';
 
 export interface ApiActions {
   state(): unknown;
@@ -27,6 +28,7 @@ export interface ApiActions {
   timers: Timers;
   rollTable(nome: string): TableResult;
   scripts: Scripts;
+  setFilter(nome: FilterName, ligado?: boolean): void;
 }
 
 const VOLUME_KEYS = ['musica', 'efeitos', 'ambiente', 'master', 'ducking', 'monitorVolume', 'youtube'];
@@ -55,13 +57,14 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/ambiente/<arquivo>              liga/desliga uma camada de ambiente
  *   /api/ambiente/parar                  desliga todo o ambiente
  *   /api/combate/<iniciar|proximo|anterior|encerrar>
+ *   /api/filtro/<abafado|caverna|eco>[/on|off]  liga, desliga ou alterna um filtro
  *   /api/roteiro/<proximo|anterior>      avança ou volta um momento do roteiro
  *   /api/tabela/<nome>                   rola uma tabela e devolve o resultado
  *   /api/timer?min=<minutos>&nome=<nome> começa um timer
  *   /api/volume/<musica|efeitos|master|ducking|youtube>/<0-100>
  */
 export function startApi(port: number, actions: ApiActions, onError: (message: string) => void) {
-  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes, loadPlaylist, combat, timers, rollTable, scripts } = actions;
+  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes, loadPlaylist, combat, timers, rollTable, scripts, setFilter } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
     // Divide antes de decodificar: ids de som têm "/" (ex.: Combate%2Fespada).
@@ -148,6 +151,10 @@ export function startApi(port: number, actions: ApiActions, onError: (message: s
         acao();
         return reply(200, combat.state());
       }
+      case 'filtro':
+        if (!['abafado', 'caverna', 'eco'].includes(a)) return reply(400, { erro: 'use abafado, caverna ou eco' });
+        setFilter(a as FilterName, b === 'on' ? true : b === 'off' ? false : undefined);
+        return ok();
       case 'roteiro':
         if (a === 'proximo') scripts.next();
         else if (a === 'anterior') scripts.previous();
