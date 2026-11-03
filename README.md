@@ -92,6 +92,11 @@ O cartão **Mesa** tem três abas:
 | `/entrar` · `/sair` | Mestre | Chama o bot para o seu canal de voz, ou dispensa |
 | `/r 2d20kh1+5` | Todos | Rola dados. Aceita `NdM`, `kh`/`kl` (manter maiores/menores), `d%`, somas e subtrações, e os atalhos `vantagem` e `desvantagem`. Destaca 20 e 1 naturais no d20. Com `secreto: True`, só quem rolou vê |
 | `/canal` | Mestre | Escolhe o canal de texto para a mensagem **tocando agora** e para os **handouts** |
+| `/iniciativa bonus:3` | Todos | Rola 1d20 + bônus e entra (ou atualiza) na ordem de combate do app |
+| `/ordem` | Todos | Mostra a ordem de combate, sem revelar HP |
+| `/musica link` | Todos | Pede uma música; aparece no app para o mestre aprovar (do mestre, toca direto) |
+| `/som nome` | Todos | Pede um efeito da soundboard (com autocompletar); mesmo esquema de aprovação |
+| `/resumo` | Mestre | Posta o resumo da sessão: cenas, momentos, combates, críticos, músicas e pedidos |
 
 **Tocando agora**: o bot mantém uma mensagem no canal escolhido mostrando a música, a cena e o ambiente, editada sozinha quando algo muda (dá para desligar no ⚙).
 
@@ -133,6 +138,22 @@ O volume do fone não muda o que vai para a call.
 - **Link**: cole um link de vídeo ou playlist do YouTube (ou de outro site que o yt-dlp suporte).
 - **Busca**: digite um texto (ex.: "tavern music") e escolha entre os 5 primeiros resultados.
 - **Músicas locais**: cada subpasta de `musicas/` vira uma playlist (instalado: `Documentos\Mestrônomo\musicas`); escolha e clique em **Pôr na fila**. Links e arquivos locais podem ficar na mesma fila.
+
+## Roteiro da sessão
+
+Na página **Roteiro** (`Ctrl+1`), prepare a sessão em **momentos** ("Chegada à taverna", "A briga", "Fuga pela floresta"). Cada momento pode ter notas (o que narrar, falas de NPCs), uma cena que entra junto, atalhos de sons e um handout. Durante o jogo, **Próximo momento** (ou `/api/roteiro/proximo`, ou a tecla Próximo Momento do Ulanzi) troca a cena e mostra tudo daquele trecho.
+
+## Filtros de ambiente
+
+**Abafado** (atrás da porta, debaixo d'água), **Caverna** (reverberação) e **Eco** mudam todo o som da mesa. Ficam na barra de baixo e na página Áudio, e as cenas salvam os filtros ligados.
+
+## Freesound
+
+Na página Soundboard, busque efeitos gratuitos no [Freesound](https://freesound.org), ouça a prévia e baixe direto para a soundboard ou para o ambiente. Precisa de uma chave de API gratuita (⚙ → Freesound). Os créditos ficam em `CREDITOS-freesound.txt`.
+
+## Atualização automática
+
+A versão instalada baixa as atualizações sozinha e mostra **Atualização pronta — reiniciar** no topo. A portátil avisa que há versão nova e abre a página de download.
 
 ## Cenas
 

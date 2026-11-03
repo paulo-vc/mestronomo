@@ -5,6 +5,7 @@ import {
   GatewayIntentBits,
   MessageFlags,
   SlashCommandBuilder,
+  type AutocompleteInteraction,
   type ChatInputCommandInteraction,
   type Guild,
   type Message,
@@ -24,7 +25,7 @@ import {
   type AudioPlayer,
 } from '@discordjs/voice';
 import type { Mixer } from './mixer';
-import { formatRoll, roll } from './dice';
+import { formatRoll, roll, type RollResult } from './dice';
 
 export type BotStatus =
   | { state: 'desligado'; motivo?: string }
@@ -41,7 +42,45 @@ const COMMANDS = [
     .addStringOption((o) => o.setName('dados').setDescription('Expressão, ex.: 1d20+5').setRequired(true))
     .addBooleanOption((o) => o.setName('secreto').setDescription('Só você vê o resultado')),
   new SlashCommandBuilder().setName('canal').setDescription('Usa este canal de texto para "tocando agora" e handouts'),
+  new SlashCommandBuilder()
+    .setName('iniciativa')
+    .setDescription('Rola a sua iniciativa (1d20 + bônus) e entra na ordem de combate')
+    .addIntegerOption((o) => o.setName('bonus').setDescription('Seu bônus de iniciativa, ex.: 3').setMinValue(-10).setMaxValue(30))
+    .addIntegerOption((o) => o.setName('valor').setDescription('Já rolou? Informe o total direto').setMinValue(-10).setMaxValue(60)),
+  new SlashCommandBuilder().setName('ordem').setDescription('Mostra a ordem de combate'),
+  new SlashCommandBuilder()
+    .setName('musica')
+    .setDescription('Pede uma música ao mestre (link do YouTube)')
+    .addStringOption((o) => o.setName('link').setDescription('Link do vídeo').setRequired(true)),
+  new SlashCommandBuilder()
+    .setName('som')
+    .setDescription('Pede um efeito da soundboard ao mestre')
+    .addStringOption((o) => o.setName('nome').setDescription('Nome do som').setRequired(true).setAutocomplete(true)),
+  new SlashCommandBuilder().setName('resumo').setDescription('Posta o resumo da sessão (só o mestre)'),
 ].map((c) => c.toJSON());
+
+export interface Player {
+  id: string;
+  nome: string;
+}
+
+/**
+ * O que o bot pede ao resto do app. O bot só cuida do Discord; quem decide (tracker,
+ * soundboard, fila de pedidos, resumo) é o main.
+ */
+export interface BotHooks {
+  /** Entra (ou atualiza) o jogador na ordem de combate. */
+  iniciativa(jogador: Player, total: number): void;
+  /** Texto da ordem de combate, já formatado para o Discord. */
+  ordem(): string;
+  /** Pedido de música/som de um jogador; `true` se entrou na fila. Do mestre, toca direto. */
+  pedido(tipo: 'musica' | 'som', jogador: Player, valor: string, doMestre: boolean): { ok: boolean; mensagem: string };
+  /** Ids dos sons da soundboard, para o autocompletar de /som. */
+  sons(): string[];
+  rolagem(jogador: Player, resultado: RollResult): void;
+  /** Texto do resumo da sessão (embed montado pelo bot). */
+  resumo(): { titulo: string; linhas: string[] };
+}
 
 /** O que a mensagem "tocando agora" mostra. */
 export interface NowPlaying {
@@ -67,7 +106,12 @@ export class DiscordBot extends EventEmitter {
   private nowPlayingMessage: Message | undefined;
   private nowPlayingTimer: NodeJS.Timeout | undefined;
 
-  constructor(private mixer: Mixer, private token: string, private ownerId: string) {
+  constructor(
+    private mixer: Mixer,
+    private token: string,
+    private ownerId: string,
+    private hooks: BotHooks,
+  ) {
     // ownerId vazio: descobrimos o dono da aplicação assim que o bot conecta.
     super();
     this.player = createAudioPlayer({
@@ -92,6 +136,7 @@ export class DiscordBot extends EventEmitter {
     this.client.on('guildCreate', (guild) => this.registerCommands(guild));
     this.client.on('interactionCreate', (interaction) => {
       if (interaction.isChatInputCommand()) this.onCommand(interaction);
+      else if (interaction.isAutocomplete()) this.onAutocomplete(interaction);
     });
     // Sai quando não sobra nenhuma pessoa (só bots) no canal.
     this.client.on('voiceStateUpdate', (oldState) => {
@@ -138,10 +183,38 @@ export class DiscordBot extends EventEmitter {
 
   private async onCommand(interaction: ChatInputCommandInteraction) {
     const reply = (content: string) => interaction.reply({ content, flags: MessageFlags.Ephemeral });
-    // Dados são para todo mundo; o resto é só do mestre.
-    if (interaction.commandName === 'r') return this.onRoll(interaction);
+    // Dados, iniciativa, ordem e pedidos são para todo mundo; o resto é só do mestre.
+    const jogador = this.jogadorDe(interaction);
+    const doMestre = interaction.user.id === this.ownerId;
+    switch (interaction.commandName) {
+      case 'r':
+        return this.onRoll(interaction);
+      case 'iniciativa': {
+        const valor = interaction.options.getInteger('valor');
+        const bonus = interaction.options.getInteger('bonus') ?? 0;
+        const r = valor === null ? roll(`1d20${bonus < 0 ? '' : '+'}${bonus}`) : undefined;
+        const total = valor ?? r!.total;
+        this.hooks.iniciativa(jogador, total);
+        if (r) this.hooks.rolagem(jogador, r);
+        return interaction.reply(`⚔️ **${jogador.nome}** entrou na ordem com iniciativa **${total}**${r ? ` (${formatRoll(r)})` : ''}`);
+      }
+      case 'ordem':
+        return interaction.reply(this.hooks.ordem());
+      case 'musica':
+      case 'som': {
+        const valor = interaction.options.getString(interaction.commandName === 'musica' ? 'link' : 'nome', true);
+        const r = this.hooks.pedido(interaction.commandName, jogador, valor, doMestre);
+        return interaction.reply({ content: r.mensagem, flags: r.ok && !doMestre ? undefined : MessageFlags.Ephemeral });
+      }
+    }
     if (interaction.user.id !== this.ownerId) return reply('Só o mestre pode chamar o Mestrônomo.');
     if (!interaction.guild) return reply('Use este comando dentro de um servidor.');
+
+    if (interaction.commandName === 'resumo') {
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      await this.postSummary();
+      return interaction.editReply('Resumo postado no canal.');
+    }
 
     if (interaction.commandName === 'canal') {
       this.textChannelId = interaction.channelId;
@@ -161,11 +234,25 @@ export class DiscordBot extends EventEmitter {
     await interaction.editReply(ok ? `Entrei em **${channel.name}**.` : `Não consegui entrar em ${channel.name}. Tenho permissão de Conectar e Falar?`);
   }
 
+  private jogadorDe(interaction: ChatInputCommandInteraction): Player {
+    const nome = interaction.member && 'displayName' in interaction.member ? interaction.member.displayName : interaction.user.displayName;
+    return { id: interaction.user.id, nome };
+  }
+
+  private async onAutocomplete(interaction: AutocompleteInteraction) {
+    const digitado = interaction.options.getFocused().toLowerCase();
+    const sons = this.hooks.sons().filter((s) => s.toLowerCase().includes(digitado)).slice(0, 25);
+    await interaction.respond(sons.map((s) => ({ name: s.slice(0, 100), value: s.slice(0, 100) }))).catch(() => {});
+  }
+
   private async onRoll(interaction: ChatInputCommandInteraction) {
     const secreto = interaction.options.getBoolean('secreto') ?? false;
     try {
-      const resultado = formatRoll(roll(interaction.options.getString('dados', true)));
-      const quem = interaction.member && 'displayName' in interaction.member ? interaction.member.displayName : interaction.user.displayName;
+      const r = roll(interaction.options.getString('dados', true));
+      const resultado = formatRoll(r);
+      const jogador = this.jogadorDe(interaction);
+      if (!secreto) this.hooks.rolagem(jogador, r);
+      const quem = jogador.nome;
       await interaction.reply({
         content: `🎲 **${quem}** rolou ${resultado}${secreto ? '  *(secreto)*' : ''}`,
         flags: secreto ? MessageFlags.Ephemeral : undefined,
@@ -203,6 +290,21 @@ export class DiscordBot extends EventEmitter {
       }
     }
     this.nowPlayingMessage = await channel.send({ embeds: [embed] });
+  }
+
+  /** Posta o resumo da sessão como embed no canal do /canal. */
+  async postSummary() {
+    const channel = await this.textChannel();
+    if (!channel) throw new Error('Escolha o canal de texto antes: use /canal no Discord, dentro do canal desejado.');
+    const { titulo, linhas } = this.hooks.resumo();
+    // Embeds aceitam até 4096 caracteres na descrição.
+    let descricao = '';
+    for (const linha of linhas) {
+      if (descricao.length + linha.length + 1 > 4000) break;
+      descricao += `${linha}\n`;
+    }
+    const embed = new EmbedBuilder().setColor(BRAND_COLOR).setTitle(titulo).setDescription(descricao || 'Nada registrado nesta sessão.').setTimestamp();
+    await channel.send({ embeds: [embed] });
   }
 
   /** Manda um texto no canal escolhido com /canal (turnos, tabelas...). */

@@ -53,12 +53,30 @@ function mostrarErro(msg, tipo = 'erro') {
   if (msg) erroTimer = setTimeout(() => (els.erro.textContent = ''), 8000);
 }
 
+/** Substitui o prompt() (que o Electron não suporta): pede um texto num diálogo. */
+function pedirTexto(titulo, valor = '') {
+  const dialogo = $('#pergunta');
+  const form = $('#pergunta-form');
+  $('#pergunta-titulo').textContent = titulo;
+  form.texto.value = valor;
+  dialogo.showModal();
+  form.texto.select();
+  return new Promise((resolve) => {
+    dialogo.addEventListener('close', () => resolve(dialogo.returnValue === 'ok' ? form.texto.value.trim() : null), { once: true });
+  });
+}
+
 // --- Navegação ---------------------------------------------------------
 
-const PAGINAS = ['cenas', 'musica', 'ambiente', 'soundboard', 'mesa', 'audio'];
+const PAGINAS = ['roteiro', 'cenas', 'musica', 'ambiente', 'soundboard', 'mesa', 'audio'];
+
+let paginaAtual = 'roteiro';
 
 function irPara(pagina) {
-  if (!PAGINAS.includes(pagina)) pagina = 'cenas';
+  if (!PAGINAS.includes(pagina)) pagina = 'roteiro';
+  paginaAtual = pagina;
+  // A lista de saídas do fone só é montada aqui (ver carregarSaidas).
+  if (pagina === 'audio') carregarSaidas($('#monitor-saida').value);
   for (const p of document.querySelectorAll('.pagina')) p.classList.toggle('ativa', p.dataset.pagina === pagina);
   for (const b of document.querySelectorAll('.menu button')) b.classList.toggle('ativo', b.dataset.ir === pagina);
   $('.conteudo').scrollTop = 0;
@@ -68,7 +86,7 @@ function irPara(pagina) {
 }
 
 for (const b of document.querySelectorAll('.menu button')) b.addEventListener('click', () => irPara(b.dataset.ir));
-// Ctrl+1..6 troca de página (com a janela em foco; os atalhos globais usam Ctrl+Alt).
+// Ctrl+1..7 troca de página (com a janela em foco; os atalhos globais usam Ctrl+Alt).
 window.addEventListener('keydown', (e) => {
   if (!e.ctrlKey || e.altKey || e.shiftKey) return;
   const i = Number(e.key) - 1;
@@ -78,9 +96,9 @@ window.addEventListener('keydown', (e) => {
   }
 });
 try {
-  irPara(localStorage.getItem('pagina') || 'cenas');
+  irPara(localStorage.getItem('pagina') || 'roteiro');
 } catch {
-  irPara('cenas');
+  irPara('roteiro');
 }
 
 // --- Barra fixa ----------------------------------------------------------
@@ -146,6 +164,21 @@ dialogoHandout.addEventListener('close', async () => {
   if (await api.handout(form.legenda.value)) form.legenda.value = '';
 });
 
+// --- Atualização ---------------------------------------------------------
+
+function renderAtualizacao(s) {
+  const botao = $('#atualizacao');
+  const textos = {
+    baixando: () => `Baixando ${s.versao}… ${s.progresso}%`,
+    pronta: () => `Atualização ${s.versao} pronta — reiniciar`,
+    disponivel: () => `Versão ${s.versao} disponível — baixar`,
+  };
+  botao.classList.toggle('hidden', !textos[s.estado]);
+  if (textos[s.estado]) botao.textContent = textos[s.estado]();
+  botao.disabled = s.estado === 'baixando';
+}
+$('#atualizacao').addEventListener('click', () => api.atualizar());
+
 // --- Configurações -------------------------------------------------------
 
 const dialogo = $('#config');
@@ -164,6 +197,8 @@ async function abrirConfig() {
   configForm.token.placeholder = info.hasToken ? '•••••••• (salvo; deixe vazio para manter)' : 'Cole o token aqui';
   configForm.ownerId.value = info.ownerId ?? '';
   configForm.autoStart.checked = info.autoStart;
+  configForm.freesound.value = '';
+  configForm.freesound.placeholder = info.hasFreesound ? '•••••••• (salva; deixe vazio para manter)' : 'Cole a chave aqui';
   configForm.tocandoAgora.checked = info.tocandoAgora;
   $('#config-canal').textContent = info.canalTexto
     ? 'Canal de texto definido. Para trocar, use /canal no canal desejado.'
@@ -176,6 +211,7 @@ async function abrirConfig() {
 
 $('#abrir-config').addEventListener('click', abrirConfig);
 $('#bot-portal').addEventListener('click', () => api.botPortal());
+$('#fs-chave').addEventListener('click', () => api.freesound.pedirChave());
 $('#backup-exportar').addEventListener('click', () => api.backupExportar($('#backup-arquivos').checked));
 $('#backup-importar').addEventListener('click', () => api.backupImportar());
 $('#bot-convidar').addEventListener('click', () => api.botConvidar(configForm.token.value));
@@ -189,7 +225,8 @@ $('#bot-verificar').addEventListener('click', async () => {
 });
 dialogo.addEventListener('close', () => {
   if (dialogo.returnValue !== 'salvar') return;
-  api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked, configForm.tocandoAgora.checked);
+  api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked, configForm.tocandoAgora.checked, configForm.freesound.value);
+  configForm.freesound.value = '';
   configForm.token.value = '';
 });
 
@@ -468,6 +505,10 @@ async function escolherSaida(deviceId) {
   }
 }
 
+/**
+ * Lista os dispositivos de saída. enumerateDevices() liga também o serviço de captura de vídeo
+ * do Chromium (~110 MB que ninguém usa), então só chamamos ao abrir a página Áudio.
+ */
 async function carregarSaidas(atual) {
   const select = $('#monitor-saida');
   const saidas = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audiooutput');
@@ -477,14 +518,21 @@ async function carregarSaidas(atual) {
   select.value = saidas.some((d) => d.deviceId === atual) ? atual : 'default';
 }
 
+/** Antes de abrir a página Áudio, mostra só o dispositivo salvo (sem enumerar). */
+function mostrarSaidaSalva(atual) {
+  $('#monitor-saida').replaceChildren(new Option(atual && atual !== 'default' ? 'Dispositivo escolhido' : 'Saída padrão do Windows', atual || 'default'));
+}
+
 $('#monitor-modo').addEventListener('change', (e) => api.monitor(e.target.value));
 $('#monitor-saida').addEventListener('change', (e) => {
   escolherSaida(e.target.value);
   api.monitorSaida(e.target.value);
 });
-navigator.mediaDevices.addEventListener('devicechange', () => carregarSaidas($('#monitor-saida').value));
+
+for (const b of document.querySelectorAll('[data-filtro]')) b.addEventListener('click', () => api.filtro(b.dataset.filtro));
 
 function renderMixer(settings) {
+  for (const b of document.querySelectorAll('[data-filtro]')) b.classList.toggle('ativo', Boolean(settings.filtros?.[b.dataset.filtro]));
   $('#monitor-modo').value = settings.monitor;
   if (monitor.gain) monitor.gain.gain.value = settings.monitorVolume;
   for (const input of document.querySelectorAll('[data-volume]')) {
@@ -586,6 +634,67 @@ function renderSoundboard(estado) {
       }),
   );
 }
+
+// Freesound
+
+const previa = new Audio();
+let previaTocando = null;
+
+function preencherDestinosFreesound(estado) {
+  const select = $('#fs-destino');
+  const atual = select.value;
+  const opcoes = [new Option('→ Soundboard (Geral)', 'sons')];
+  for (const c of estado.categorias.filter((c) => c !== 'Geral')) opcoes.push(new Option(`→ Soundboard: ${c}`, `sons/${c}`));
+  opcoes.push(new Option('→ Ambiente', 'ambientes'));
+  select.replaceChildren(...opcoes);
+  if ([...select.options].some((o) => o.value === atual)) select.value = atual;
+}
+
+$('#fs-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const lista = $('#fs-resultados');
+  lista.replaceChildren(el('li', { className: 'carregando', textContent: 'Buscando…' }));
+  const resultados = await api.freesound.buscar($('#fs-busca').value.trim());
+  lista.replaceChildren(
+    ...resultados.map((som) => {
+      const ouvir = el('button', { className: 'ghost icone', textContent: '▶', title: 'Ouvir a prévia (só para você)' });
+      ouvir.addEventListener('click', () => {
+        if (previaTocando === som.id && !previa.paused) {
+          previa.pause();
+          ouvir.textContent = '▶';
+          return;
+        }
+        for (const b of lista.querySelectorAll('.tocando-previa')) {
+          b.textContent = '▶';
+          b.classList.remove('tocando-previa');
+        }
+        previa.src = som.previa;
+        previa.play();
+        previaTocando = som.id;
+        ouvir.textContent = '⏸';
+        ouvir.classList.add('tocando-previa');
+        previa.onended = () => (ouvir.textContent = '▶');
+      });
+      const baixar = el('button', { className: 'ghost pequeno', textContent: 'Baixar' });
+      baixar.addEventListener('click', async () => {
+        baixar.disabled = true;
+        baixar.textContent = '…';
+        const ok = await api.freesound.baixar(som, $('#fs-destino').value);
+        baixar.textContent = ok ? '✓' : 'Baixar';
+        baixar.disabled = ok;
+      });
+      return el(
+        'li',
+        {},
+        ouvir,
+        el('span', { className: 'nome', textContent: som.nome, title: `${som.nome} — ${som.autor}` }),
+        el('span', { className: 'detalhe', textContent: `${som.duracao.toFixed(1)} s · ${som.licenca}` }),
+        baixar,
+      );
+    }),
+  );
+  if (resultados.length === 0) lista.replaceChildren(el('li', { className: 'carregando', textContent: 'Nada encontrado.' }));
+});
 
 const dialogoSom = $('#som-opcoes');
 const formSom = $('#som-opcoes-form');
@@ -799,6 +908,210 @@ $('#tabela-discord').addEventListener('click', () => {
 $('#tabelas-pasta').addEventListener('click', () => api.tabelas.abrirPasta());
 window.addEventListener('focus', carregarTabelas);
 
+// --- Roteiro -------------------------------------------------------------
+
+let roteiro = { roteiros: [], indice: -1 };
+let handoutsUrl = '';
+let cenasConhecidas = [];
+let momentoEditado = null;
+let imagemEditada = null;
+
+const roteiroAtivo = () => roteiro.roteiros.find((r) => r.id === roteiro.ativo);
+
+function renderRoteiro(estado) {
+  roteiro = estado;
+  const ativo = roteiroAtivo();
+  const select = $('#roteiro-select');
+  select.replaceChildren(
+    ...(estado.roteiros.length ? estado.roteiros.map((r) => new Option(r.nome, r.id)) : [new Option('Nenhum roteiro — clique em + Novo', '')]),
+  );
+  select.value = estado.ativo ?? '';
+  for (const id of ['#roteiro-renomear', '#roteiro-apagar', '#momento-novo']) $(id).disabled = !ativo;
+
+  const momentos = ativo?.momentos ?? [];
+  $('#momentos').replaceChildren(
+    ...momentos.map((m, i) =>
+      el(
+        'li',
+        { className: i === estado.indice ? 'atual' : '', title: 'Ir para este momento', onclick: () => api.roteiro.ir(i) },
+        el('span', { className: 'num', textContent: String(i + 1) }),
+        el('span', { className: 'nome', textContent: m.titulo }),
+        el(
+          'span',
+          { className: 'acoes' },
+          botaoIcone('↑', 'Subir', () => api.roteiro.moverMomento(m.id, -1)),
+          botaoIcone('↓', 'Descer', () => api.roteiro.moverMomento(m.id, 1)),
+          botaoIcone('✎', 'Editar', () => abrirMomento(m)),
+          botaoIcone('✕', 'Apagar', () => confirm(`Apagar o momento "${m.titulo}"?`) && api.roteiro.removerMomento(m.id)),
+        ),
+      ),
+    ),
+  );
+
+  const atual = momentos[estado.indice];
+  $('#agora-vazio').classList.toggle('hidden', Boolean(atual));
+  $('#agora').classList.toggle('hidden', !atual);
+  $('#roteiro-comecar').disabled = momentos.length === 0;
+  $('#roteiro-anterior').disabled = !atual || estado.indice === 0;
+  $('#roteiro-proximo').disabled = !ativo || estado.indice >= momentos.length - 1;
+  $('#roteiro-proximo').textContent = atual ? 'Próximo momento ▶' : 'Começar ▶';
+  $('#momento-posicao').textContent = atual ? `${estado.indice + 1} de ${momentos.length}` : '';
+  if (!atual) return;
+
+  $('#agora-titulo').textContent = atual.titulo;
+  const cena = cenasConhecidas.find((c) => c.id === atual.cena);
+  $('#agora-cena').textContent = cena ? `Cena: ${cena.nome}` : '';
+  $('#agora-notas').textContent = atual.notas || '';
+  $('#agora-sons').replaceChildren(
+    ...atual.sons.map((id) => {
+      const som = soundboard.sons.find((s) => s.id === id);
+      const botao = el('button', { title: id, onclick: () => api.som(id, false) }, el('span', { className: 'nome', textContent: som?.nome ?? id }));
+      botao.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        api.som(id, true);
+      });
+      return botao;
+    }),
+  );
+  const handout = atual.handout;
+  $('#agora-handout').classList.toggle('hidden', !handout);
+  if (handout) {
+    $('#agora-handout-img').src = `${handoutsUrl}/${encodeURIComponent(handout.arquivo)}`;
+    $('#agora-handout-legenda').textContent = handout.legenda || handout.arquivo;
+  }
+}
+
+function botaoIcone(texto, titulo, acao) {
+  return el('button', {
+    className: 'ghost icone',
+    textContent: texto,
+    title: titulo,
+    onclick: (e) => {
+      e.stopPropagation();
+      acao();
+    },
+  });
+}
+
+$('#roteiro-select').addEventListener('change', (e) => e.target.value && api.roteiro.selecionar(e.target.value));
+$('#roteiro-novo').addEventListener('click', async () => {
+  const nome = await pedirTexto('Nome do roteiro (ex.: Sessão 12 — A cripta)');
+  if (nome !== null) api.roteiro.criar(nome);
+});
+$('#roteiro-renomear').addEventListener('click', async () => {
+  const ativo = roteiroAtivo();
+  const nome = ativo && (await pedirTexto('Novo nome do roteiro', ativo.nome));
+  if (nome) api.roteiro.renomear(ativo.id, nome);
+});
+$('#roteiro-apagar').addEventListener('click', () => {
+  const ativo = roteiroAtivo();
+  if (ativo && confirm(`Apagar o roteiro "${ativo.nome}" e todos os momentos dele?`)) api.roteiro.remover(ativo.id);
+});
+$('#roteiro-comecar').addEventListener('click', () => api.roteiro.ir(0));
+$('#roteiro-proximo').addEventListener('click', () => api.roteiro.proximo());
+$('#roteiro-anterior').addEventListener('click', () => api.roteiro.anterior());
+$('#agora-handout-enviar').addEventListener('click', () => {
+  const atual = roteiroAtivo()?.momentos[roteiro.indice];
+  if (atual) api.roteiro.enviarHandout(atual.id);
+});
+$('#momento-novo').addEventListener('click', () => abrirMomento(null));
+
+// Editor de momento
+
+const editor = $('#momento-editor');
+const formMomento = $('#momento-form');
+
+function abrirMomento(momento) {
+  momentoEditado = momento;
+  imagemEditada = momento?.handout?.arquivo ?? null;
+  $('#momento-editor-titulo').textContent = momento ? 'Editar momento' : 'Novo momento';
+  formMomento.titulo.value = momento?.titulo ?? '';
+  formMomento.notas.value = momento?.notas ?? '';
+  formMomento.cena.replaceChildren(new Option('Não trocar de cena', ''), ...cenasConhecidas.map((c) => new Option(c.nome, c.id)));
+  formMomento.cena.value = momento?.cena ?? '';
+  const escolhidos = new Set(momento?.sons ?? []);
+  formMomento.sons.replaceChildren(...soundboard.sons.map((s) => new Option(s.id, s.id, false, escolhidos.has(s.id))));
+  formMomento.legenda.value = momento?.handout?.legenda ?? '';
+  mostrarImagemEditada();
+  editor.showModal();
+}
+
+function mostrarImagemEditada() {
+  $('#momento-imagem-nome').textContent = imagemEditada ?? 'Nenhuma imagem';
+  $('#momento-imagem-tirar').classList.toggle('hidden', !imagemEditada);
+}
+
+$('#momento-imagem').addEventListener('click', async () => {
+  const nome = await api.roteiro.escolherImagem();
+  if (nome) {
+    imagemEditada = nome;
+    mostrarImagemEditada();
+  }
+});
+$('#momento-imagem-tirar').addEventListener('click', () => {
+  imagemEditada = null;
+  mostrarImagemEditada();
+});
+editor.addEventListener('close', () => {
+  if (editor.returnValue !== 'salvar') return;
+  api.roteiro.salvarMomento({
+    id: momentoEditado?.id,
+    titulo: formMomento.titulo.value,
+    notas: formMomento.notas.value,
+    cena: formMomento.cena.value,
+    sons: [...formMomento.sons.selectedOptions].map((o) => o.value),
+    handout: imagemEditada ? { arquivo: imagemEditada, legenda: formMomento.legenda.value } : undefined,
+  });
+});
+
+// --- Pedidos dos jogadores ------------------------------------------------
+
+function renderPedidos(estado) {
+  $('#pedidos-aceitar').checked = estado.aceitando;
+  const n = estado.pedidos.length;
+  const aviso = $('#pedidos-aviso');
+  aviso.classList.toggle('hidden', n === 0);
+  aviso.textContent = `📨 ${n} pedido${n > 1 ? 's' : ''}`;
+  $('#pedidos-lista').replaceChildren(
+    ...estado.pedidos.map((p) =>
+      el(
+        'li',
+        {},
+        el('span', { className: 'quem', textContent: p.jogador.nome }),
+        el('span', { className: 'nome', textContent: `${p.tipo === 'musica' ? '🎵' : '🔊'} ${p.valor}`, title: p.valor }),
+        el('button', { className: 'primary pequeno', textContent: '✓ Tocar', onclick: () => api.pedidos.aprovar(p.id) }),
+        el('button', { className: 'ghost icone', textContent: '✕', title: 'Recusar', onclick: () => api.pedidos.recusar(p.id) }),
+      ),
+    ),
+  );
+}
+$('#pedidos-aceitar').addEventListener('change', (e) => api.pedidos.aceitar(e.target.checked));
+$('#pedidos-aviso').addEventListener('click', () => irPara('musica'));
+
+// --- Sessão (resumo) -----------------------------------------------------
+
+const ICONES_SESSAO = { cena: '🎬', momento: '📜', combate: '⚔️', critico: '✨', falha: '💀', musica: '🎵', pedido: '📨' };
+
+function renderSessao(estado) {
+  const inicio = new Date(estado.inicio);
+  $('#sessao-info').textContent = `Desde ${inicio.toLocaleDateString('pt-BR')} ${inicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${estado.eventos.length} registros`;
+  $('#sessao-eventos').replaceChildren(
+    ...estado.eventos
+      .slice(-200)
+      .reverse()
+      .map((e) =>
+        el(
+          'li',
+          {},
+          el('span', { className: 'hora', textContent: new Date(e.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }),
+          el('span', { className: 'nome', textContent: `${ICONES_SESSAO[e.tipo] ?? ''} ${e.texto}` }),
+        ),
+      ),
+  );
+}
+$('#sessao-postar').addEventListener('click', () => api.sessao.postarResumo());
+$('#sessao-nova').addEventListener('click', () => confirm('Começar uma nova sessão? O registro atual será apagado.') && api.sessao.nova());
+
 // --- Início ------------------------------------------------------------
 
 api.onBot(renderBot);
@@ -806,11 +1119,13 @@ api.onCapturas(renderCapturas);
 api.onYoutube(renderYoutube);
 api.onAmbiente(renderAmbiente);
 api.onCenas((s) => {
+  cenasConhecidas = s.cenas;
   renderCenas(s);
   preencherCenasCombate(s);
 });
 api.onSoundboard((s) => {
   renderSoundboard(s);
+  preencherDestinosFreesound(s);
   preencherSonsTimer(s);
 });
 api.onCombate(renderCombate);
@@ -819,24 +1134,37 @@ api.onTimerFim((t) => mostrarErro(`⏰ ${t.nome}: o tempo acabou!`));
 api.onMixer(renderMixer);
 api.onErro(mostrarErro);
 api.onAviso((msg) => mostrarErro(msg, 'aviso'));
+api.onAtualizacao(renderAtualizacao);
+api.onRoteiro(renderRoteiro);
+api.onPedidos(renderPedidos);
+api.onSessao(renderSessao);
 
 (async () => {
   const estado = await api.estado();
   renderBot(estado.bot);
+  renderAtualizacao(estado.atualizacao);
+  handoutsUrl = estado.handoutsUrl;
+  cenasConhecidas = estado.cenas.cenas;
+  $('#versao').textContent = `Mestrônomo ${estado.versao}`;
   renderCapturas(estado.capturas);
   renderYoutube(estado.youtube);
   renderAmbiente(estado.ambiente);
   renderCenas(estado.cenas);
   await iniciarMonitor(estado.monitorDevice);
   renderMixer(estado.mixer);
-  carregarSaidas(estado.monitorDevice);
+  mostrarSaidaSalva(estado.monitorDevice);
+  if (paginaAtual === 'audio') carregarSaidas(estado.monitorDevice);
   renderSoundboard(estado.soundboard);
   preencherSonsTimer(estado.soundboard);
+  preencherDestinosFreesound(estado.soundboard);
   renderCombate(estado.combate);
   preencherCenasCombate(estado.cenas);
   $('#combate-anunciar').checked = estado.anunciarTurnos;
   renderTimers(estado.timers);
   carregarTabelas();
+  renderRoteiro(estado.roteiro);
+  renderPedidos(estado.pedidos);
+  renderSessao(estado.sessao);
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();
   carregarPlaylists();

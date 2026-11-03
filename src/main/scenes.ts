@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import type { Ambience, Layer, Occasional } from './ambience';
 import type { YouTubePlayer } from './youtube';
 import type { TrackInfo } from './sources';
+import type { FilterSettings } from './dsp';
 
 /** O que a cena faz com a música do YouTube. */
 export type SceneMusic = { modo: 'manter' } | { modo: 'parar' } | { modo: 'youtube'; fila: TrackInfo[]; atual: number };
@@ -12,6 +13,8 @@ export interface Scene {
   camadas: Layer[];
   ocasionais: Occasional[];
   musica: SceneMusic;
+  /** Filtros de ambiente da cena (abafado, caverna, eco). Cenas antigas não têm. */
+  filtros?: FilterSettings;
 }
 
 export interface ScenesState {
@@ -33,6 +36,7 @@ export class SceneManager extends EventEmitter {
     private youtube: YouTubePlayer,
     private cenas: Scene[] = [],
     public fadeMs = 3000,
+    private filters?: { get(): FilterSettings; set(f: FilterSettings): void },
   ) {
     super();
   }
@@ -46,6 +50,7 @@ export class SceneManager extends EventEmitter {
       nome: nome.trim() || `Cena ${this.cenas.length + 1}`,
       camadas: amb.camadas,
       ocasionais: amb.ocasionais,
+      filtros: this.filters ? { ...this.filters.get() } : undefined,
       musica: musica === 'youtube' && yt.fila.length ? { modo: 'youtube', fila: yt.fila, atual: Math.max(0, yt.atual) } : { modo: musica === 'parar' ? 'parar' : 'manter' },
     };
     const i = this.cenas.findIndex((c) => c.id === cena.id);
@@ -61,6 +66,7 @@ export class SceneManager extends EventEmitter {
     if (!cena) return false;
     this.ambience.setLayers(cena.camadas, this.fadeMs);
     this.ambience.setOccasionals(cena.ocasionais);
+    if (cena.filtros && this.filters) this.filters.set({ ...cena.filtros });
     if (cena.musica.modo === 'parar') this.youtube.stop(this.fadeMs);
     if (cena.musica.modo === 'youtube') this.youtube.replaceQueue(cena.musica.fila, cena.musica.atual, this.fadeMs);
     this.ativa = cena.id;
@@ -113,5 +119,7 @@ function summary(cena: Scene) {
   if (cena.ocasionais.length) partes.push(`${cena.ocasionais.length} ocasional${cena.ocasionais.length > 1 ? 'is' : ''}`);
   if (cena.musica.modo === 'youtube') partes.push(`YouTube: ${cena.musica.fila[cena.musica.atual]?.title ?? ''}`);
   if (cena.musica.modo === 'parar') partes.push('sem música');
+  const filtros = Object.entries(cena.filtros ?? {}).filter(([, ligado]) => ligado).map(([nome]) => nome);
+  if (filtros.length) partes.push(filtros.join(' + '));
   return partes.join(' · ') || 'silêncio';
 }

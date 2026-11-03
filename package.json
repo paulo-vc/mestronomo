@@ -1,6 +1,6 @@
 {
   "name": "mestronomo",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Ferramentas de áudio para mestres de RPG: música, ambiente e soundboard direto no Discord",
   "main": "dist/main/main.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "icons": "electron scripts/render-icons.js",
     "plugin:ulanzi": "node scripts/instalar-plugin-ulanzi.js",
-    "dist": "npm run build:capture && tsc && npm run icons && node scripts/preparar-vendor.js && electron-builder --win nsis && electron-builder --win --config scripts/electron-builder-portatil.js"
+    "dist": "npm run build:capture && tsc && npm run icons && node scripts/preparar-vendor.js && electron-builder --win nsis --publish never && electron-builder --win --config scripts/electron-builder-portatil.js --publish never"
   },
   "author": "paulo-vc",
   "license": "MIT",
@@ -19,6 +19,7 @@
     "@discordjs/voice": "^0.19.2",
     "discord.js": "^14.27.0",
     "dotenv": "^18.0.9",
+    "electron-updater": "^6.8.11",
     "opusscript": "^0.0.8"
   },
   "devDependencies": {
@@ -62,6 +63,13 @@
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "artifactName": "Mestronomo-Setup-${version}.${ext}"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "paulo-vc",
+        "repo": "mestronomo"
+      }
+    ]
   }
 }

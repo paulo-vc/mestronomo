@@ -2,13 +2,10 @@ import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
 import OpusScript from 'opusscript';
 
-export const SAMPLE_RATE = 48_000;
-export const CHANNELS = 2;
-/** 20 ms por quadro — o ritmo em que o Discord consome áudio. */
-export const FRAME_MS = 20;
-export const FRAME_SAMPLES = (SAMPLE_RATE / 1000) * FRAME_MS;
-export const FRAME_VALUES = FRAME_SAMPLES * CHANNELS;
-export const FRAME_BYTES = FRAME_VALUES * 2;
+import { CHANNELS, FRAME_BYTES, FRAME_MS, FRAME_SAMPLES, FRAME_VALUES, SAMPLE_RATE } from './audioFormat';
+import { FilterChain, type FilterSettings } from './dsp';
+
+export { CHANNELS, FRAME_BYTES, FRAME_MS, FRAME_SAMPLES, FRAME_VALUES, SAMPLE_RATE };
 
 /** Quadros Opus esperando o Discord; acima disso descartamos para não acumular atraso. */
 const MAX_QUEUED_FRAMES = 3;
@@ -52,6 +49,8 @@ export interface MixerSettings {
   monitor: MonitorMode;
   /** Volume do monitor local (0–1). Não afeta o que vai para o bot. */
   monitorVolume: number;
+  /** Filtros de ambiente sobre a mixagem inteira (bot e monitor). */
+  filtros: FilterSettings;
 }
 
 /**
@@ -59,7 +58,7 @@ export interface MixerSettings {
  * Roda num relógio próprio, então efeitos andam no tempo certo mesmo sem o bot conectado.
  */
 export class Mixer extends EventEmitter {
-  settings: MixerSettings = { musica: 0.8, efeitos: 1, ambiente: 0.7, master: 1, ducking: 0.35, monitor: 'sem-capturas', monitorVolume: 0.7 };
+  settings: MixerSettings = { musica: 0.8, efeitos: 1, ambiente: 0.7, master: 1, ducking: 0.35, monitor: 'sem-capturas', monitorVolume: 0.7, filtros: { abafado: false, caverna: false, eco: false } };
 
   private sources = new Set<Source>();
   /** Fades em andamento: ganho atual, alvo, passo por quadro e se a fonte sai do mixer ao chegar em 0. */
@@ -68,6 +67,8 @@ export class Mixer extends EventEmitter {
   private scratch = new Int16Array(FRAME_VALUES);
   private acc = new Float32Array(FRAME_VALUES);
   private monitorAcc = new Float32Array(FRAME_VALUES);
+  private botFilters = new FilterChain();
+  private monitorFilters = new FilterChain();
   private encoder = new OpusScript(SAMPLE_RATE, CHANNELS, OpusScript.Application.AUDIO);
   private outputs = new Set<Readable>();
   private timer: NodeJS.Timeout | undefined;
@@ -213,6 +214,9 @@ export class Mixer extends EventEmitter {
     }
     // Fontes que terminaram um fade-out saem sem 'ended': foi o mestre que tirou, não a faixa que acabou.
     for (const source of finished) this.remove(source);
+    const { filtros } = this.settings;
+    if (botUsed) this.botFilters.process(this.acc, filtros);
+    if (monitorUsed) this.monitorFilters.process(this.monitorAcc, filtros);
     return {
       bot: botUsed ? toPcm(this.acc, master) : undefined,
       monitor: monitorUsed ? toPcm(this.monitorAcc, master) : undefined,

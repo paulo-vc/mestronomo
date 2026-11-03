@@ -14,8 +14,8 @@ let estado = null;
 let online = false;
 
 const MESSAGES = {
-  en: { noCombat: 'No combat', offline: 'Open Mestrônomo', noScene: 'Pick a scene', noSound: 'Pick a sound', noApp: 'Pick an app', inCall: 'IN CALL', outCall: 'CALL BOT', nothing: 'Nothing playing', preview: 'PREVIEW' },
-  pt: { noCombat: 'Sem combate', offline: 'Abra o Mestrônomo', noScene: 'Escolha uma cena', noSound: 'Escolha um som', noApp: 'Escolha um app', inCall: 'NA CALL', outCall: 'CHAMAR BOT', nothing: 'Nada tocando', preview: 'PRÉVIA' },
+  en: { noScript: 'No script', start: 'Start', noCombat: 'No combat', offline: 'Open Mestrônomo', noScene: 'Pick a scene', noSound: 'Pick a sound', noApp: 'Pick an app', inCall: 'IN CALL', outCall: 'CALL BOT', nothing: 'Nothing playing', preview: 'PREVIEW' },
+  pt: { noScript: 'Sem roteiro', start: 'Começar', noCombat: 'Sem combate', offline: 'Abra o Mestrônomo', noScene: 'Escolha uma cena', noSound: 'Escolha um som', noApp: 'Escolha um app', inCall: 'NA CALL', outCall: 'CHAMAR BOT', nothing: 'Nada tocando', preview: 'PRÉVIA' },
 };
 
 function t(key) {
@@ -100,6 +100,17 @@ function keyFace(action) {
         badge: valor === undefined ? undefined : `${Math.round(valor * 100)}%`,
       };
     }
+    case 'momento': {
+      const roteiro = estado.roteiro;
+      const ativo = roteiro.roteiros.find((r) => r.id === roteiro.ativo);
+      if (!ativo || ativo.momentos.length === 0) return { glyph: 'momento', text: t('noScript'), color: COLORS.muted };
+      const atual = ativo.momentos[roteiro.indice];
+      return {
+        glyph: 'momento',
+        text: atual ? atual.titulo : t('start'),
+        badge: atual ? `${roteiro.indice + 1}/${ativo.momentos.length}` : undefined,
+      };
+    }
     case 'turno': {
       const combate = estado.combate;
       const atual = combate.ativo ? combate.combatentes[combate.turno] : undefined;
@@ -182,6 +193,17 @@ async function run(context, action) {
       const novo = Math.round(Math.min(1, Math.max(0, atual + delta)) * 100);
       return api(`volume/${settings.alvo}/${novo}`);
     }
+    case 'momento': {
+      const roteiro = estado.roteiro;
+      const ativo = roteiro.roteiros.find((r) => r.id === roteiro.ativo);
+      if (!ativo || ativo.momentos.length === 0) return { glyph: 'momento', text: t('noScript'), color: COLORS.muted };
+      const atual = ativo.momentos[roteiro.indice];
+      return {
+        glyph: 'momento',
+        text: atual ? atual.titulo : t('start'),
+        badge: atual ? `${roteiro.indice + 1}/${ativo.momentos.length}` : undefined,
+      };
+    }
     case 'turno': {
       const combate = estado.combate;
       const atual = combate.ativo ? combate.combatentes[combate.turno] : undefined;
@@ -199,6 +221,8 @@ async function run(context, action) {
         background: ativa ? COLORS.backgroundOn : COLORS.background,
       };
     }
+    case 'momento':
+      return api('roteiro/proximo');
     case 'turno':
       return api(estado?.combate.ativo ? 'combate/proximo' : 'combate/iniciar');
     case 'cena':

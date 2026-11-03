@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; media-src 'self' https://cdn.freesound.org" />
     <title>Mestrônomo</title>
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -10,6 +10,8 @@
     <header class="topo">
       <h1 class="marca"><img src="../../assets/icon.svg" alt="" /> Mestrônomo</h1>
       <div class="row">
+        <button id="pedidos-aviso" class="pedidos-aviso hidden" title="Pedidos dos jogadores esperando você"></button>
+        <button id="atualizacao" class="atualizacao hidden"></button>
         <div id="bot" class="pill">Bot desligado</div>
         <button id="bot-botao">Chamar bot</button>
         <button id="abrir-handout" class="ghost icone-grande" title="Mandar uma imagem (mapa, retrato...) no Discord">🖼</button>
@@ -19,15 +21,61 @@
 
     <div class="corpo">
       <nav class="menu" aria-label="Seções">
-        <button data-ir="cenas"><span class="ic">🎬</span><span>Cenas</span><kbd>Ctrl+1</kbd></button>
-        <button data-ir="musica"><span class="ic">🎵</span><span>Música</span><kbd>Ctrl+2</kbd></button>
-        <button data-ir="ambiente"><span class="ic">🌧</span><span>Ambiente</span><kbd>Ctrl+3</kbd></button>
-        <button data-ir="soundboard"><span class="ic">🔊</span><span>Soundboard</span><kbd>Ctrl+4</kbd></button>
-        <button data-ir="mesa"><span class="ic">⚔</span><span>Mesa</span><kbd>Ctrl+5</kbd></button>
-        <button data-ir="audio"><span class="ic">🎚</span><span>Áudio</span><kbd>Ctrl+6</kbd></button>
+        <button data-ir="roteiro"><span class="ic">📜</span><span>Roteiro</span><kbd>Ctrl+1</kbd></button>
+        <button data-ir="cenas"><span class="ic">🎬</span><span>Cenas</span><kbd>Ctrl+2</kbd></button>
+        <button data-ir="musica"><span class="ic">🎵</span><span>Música</span><kbd>Ctrl+3</kbd></button>
+        <button data-ir="ambiente"><span class="ic">🌧</span><span>Ambiente</span><kbd>Ctrl+4</kbd></button>
+        <button data-ir="soundboard"><span class="ic">🔊</span><span>Soundboard</span><kbd>Ctrl+5</kbd></button>
+        <button data-ir="mesa"><span class="ic">⚔</span><span>Mesa</span><kbd>Ctrl+6</kbd></button>
+        <button data-ir="audio"><span class="ic">🎚</span><span>Áudio</span><kbd>Ctrl+7</kbd></button>
       </nav>
 
       <main class="conteudo">
+        <!-- Roteiro -->
+        <div class="pagina roteiro-pagina" data-pagina="roteiro">
+          <section class="card roteiro-lista">
+            <div class="card-head">
+              <h2>Roteiro</h2>
+              <div class="row">
+                <button id="roteiro-novo" class="ghost pequeno" title="Novo roteiro">+ Novo</button>
+                <button id="roteiro-renomear" class="ghost pequeno" title="Renomear">✎</button>
+                <button id="roteiro-apagar" class="ghost pequeno" title="Apagar roteiro">🗑</button>
+              </div>
+            </div>
+            <select id="roteiro-select" title="Roteiro desta sessão"></select>
+            <ol id="momentos" class="lista momentos" data-vazio="Nenhum momento ainda."></ol>
+            <button id="momento-novo" class="primary">+ Momento</button>
+          </section>
+
+          <section class="card roteiro-agora">
+            <div class="card-head">
+              <h2>Agora</h2>
+              <span id="momento-posicao" class="hint"></span>
+            </div>
+            <div id="agora-vazio" class="vazio-grande">
+              <p>Prepare a sessão em momentos (ex.: "Chegada à taverna", "A briga", "Fuga pela floresta"). Cada momento pode trocar a cena, ter notas e atalhos de sons e um handout.</p>
+              <button id="roteiro-comecar" class="primary">Começar do primeiro momento</button>
+            </div>
+            <div id="agora" class="hidden">
+              <h3 id="agora-titulo" class="agora-titulo"></h3>
+              <p id="agora-cena" class="hint"></p>
+              <div id="agora-notas" class="agora-notas"></div>
+              <div id="agora-sons" class="grid agora-sons"></div>
+              <div id="agora-handout" class="agora-handout hidden">
+                <img id="agora-handout-img" alt="" />
+                <div>
+                  <p id="agora-handout-legenda"></p>
+                  <button id="agora-handout-enviar" class="ghost pequeno">Mandar no Discord</button>
+                </div>
+              </div>
+            </div>
+            <div class="row roteiro-nav">
+              <button id="roteiro-anterior" class="ghost">◀ Anterior</button>
+              <button id="roteiro-proximo" class="primary">Próximo momento ▶</button>
+            </div>
+          </section>
+        </div>
+
         <!-- Cenas -->
         <div class="pagina" data-pagina="cenas">
           <section class="card" id="cenas">
@@ -79,6 +127,15 @@
             </div>
             <ol id="yt-fila" class="lista fila" data-vazio="Fila vazia."></ol>
             <button id="yt-limpar" class="ghost pequeno">Limpar fila</button>
+          </section>
+
+          <section class="card" id="pedidos">
+            <div class="card-head">
+              <h2>Pedidos dos jogadores</h2>
+              <label class="check"><input type="checkbox" id="pedidos-aceitar" /> Aceitar pedidos</label>
+            </div>
+            <p class="hint">Os jogadores pedem com <code>/musica link</code> e <code>/som nome</code> no Discord. Nada toca sem você aprovar.</p>
+            <ul id="pedidos-lista" class="lista pedidos" data-vazio="Nenhum pedido esperando."></ul>
           </section>
 
           <section class="card" id="programas">
@@ -136,6 +193,20 @@
             <div id="sons-abas" class="chips abas"></div>
             <div id="sons" class="grid"></div>
           </section>
+
+          <section class="card" id="freesound">
+            <div class="card-head">
+              <h2>Buscar sons no Freesound</h2>
+              <span class="hint">Milhares de efeitos gratuitos</span>
+            </div>
+            <form id="fs-form" class="row">
+              <input id="fs-busca" type="text" placeholder="Em inglês funciona melhor: sword, dragon roar, door creak…" required />
+              <select id="fs-destino" title="Para onde vai o som baixado"></select>
+              <button class="primary">Buscar</button>
+            </form>
+            <ul id="fs-resultados" class="lista fs-resultados"></ul>
+            <p class="hint">A prévia toca só para você. Respeite a licença: CC0 é livre; CC BY pede crédito (anotado em CREDITOS-freesound.txt na pasta); CC BY-NC não permite uso comercial.</p>
+          </section>
         </div>
 
         <!-- Mesa -->
@@ -147,6 +218,7 @@
                 <button data-aba="iniciativa" class="ativo">Iniciativa</button>
                 <button data-aba="timers">Timers</button>
                 <button data-aba="tabelas">Tabelas</button>
+                <button data-aba="sessao">Sessão</button>
               </div>
             </div>
 
@@ -184,6 +256,16 @@
                 <select name="som" title="Som tocado quando acabar"></select>
                 <button class="primary">Começar</button>
               </form>
+            </div>
+
+            <div data-painel="sessao" class="hidden">
+              <div class="row">
+                <span id="sessao-info" class="status"></span>
+                <button id="sessao-postar" class="primary">Postar resumo no Discord</button>
+                <button id="sessao-nova" class="ghost" title="Limpa o registro e começa a contar de novo">Nova sessão</button>
+              </div>
+              <ol id="sessao-eventos" class="lista sessao-eventos" data-vazio="Nada registrado ainda. Cenas, momentos do roteiro, combates, críticos e músicas aparecem aqui."></ol>
+              <p class="hint">O mestre também pode usar <code>/resumo</code> no Discord. Os jogadores entram na iniciativa com <code>/iniciativa bonus:3</code> e veem a ordem com <code>/ordem</code>.</p>
             </div>
 
             <div data-painel="tabelas" class="hidden">
@@ -226,6 +308,13 @@
               <span>Ducking<small>música enquanto um efeito toca</small></span>
               <input type="range" data-volume="ducking" min="0" max="100" /><output></output>
             </label>
+            <h3>Filtros de ambiente</h3>
+            <p class="hint">Mudam todo o som da mesa (também na barra de baixo). Salvar uma cena guarda os filtros ligados.</p>
+            <div class="chips filtros">
+              <button data-filtro="abafado">Abafado</button>
+              <button data-filtro="caverna">Caverna</button>
+              <button data-filtro="eco">Eco</button>
+            </div>
           </section>
 
           <section class="card">
@@ -263,12 +352,54 @@
       </div>
       <span id="erro" class="erro" role="status"></span>
       <div class="barra-acoes">
+        <div class="chips filtros" title="Filtros de ambiente sobre todo o som da mesa">
+          <button data-filtro="abafado" title="Atrás da porta, debaixo d'água">Abafado</button>
+          <button data-filtro="caverna" title="Reverberação de masmorra">Caverna</button>
+          <button data-filtro="eco" title="Eco de abismo">Eco</button>
+        </div>
         <button id="parar-efeitos" class="ghost" title="Para todos os efeitos, inclusive loops (Ctrl+Alt+0)">⏹ Efeitos</button>
         <label class="slider compacto barra-volume" title="Volume geral">
           <span>🔊</span><input type="range" data-volume="master" min="0" max="100" /><output></output>
         </label>
       </div>
     </footer>
+
+    <dialog id="momento-editor" class="largo">
+      <form method="dialog" id="momento-form">
+        <h2 id="momento-editor-titulo">Momento</h2>
+        <label class="campo"><span>Título</span><input type="text" name="titulo" required maxlength="80" placeholder="Ex.: Chegada à taverna" /></label>
+        <label class="campo"><span>Notas</span><textarea name="notas" rows="7" placeholder="O que narrar, falas de NPCs, pistas, CDs de testes…"></textarea></label>
+        <label class="campo"><span>Cena ao entrar</span><select name="cena"></select></label>
+        <label class="campo"><span>Atalhos de sons</span>
+          <select name="sons" multiple size="5" title="Ctrl+clique para escolher vários"></select>
+          <small>Aparecem como botões enquanto este momento estiver na tela.</small>
+        </label>
+        <div class="campo">
+          <span>Handout</span>
+          <div class="row">
+            <button type="button" id="momento-imagem" class="ghost pequeno">Escolher imagem…</button>
+            <span id="momento-imagem-nome" class="hint"></span>
+            <button type="button" id="momento-imagem-tirar" class="ghost pequeno hidden">Tirar</button>
+          </div>
+          <input type="text" name="legenda" maxlength="200" placeholder="Legenda (opcional)" />
+        </div>
+        <div class="row fim">
+          <button value="cancelar" class="ghost" formnovalidate>Cancelar</button>
+          <button value="salvar" class="primary">Salvar momento</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="pergunta">
+      <form method="dialog" id="pergunta-form">
+        <h2 id="pergunta-titulo"></h2>
+        <input type="text" name="texto" maxlength="80" />
+        <div class="row fim">
+          <button value="cancelar" class="ghost" formnovalidate>Cancelar</button>
+          <button value="ok" class="primary">OK</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="som-opcoes">
       <form method="dialog" id="som-opcoes-form">
@@ -330,6 +461,13 @@
           </label>
         </details>
 
+        <h3>Freesound</h3>
+        <label class="campo">
+          <span>Chave da API do Freesound (opcional)</span>
+          <input type="password" name="freesound" autocomplete="off" spellcheck="false" />
+          <small>Para buscar efeitos dentro do app. É grátis: <button type="button" id="fs-chave" class="link">pegar uma chave</button> (escolha "API key" e copie a chave).</small>
+        </label>
+
         <h3>Geral</h3>
         <label class="check"><input type="checkbox" name="autoStart" /> Iniciar com o Windows (abre na bandeja)</label>
         <label class="check"><input type="checkbox" name="tocandoAgora" /> Postar "tocando agora" no canal de texto</label>
@@ -342,6 +480,8 @@
           <button type="button" id="backup-exportar" class="ghost">Exportar…</button>
           <button type="button" id="backup-importar" class="ghost">Importar…</button>
         </div>
+
+        <p id="versao" class="hint"></p>
 
         <div class="row fim">
           <button value="cancelar" class="ghost">Cancelar</button>

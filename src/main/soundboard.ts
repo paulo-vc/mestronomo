@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Mixer } from './mixer';
-import { FileSource } from './sources';
+import { playFile, type PcmCache } from './pcmCache';
 import { AUDIO_EXT } from './ambience';
 
 /** Ajustes de um som, guardados no config.json. */
@@ -41,13 +41,14 @@ const groupName = (file: string) => baseName(file).replace(/(?:[\s._-]+\(?\d+\)?
  * viram um só botão que sorteia entre eles. Emite 'change' com o estado.
  */
 export class Soundboard extends EventEmitter {
-  private loops = new Map<string, FileSource>();
+  private loops = new Map<string, ReturnType<typeof playFile>>();
   private last = new Map<string, string>();
 
   constructor(
     private mixer: Mixer,
     readonly dir: string,
     private options: Record<string, SoundOptions> = {},
+    private cache?: PcmCache,
   ) {
     super();
   }
@@ -146,7 +147,7 @@ export class Soundboard extends EventEmitter {
 
   private source(som: SoundGroup, preview: boolean, loop: boolean) {
     const file = path.join(this.dir, this.pick(som));
-    const source = new FileSource(file, 'efeitos', preview, loop);
+    const source = playFile(this.cache, file, 'efeitos', preview, loop);
     source.volume = som.volume;
     // Loops (batida de coração, sino ao fundo...) não abaixam a música o tempo todo.
     if (loop) source.ducks = false;

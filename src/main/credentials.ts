@@ -15,6 +15,7 @@ export interface Credentials {
 interface Stored {
   token?: string; // base64 do token criptografado
   ownerId?: string;
+  freesound?: string; // base64 da chave do Freesound criptografada
 }
 
 const file = () => path.join(app.getPath('userData'), 'discord.json');
@@ -47,9 +48,33 @@ export function saveCredentials(token: string, ownerId: string) {
   fs.writeFileSync(file(), JSON.stringify(stored, null, 2));
 }
 
+export function loadFreesoundKey(): string | undefined {
+  if (process.env.FREESOUND_KEY) return process.env.FREESOUND_KEY;
+  const stored = readStored();
+  if (!stored.freesound || !safeStorage.isEncryptionAvailable()) return undefined;
+  try {
+    return safeStorage.decryptString(Buffer.from(stored.freesound, 'base64'));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Chave vazia mantém a já salva. */
+export function saveFreesoundKey(key: string) {
+  if (!key.trim()) return;
+  const stored = readStored();
+  stored.freesound = safeStorage.encryptString(key.trim()).toString('base64');
+  fs.writeFileSync(file(), JSON.stringify(stored, null, 2));
+}
+
 /** O que a tela de configuração pode saber: se há token salvo e de onde ele vem, nunca o valor. */
 export function credentialsInfo() {
   const fromEnv = Boolean(process.env.DISCORD_TOKEN);
   const stored = readStored();
-  return { fromEnv, hasToken: fromEnv || Boolean(stored.token), ownerId: fromEnv ? process.env.DISCORD_OWNER_ID : stored.ownerId ?? '' };
+  return {
+    fromEnv,
+    hasToken: fromEnv || Boolean(stored.token),
+    ownerId: fromEnv ? process.env.DISCORD_OWNER_ID : stored.ownerId ?? '',
+    hasFreesound: Boolean(process.env.FREESOUND_KEY || stored.freesound),
+  };
 }

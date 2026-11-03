@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Notification, dialog, globalShortcut, ipcMain, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import dotenv from 'dotenv';
 import { Mixer, type MixerSettings, type MonitorMode, type VolumeKey } from './mixer';
 import { AppCaptureSource, listAudioApps, type TrackInfo } from './sources';
@@ -15,12 +16,23 @@ import { Timers, type TimerState } from './timers';
 import { listTables, rollTable } from './tables';
 import { SceneManager, type Scene, type SceneMusic } from './scenes';
 import { PACKAGED, ROOT } from './paths';
-import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
+import { credentialsInfo, loadCredentials, loadFreesoundKey, saveCredentials, saveFreesoundKey } from './credentials';
+import * as freesound from './freesound';
 import { createTray } from './tray';
 import { DEVELOPER_PORTAL, botIdFromToken, checkToken, inviteUrl } from './botSetup';
 import { exportBackup, importBackup } from './backup';
+import { Updater } from './updater';
+import { Scripts, type Moment, type ScriptState } from './script';
+import { FILTERS, type FilterName } from './dsp';
+import { Requests, type PlayerRequest } from './requests';
+import { PcmCache } from './pcmCache';
+import { SessionLog, type SessionLogState } from './sessionLog';
+import type { BotHooks } from './discord';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
+// A interface é simples (sem vídeo nem 3D): sem aceleração de GPU o processo de GPU fica
+// ~36 MB menor e a janela praticamente igual (medido com scripts/medir-app.ps1).
+app.disableHardwareAcceleration();
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
 if (process.env.MESTRONOMO_USER_DATA) app.setPath('userData', process.env.MESTRONOMO_USER_DATA);
 
@@ -38,16 +50,23 @@ const SOUNDS_DIR = path.join(DATA_DIR, 'sons');
 const AMBIENT_DIR = path.join(DATA_DIR, 'ambientes');
 const MUSIC_DIR = path.join(DATA_DIR, 'musicas');
 const TABLES_DIR = path.join(DATA_DIR, 'tabelas');
+const HANDOUTS_DIR = path.join(DATA_DIR, 'handouts');
 /** Iniciado junto com o Windows: abre direto na bandeja, sem mostrar a janela. */
 const START_HIDDEN = process.argv.includes('--oculto');
 const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
 
 const mixer = new Mixer();
 const youtube = new YouTubePlayer(mixer);
-const ambience = new Ambience(mixer, AMBIENT_DIR);
+/** Efeitos e loops curtos decodificados uma vez e tocados da memória (ver pcmCache.ts). */
+const pcmCache = new PcmCache();
+const ambience = new Ambience(mixer, AMBIENT_DIR, pcmCache);
 let soundboard: Soundboard;
 let combat: Combat;
+let scripts: Scripts;
 const timers = new Timers();
+const updater = new Updater(PORTABLE);
+const requests = new Requests();
+let sessionLog: SessionLog;
 let scenes: SceneManager;
 /** Capturas ativas, por nome do executável. Várias podem tocar juntas. */
 const captures = new Map<string, AppCaptureSource>();
@@ -79,6 +98,12 @@ interface SavedConfig {
   combate?: CombatState;
   /** Anunciar "vez de Fulano" no canal de texto a cada turno. */
   anunciarTurnos?: boolean;
+  /** Roteiros de sessão e o momento atual. */
+  roteiro?: ScriptState;
+  /** Aceitar /musica e /som dos jogadores. */
+  aceitarPedidos?: boolean;
+  /** Registro da sessão em andamento (para o resumo). */
+  sessao?: SessionLogState;
 }
 
 let config: SavedConfig = {};
@@ -161,6 +186,55 @@ function setVolume(key: VolumeKey | 'youtube', value: number) {
   saveConfig();
 }
 
+/** Liga/desliga um filtro de ambiente; sem `ligado`, alterna. */
+function setFilter(nome: FilterName, ligado?: boolean) {
+  if (!FILTERS.includes(nome)) return;
+  mixer.settings.filtros = { ...mixer.settings.filtros, [nome]: ligado ?? !mixer.settings.filtros[nome] };
+  send('mixer', mixer.settings);
+  saveConfig();
+}
+
+/** O que o bot pede ao app: tracker, pedidos, soundboard e resumo. */
+const botHooks: BotHooks = {
+  iniciativa: (jogador, total) => combat.upsertPlayer(jogador.id, jogador.nome, total),
+  ordem: () => combat.orderText(),
+  sons: () => soundboard.list().map((s) => s.id),
+  pedido: (tipo, jogador, valor, doMestre) => {
+    if (tipo === 'musica' && !/^https?:\/\//i.test(valor.trim())) return { ok: false, mensagem: 'Mande o link completo do vídeo (https://...).' };
+    if (tipo === 'som' && !soundboard.find(valor)) return { ok: false, mensagem: `Não achei o som "${valor}" na soundboard.` };
+    if (doMestre) {
+      runRequest({ id: '', tipo, jogador, valor, em: Date.now() });
+      return { ok: true, mensagem: tipo === 'musica' ? 'Música adicionada à fila.' : 'Tocando.' };
+    }
+    return requests.add(tipo, jogador, valor);
+  },
+  rolagem: (jogador, r) => {
+    if (r.natural === 'critico') sessionLog.add('critico', `${jogador.nome} tirou 20 natural (${r.expressao})`);
+    if (r.natural === 'falha') sessionLog.add('falha', `${jogador.nome} tirou 1 natural (${r.expressao})`);
+  },
+  resumo: () => sessionLog.summary(),
+};
+
+/** Executa um pedido aprovado (ou feito pelo próprio mestre). */
+function runRequest(pedido: PlayerRequest) {
+  if (pedido.tipo === 'musica') youtube.add(pedido.valor);
+  else playSound(soundboard.find(pedido.valor)?.id ?? pedido.valor);
+  if (pedido.id) {
+    sessionLog.add('pedido', `${pedido.jogador.nome} pediu ${pedido.tipo === 'musica' ? 'uma música' : `o som "${pedido.valor}"`}`);
+    if (config.canalTexto) postToDiscord(`${pedido.tipo === 'musica' ? '🎵' : '🔊'} Tocando a pedido de **${pedido.jogador.nome}**.`);
+  }
+}
+
+async function postSummary() {
+  try {
+    if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
+    await bot.postSummary();
+    send('aviso', 'Resumo da sessão postado no Discord.');
+  } catch (err) {
+    send('erro', (err as Error).message);
+  }
+}
+
 function joinBot() {
   if (!bot) send('erro', 'Configure o bot primeiro (botão ⚙ no topo).');
   return bot?.joinOwner() ?? false;
@@ -213,16 +287,34 @@ function rollTableSafe(nome: string) {
   }
 }
 
+const IMAGE_FILTER = [{ name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }];
+
+async function pickImage(title: string) {
+  const escolha = await dialog.showOpenDialog(window!, { title, properties: ['openFile'], filters: IMAGE_FILTER });
+  return escolha.canceled ? undefined : escolha.filePaths[0];
+}
+
 async function sendHandout(legenda: string) {
   if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
-  const escolha = await dialog.showOpenDialog(window!, {
-    title: 'Escolha a imagem para mandar no Discord',
-    properties: ['openFile'],
-    filters: [{ name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
-  });
-  if (escolha.canceled || !escolha.filePaths[0]) return false;
-  await bot.sendHandout(escolha.filePaths[0], legenda);
+  const arquivo = await pickImage('Escolha a imagem para mandar no Discord');
+  if (!arquivo) return false;
+  await bot.sendHandout(arquivo, legenda);
   return true;
+}
+
+/** Manda o handout preparado num momento do roteiro. */
+async function sendMomentHandout(momentoId: string) {
+  const momento = scripts.state().roteiros.flatMap((r) => r.momentos).find((m) => m.id === momentoId);
+  if (!momento?.handout) return false;
+  try {
+    if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
+    await bot.sendHandout(scripts.handoutPath(momento.handout.arquivo), momento.handout.legenda);
+    send('aviso', `Handout "${momento.handout.legenda || momento.handout.arquivo}" enviado.`);
+    return true;
+  } catch (err) {
+    send('erro', (err as Error).message);
+    return false;
+  }
 }
 
 function state() {
@@ -237,6 +329,13 @@ function state() {
     anunciarTurnos: config.anunciarTurnos === true,
     timers: timers.state(),
     tabelas: listTables(TABLES_DIR),
+    versao: app.getVersion(),
+    cache: pcmCache.stats(),
+    pedidos: requests.state(),
+    sessao: sessionLog.state(),
+    roteiro: scripts.state(),
+    handoutsUrl: pathToFileURL(HANDOUTS_DIR).href,
+    atualizacao: updater.state,
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
     soundboard: soundboard.state(),
@@ -300,7 +399,8 @@ function registerIpc() {
     tocandoAgora: config.tocandoAgora !== false,
     canalTexto: Boolean(config.canalTexto),
   }));
-  ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean, tocandoAgora: boolean) => {
+  ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean, tocandoAgora: boolean, freesoundKey: string) => {
+    saveFreesoundKey(freesoundKey ?? '');
     if (!credentialsInfo().fromEnv) saveCredentials(token, ownerId);
     setAutoStart(autoStart);
     config.tocandoAgora = tocandoAgora;
@@ -329,6 +429,64 @@ function registerIpc() {
   ipcMain.handle('discord-texto', (_e, texto: string) => postToDiscord(texto));
   ipcMain.handle('abrir-tabelas', () => shell.openPath(TABLES_DIR));
   ipcMain.handle('bot-verificar', (_e, token: string) => checkToken(token));
+  ipcMain.handle('roteiro-criar', (_e, nome: string) => scripts.create(nome));
+  ipcMain.handle('roteiro-renomear', (_e, id: string, nome: string) => scripts.rename(id, nome));
+  ipcMain.handle('roteiro-remover', (_e, id: string) => scripts.remove(id));
+  ipcMain.handle('roteiro-selecionar', (_e, id: string) => scripts.select(id));
+  ipcMain.handle('roteiro-ir', (_e, indice: number) => scripts.goTo(indice));
+  ipcMain.handle('roteiro-proximo', () => scripts.next());
+  ipcMain.handle('roteiro-anterior', () => scripts.previous());
+  ipcMain.handle('momento-salvar', (_e, momento: Moment) => scripts.saveMoment(momento));
+  ipcMain.handle('momento-remover', (_e, id: string) => scripts.removeMoment(id));
+  ipcMain.handle('momento-mover', (_e, id: string, delta: -1 | 1) => scripts.moveMoment(id, delta));
+  ipcMain.handle('momento-imagem', async () => {
+    const arquivo = await pickImage('Escolha a imagem do handout');
+    return arquivo ? scripts.importHandout(arquivo) : undefined;
+  });
+  ipcMain.handle('momento-handout', (_e, id: string) => sendMomentHandout(id));
+  ipcMain.handle('freesound-buscar', async (_e, query: string) => {
+    const key = loadFreesoundKey();
+    if (!key) {
+      send('erro', 'Cole a sua chave do Freesound em ⚙ → Freesound (é grátis).');
+      return [];
+    }
+    try {
+      return await freesound.search(query, key);
+    } catch (err) {
+      send('erro', (err as Error).message);
+      return [];
+    }
+  });
+  ipcMain.handle('freesound-baixar', async (_e, som: freesound.FreesoundResult, destino: string) => {
+    // destino: "sons", "sons/<categoria>" ou "ambientes".
+    const partes = destino.split('/').map((p) => path.basename(p)).filter(Boolean);
+    const pasta = partes[0] === 'ambientes' ? AMBIENT_DIR : path.join(SOUNDS_DIR, ...partes.slice(1));
+    try {
+      const arquivo = await freesound.download(som, pasta);
+      send('aviso', `"${arquivo}" baixado para ${destino}.`);
+      send('soundboard', soundboard.state());
+      send('ambiente', ambience.state());
+      return true;
+    } catch (err) {
+      send('erro', (err as Error).message);
+      return false;
+    }
+  });
+  ipcMain.handle('freesound-chave', () => shell.openExternal(freesound.KEY_URL));
+  ipcMain.handle('pedido-aprovar', (_e, id: string) => requests.approve(id));
+  ipcMain.handle('pedido-recusar', (_e, id: string) => requests.reject(id));
+  ipcMain.handle('pedidos-aceitar', (_e, sim: boolean) => {
+    requests.setAccepting(sim);
+    config.aceitarPedidos = sim;
+    saveConfig();
+  });
+  ipcMain.handle('resumo-postar', () => postSummary());
+  ipcMain.handle('sessao-nova', () => sessionLog.reset());
+  ipcMain.handle('filtro', (_e, nome: FilterName, ligado?: boolean) => setFilter(nome, ligado));
+  ipcMain.handle('atualizar', () => {
+    if (updater.state.estado === 'disponivel') shell.openExternal(updater.state.url);
+    else updater.installNow();
+  });
   ipcMain.handle('backup-exportar', (_e, includeFiles: boolean) => exportSettings(includeFiles));
   ipcMain.handle('backup-importar', () => importSettings());
   ipcMain.handle('bot-portal', () => shell.openExternal(DEVELOPER_PORTAL));
@@ -461,7 +619,7 @@ function registerShortcuts() {
 function startBot() {
   const credentials = loadCredentials();
   if (!credentials) return send('bot', state().bot);
-  bot = new DiscordBot(mixer, credentials.token, credentials.ownerId);
+  bot = new DiscordBot(mixer, credentials.token, credentials.ownerId, botHooks);
   bot.textChannelId = config.canalTexto;
   bot.on('canal', (id: string) => {
     config.canalTexto = id;
@@ -504,6 +662,8 @@ app.whenReady().then(() => {
   seedExampleTables();
   config = loadConfig();
   Object.assign(mixer.settings, config.mixer);
+  // Configs antigas não têm filtros.
+  mixer.settings.filtros = { abafado: false, caverna: false, eco: false, ...config.mixer?.filtros };
   if (config.youtube) {
     youtube.volume = config.youtube.volume;
     youtube.loop = config.youtube.repetir;
@@ -520,19 +680,62 @@ app.whenReady().then(() => {
     send('ambiente', s);
     refreshNowPlaying();
   });
-  soundboard = new Soundboard(mixer, SOUNDS_DIR, config.sons);
+  soundboard = new Soundboard(mixer, SOUNDS_DIR, config.sons, pcmCache);
   soundboard.on('change', (s) => send('soundboard', s));
   soundboard.on('options', (sons: Record<string, SoundOptions>) => {
     config.sons = sons;
     saveConfig();
   });
-  scenes = new SceneManager(ambience, youtube, config.cenas, config.fadeMs);
+  scenes = new SceneManager(ambience, youtube, config.cenas, config.fadeMs, {
+    get: () => mixer.settings.filtros,
+    set: (filtros) => {
+      mixer.settings.filtros = filtros;
+      send('mixer', mixer.settings);
+      saveConfig();
+    },
+  });
   scenes.on('change', (s) => {
     send('cenas', s);
     refreshNowPlaying();
   });
 
   // Combate: ao começar ativa a cena de combate; ao encerrar volta para a cena de antes.
+  scripts = new Scripts(config.roteiro, HANDOUTS_DIR);
+  scripts.on('change', (s: ScriptState) => send('roteiro', s));
+  scripts.on('save', (s: ScriptState) => {
+    config.roteiro = s;
+    saveConfig();
+  });
+  // Entrar num momento ativa a cena dele.
+  scripts.on('momento', (m: Moment) => m.cena && scenes.activate(m.cena));
+
+  // Registro da sessão: alimentado por cenas, roteiro, combate, música e pedidos.
+  sessionLog = new SessionLog(config.sessao);
+  sessionLog.on('change', (s: SessionLogState) => {
+    config.sessao = s;
+    saveConfig();
+    send('sessao', s);
+  });
+  let cenaRegistrada = scenes.state().ativa;
+  scenes.on('change', (s) => {
+    if (s.ativa && s.ativa !== cenaRegistrada) sessionLog.add('cena', `Cena: ${s.cenas.find((c: { id: string }) => c.id === s.ativa)?.nome}`);
+    cenaRegistrada = s.ativa;
+  });
+  scripts.on('momento', (m: Moment) => sessionLog.add('momento', m.titulo));
+  youtube.on('change', (s) => {
+    const faixa = s.fila[s.atual];
+    if (faixa && !s.pausado && faixa.title !== 'Carregando…') sessionLog.add('musica', faixa.title);
+  });
+
+  requests.aceitando = config.aceitarPedidos !== false;
+  requests.on('change', (s) => send('pedidos', s));
+  requests.on('aprovado', (p: PlayerRequest) => runRequest(p));
+  requests.on('novo', (p: PlayerRequest) => {
+    if (Notification.isSupported() && !window?.isFocused()) {
+      new Notification({ title: `📨 Pedido de ${p.jogador.nome}`, body: p.tipo === 'musica' ? p.valor : `Som: ${p.valor}` }).show();
+    }
+  });
+
   combat = new Combat(config.combate);
   let cenaAntesDoCombate: string | undefined;
   combat.on('change', (s: CombatState) => {
@@ -544,7 +747,9 @@ app.whenReady().then(() => {
     cenaAntesDoCombate = scenes.state().ativa;
     if (cena) scenes.activate(cena);
   });
+  combat.on('inicio', () => sessionLog.add('combate', `Combate começou (${combat.state().combatentes.length} combatentes)`));
   combat.on('fim', () => {
+    sessionLog.add('combate', `Combate terminou na rodada ${combat.state().rodada || '?'}`);
     if (combat.state().cenaCombate && cenaAntesDoCombate) scenes.activate(cenaAntesDoCombate);
     cenaAntesDoCombate = undefined;
   });
@@ -585,12 +790,22 @@ app.whenReady().then(() => {
     combat,
     timers,
     rollTable: (nome: string) => rollTable(TABLES_DIR, nome),
+    scripts,
+    setFilter,
   }, (message) => {
     apiError = message;
     send('erro', message);
   });
   startBot();
   createWindow();
+  updater.on('change', (s) => send('atualizacao', s));
+  // Com o app já de pé, pré-carrega os efeitos (e depois os ambientes) um por vez.
+  setTimeout(() => {
+    const sons = soundboard.list().flatMap((s) => s.arquivos.map((a) => path.join(SOUNDS_DIR, a)));
+    const ambientes = ambience.files().map((a) => path.join(AMBIENT_DIR, a));
+    pcmCache.warm([...sons, ...ambientes]);
+  }, 3000);
+  updater.start();
   tray = createTray({
     show: showWindow,
     quit: () => app.quit(),

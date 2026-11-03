@@ -3,6 +3,10 @@
   "Description": "Music, ambience and soundboard for tabletop RPG game masters on Discord",
   "Actions": [
     {
+      "Name": "Next Moment",
+      "Tooltip": "Goes to the next moment of the session script"
+    },
+    {
       "Name": "Scene",
       "Tooltip": "Switches to a scene (ambience + music) with a crossfade"
     },
