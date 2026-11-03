@@ -46,6 +46,11 @@ contextBridge.exposeInMainWorld('mestronomo', {
   backupImportar: invoke('backup-importar'),
   atualizar: invoke('atualizar'),
   filtro: invoke('filtro'),
+  freesound: {
+    buscar: invoke('freesound-buscar'),
+    baixar: invoke('freesound-baixar'),
+    pedirChave: invoke('freesound-chave'),
+  },
   roteiro: {
     criar: invoke('roteiro-criar'),
     renomear: invoke('roteiro-renomear'),

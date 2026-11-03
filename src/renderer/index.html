@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; media-src 'self' https://cdn.freesound.org" />
     <title>Mestrônomo</title>
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -182,6 +182,20 @@
             <p class="hint">Clique toca na call · botão direito toca só no seu fone · ⋯ ajusta volume, loop e cor. Subpastas viram abas; "espada 1", "espada 2"… viram um botão que sorteia.</p>
             <div id="sons-abas" class="chips abas"></div>
             <div id="sons" class="grid"></div>
+          </section>
+
+          <section class="card" id="freesound">
+            <div class="card-head">
+              <h2>Buscar sons no Freesound</h2>
+              <span class="hint">Milhares de efeitos gratuitos</span>
+            </div>
+            <form id="fs-form" class="row">
+              <input id="fs-busca" type="text" placeholder="Em inglês funciona melhor: sword, dragon roar, door creak…" required />
+              <select id="fs-destino" title="Para onde vai o som baixado"></select>
+              <button class="primary">Buscar</button>
+            </form>
+            <ul id="fs-resultados" class="lista fs-resultados"></ul>
+            <p class="hint">A prévia toca só para você. Respeite a licença: CC0 é livre; CC BY pede crédito (anotado em CREDITOS-freesound.txt na pasta); CC BY-NC não permite uso comercial.</p>
           </section>
         </div>
 
@@ -425,6 +439,13 @@
             <small>Só o mestre usa /entrar, /sair e /canal. Para outra pessoa mestrar com o seu bot, cole o ID dela (Modo desenvolvedor → botão direito no nome → Copiar ID).</small>
           </label>
         </details>
+
+        <h3>Freesound</h3>
+        <label class="campo">
+          <span>Chave da API do Freesound (opcional)</span>
+          <input type="password" name="freesound" autocomplete="off" spellcheck="false" />
+          <small>Para buscar efeitos dentro do app. É grátis: <button type="button" id="fs-chave" class="link">pegar uma chave</button> (escolha "API key" e copie a chave).</small>
+        </label>
 
         <h3>Geral</h3>
         <label class="check"><input type="checkbox" name="autoStart" /> Iniciar com o Windows (abre na bandeja)</label>

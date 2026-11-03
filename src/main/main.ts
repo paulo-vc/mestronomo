@@ -16,7 +16,8 @@ import { Timers, type TimerState } from './timers';
 import { listTables, rollTable } from './tables';
 import { SceneManager, type Scene, type SceneMusic } from './scenes';
 import { PACKAGED, ROOT } from './paths';
-import { credentialsInfo, loadCredentials, saveCredentials } from './credentials';
+import { credentialsInfo, loadCredentials, loadFreesoundKey, saveCredentials, saveFreesoundKey } from './credentials';
+import * as freesound from './freesound';
 import { createTray } from './tray';
 import { DEVELOPER_PORTAL, botIdFromToken, checkToken, inviteUrl } from './botSetup';
 import { exportBackup, importBackup } from './backup';
@@ -339,7 +340,8 @@ function registerIpc() {
     tocandoAgora: config.tocandoAgora !== false,
     canalTexto: Boolean(config.canalTexto),
   }));
-  ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean, tocandoAgora: boolean) => {
+  ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean, tocandoAgora: boolean, freesoundKey: string) => {
+    saveFreesoundKey(freesoundKey ?? '');
     if (!credentialsInfo().fromEnv) saveCredentials(token, ownerId);
     setAutoStart(autoStart);
     config.tocandoAgora = tocandoAgora;
@@ -383,6 +385,35 @@ function registerIpc() {
     return arquivo ? scripts.importHandout(arquivo) : undefined;
   });
   ipcMain.handle('momento-handout', (_e, id: string) => sendMomentHandout(id));
+  ipcMain.handle('freesound-buscar', async (_e, query: string) => {
+    const key = loadFreesoundKey();
+    if (!key) {
+      send('erro', 'Cole a sua chave do Freesound em ⚙ → Freesound (é grátis).');
+      return [];
+    }
+    try {
+      return await freesound.search(query, key);
+    } catch (err) {
+      send('erro', (err as Error).message);
+      return [];
+    }
+  });
+  ipcMain.handle('freesound-baixar', async (_e, som: freesound.FreesoundResult, destino: string) => {
+    // destino: "sons", "sons/<categoria>" ou "ambientes".
+    const partes = destino.split('/').map((p) => path.basename(p)).filter(Boolean);
+    const pasta = partes[0] === 'ambientes' ? AMBIENT_DIR : path.join(SOUNDS_DIR, ...partes.slice(1));
+    try {
+      const arquivo = await freesound.download(som, pasta);
+      send('aviso', `"${arquivo}" baixado para ${destino}.`);
+      send('soundboard', soundboard.state());
+      send('ambiente', ambience.state());
+      return true;
+    } catch (err) {
+      send('erro', (err as Error).message);
+      return false;
+    }
+  });
+  ipcMain.handle('freesound-chave', () => shell.openExternal(freesound.KEY_URL));
   ipcMain.handle('filtro', (_e, nome: FilterName, ligado?: boolean) => setFilter(nome, ligado));
   ipcMain.handle('atualizar', () => {
     if (updater.state.estado === 'disponivel') shell.openExternal(updater.state.url);

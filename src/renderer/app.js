@@ -192,6 +192,8 @@ async function abrirConfig() {
   configForm.token.placeholder = info.hasToken ? '•••••••• (salvo; deixe vazio para manter)' : 'Cole o token aqui';
   configForm.ownerId.value = info.ownerId ?? '';
   configForm.autoStart.checked = info.autoStart;
+  configForm.freesound.value = '';
+  configForm.freesound.placeholder = info.hasFreesound ? '•••••••• (salva; deixe vazio para manter)' : 'Cole a chave aqui';
   configForm.tocandoAgora.checked = info.tocandoAgora;
   $('#config-canal').textContent = info.canalTexto
     ? 'Canal de texto definido. Para trocar, use /canal no canal desejado.'
@@ -204,6 +206,7 @@ async function abrirConfig() {
 
 $('#abrir-config').addEventListener('click', abrirConfig);
 $('#bot-portal').addEventListener('click', () => api.botPortal());
+$('#fs-chave').addEventListener('click', () => api.freesound.pedirChave());
 $('#backup-exportar').addEventListener('click', () => api.backupExportar($('#backup-arquivos').checked));
 $('#backup-importar').addEventListener('click', () => api.backupImportar());
 $('#bot-convidar').addEventListener('click', () => api.botConvidar(configForm.token.value));
@@ -217,7 +220,8 @@ $('#bot-verificar').addEventListener('click', async () => {
 });
 dialogo.addEventListener('close', () => {
   if (dialogo.returnValue !== 'salvar') return;
-  api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked, configForm.tocandoAgora.checked);
+  api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked, configForm.tocandoAgora.checked, configForm.freesound.value);
+  configForm.freesound.value = '';
   configForm.token.value = '';
 });
 
@@ -618,6 +622,67 @@ function renderSoundboard(estado) {
   );
 }
 
+// Freesound
+
+const previa = new Audio();
+let previaTocando = null;
+
+function preencherDestinosFreesound(estado) {
+  const select = $('#fs-destino');
+  const atual = select.value;
+  const opcoes = [new Option('→ Soundboard (Geral)', 'sons')];
+  for (const c of estado.categorias.filter((c) => c !== 'Geral')) opcoes.push(new Option(`→ Soundboard: ${c}`, `sons/${c}`));
+  opcoes.push(new Option('→ Ambiente', 'ambientes'));
+  select.replaceChildren(...opcoes);
+  if ([...select.options].some((o) => o.value === atual)) select.value = atual;
+}
+
+$('#fs-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const lista = $('#fs-resultados');
+  lista.replaceChildren(el('li', { className: 'carregando', textContent: 'Buscando…' }));
+  const resultados = await api.freesound.buscar($('#fs-busca').value.trim());
+  lista.replaceChildren(
+    ...resultados.map((som) => {
+      const ouvir = el('button', { className: 'ghost icone', textContent: '▶', title: 'Ouvir a prévia (só para você)' });
+      ouvir.addEventListener('click', () => {
+        if (previaTocando === som.id && !previa.paused) {
+          previa.pause();
+          ouvir.textContent = '▶';
+          return;
+        }
+        for (const b of lista.querySelectorAll('.tocando-previa')) {
+          b.textContent = '▶';
+          b.classList.remove('tocando-previa');
+        }
+        previa.src = som.previa;
+        previa.play();
+        previaTocando = som.id;
+        ouvir.textContent = '⏸';
+        ouvir.classList.add('tocando-previa');
+        previa.onended = () => (ouvir.textContent = '▶');
+      });
+      const baixar = el('button', { className: 'ghost pequeno', textContent: 'Baixar' });
+      baixar.addEventListener('click', async () => {
+        baixar.disabled = true;
+        baixar.textContent = '…';
+        const ok = await api.freesound.baixar(som, $('#fs-destino').value);
+        baixar.textContent = ok ? '✓' : 'Baixar';
+        baixar.disabled = ok;
+      });
+      return el(
+        'li',
+        {},
+        ouvir,
+        el('span', { className: 'nome', textContent: som.nome, title: `${som.nome} — ${som.autor}` }),
+        el('span', { className: 'detalhe', textContent: `${som.duracao.toFixed(1)} s · ${som.licenca}` }),
+        baixar,
+      );
+    }),
+  );
+  if (resultados.length === 0) lista.replaceChildren(el('li', { className: 'carregando', textContent: 'Nada encontrado.' }));
+});
+
 const dialogoSom = $('#som-opcoes');
 const formSom = $('#som-opcoes-form');
 let somEditado = null;
@@ -999,6 +1064,7 @@ api.onCenas((s) => {
 });
 api.onSoundboard((s) => {
   renderSoundboard(s);
+  preencherDestinosFreesound(s);
   preencherSonsTimer(s);
 });
 api.onCombate(renderCombate);
@@ -1026,6 +1092,7 @@ api.onRoteiro(renderRoteiro);
   carregarSaidas(estado.monitorDevice);
   renderSoundboard(estado.soundboard);
   preencherSonsTimer(estado.soundboard);
+  preencherDestinosFreesound(estado.soundboard);
   renderCombate(estado.combate);
   preencherCenasCombate(estado.cenas);
   $('#combate-anunciar').checked = estado.anunciarTurnos;
