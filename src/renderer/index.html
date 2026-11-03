@@ -10,6 +10,7 @@
     <header class="topo">
       <h1 class="marca"><img src="../../assets/icon.svg" alt="" /> Mestrônomo</h1>
       <div class="row">
+        <button id="pedidos-aviso" class="pedidos-aviso hidden" title="Pedidos dos jogadores esperando você"></button>
         <button id="atualizacao" class="atualizacao hidden"></button>
         <div id="bot" class="pill">Bot desligado</div>
         <button id="bot-botao">Chamar bot</button>
@@ -128,6 +129,15 @@
             <button id="yt-limpar" class="ghost pequeno">Limpar fila</button>
           </section>
 
+          <section class="card" id="pedidos">
+            <div class="card-head">
+              <h2>Pedidos dos jogadores</h2>
+              <label class="check"><input type="checkbox" id="pedidos-aceitar" /> Aceitar pedidos</label>
+            </div>
+            <p class="hint">Os jogadores pedem com <code>/musica link</code> e <code>/som nome</code> no Discord. Nada toca sem você aprovar.</p>
+            <ul id="pedidos-lista" class="lista pedidos" data-vazio="Nenhum pedido esperando."></ul>
+          </section>
+
           <section class="card" id="programas">
             <h2>Áudio de programas</h2>
             <p class="hint">Transmita o som de um ou mais programas ao mesmo tempo (Spotify, navegador…).</p>
@@ -208,6 +218,7 @@
                 <button data-aba="iniciativa" class="ativo">Iniciativa</button>
                 <button data-aba="timers">Timers</button>
                 <button data-aba="tabelas">Tabelas</button>
+                <button data-aba="sessao">Sessão</button>
               </div>
             </div>
 
@@ -245,6 +256,16 @@
                 <select name="som" title="Som tocado quando acabar"></select>
                 <button class="primary">Começar</button>
               </form>
+            </div>
+
+            <div data-painel="sessao" class="hidden">
+              <div class="row">
+                <span id="sessao-info" class="status"></span>
+                <button id="sessao-postar" class="primary">Postar resumo no Discord</button>
+                <button id="sessao-nova" class="ghost" title="Limpa o registro e começa a contar de novo">Nova sessão</button>
+              </div>
+              <ol id="sessao-eventos" class="lista sessao-eventos" data-vazio="Nada registrado ainda. Cenas, momentos do roteiro, combates, críticos e músicas aparecem aqui."></ol>
+              <p class="hint">O mestre também pode usar <code>/resumo</code> no Discord. Os jogadores entram na iniciativa com <code>/iniciativa bonus:3</code> e veem a ordem com <code>/ordem</code>.</p>
             </div>
 
             <div data-painel="tabelas" class="hidden">

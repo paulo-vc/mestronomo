@@ -9,6 +9,8 @@ export interface Combatant {
   hpMax?: number;
   /** Jogadores ficam destacados e não têm o HP mostrado no Discord. */
   jogador: boolean;
+  /** Quem entrou pelo /iniciativa: rolar de novo atualiza em vez de duplicar. */
+  discordId?: string;
 }
 
 export interface CombatState {
@@ -55,6 +57,31 @@ export class Combat extends EventEmitter {
     });
     this.sort(atual?.id);
     this.changed();
+  }
+
+  /** /iniciativa no Discord: entra como jogador, ou atualiza a iniciativa de quem já está. */
+  upsertPlayer(discordId: string, nome: string, iniciativa: number) {
+    const existente = this.s.combatentes.find((c) => c.discordId === discordId) ?? this.s.combatentes.find((c) => c.jogador && c.nome === nome);
+    if (existente) {
+      existente.discordId = discordId;
+      this.setInitiative(existente.id, iniciativa);
+      return;
+    }
+    this.add({ nome, iniciativa, jogador: true });
+    this.s.combatentes.find((c) => c.nome === nome && c.iniciativa === iniciativa && !c.discordId)!.discordId = discordId;
+    this.changed();
+  }
+
+  /** Ordem de combate para o Discord: nomes e iniciativas, sem HP (os jogadores não devem ver). */
+  orderText() {
+    if (this.s.combatentes.length === 0) return 'A ordem de combate está vazia. Use `/iniciativa` para entrar.';
+    const cabecalho = this.s.ativo ? `⚔️ **Rodada ${this.s.rodada}**` : '⚔️ **Ordem de combate** (ainda não começou)';
+    const linhas = this.s.combatentes.map((c, i) => {
+      const nome = c.hp !== undefined && c.hp <= 0 && !c.jogador ? `~~${c.nome}~~` : c.nome;
+      const seta = this.s.ativo && i === this.s.turno ? '➡️' : '▫️';
+      return `${seta} \`${String(c.iniciativa).padStart(2)}\` ${c.jogador ? `**${nome}**` : nome}`;
+    });
+    return [cabecalho, ...linhas].join('\n');
   }
 
   remove(id: string) {

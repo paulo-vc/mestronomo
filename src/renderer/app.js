@@ -1051,6 +1051,54 @@ editor.addEventListener('close', () => {
   });
 });
 
+// --- Pedidos dos jogadores ------------------------------------------------
+
+function renderPedidos(estado) {
+  $('#pedidos-aceitar').checked = estado.aceitando;
+  const n = estado.pedidos.length;
+  const aviso = $('#pedidos-aviso');
+  aviso.classList.toggle('hidden', n === 0);
+  aviso.textContent = `📨 ${n} pedido${n > 1 ? 's' : ''}`;
+  $('#pedidos-lista').replaceChildren(
+    ...estado.pedidos.map((p) =>
+      el(
+        'li',
+        {},
+        el('span', { className: 'quem', textContent: p.jogador.nome }),
+        el('span', { className: 'nome', textContent: `${p.tipo === 'musica' ? '🎵' : '🔊'} ${p.valor}`, title: p.valor }),
+        el('button', { className: 'primary pequeno', textContent: '✓ Tocar', onclick: () => api.pedidos.aprovar(p.id) }),
+        el('button', { className: 'ghost icone', textContent: '✕', title: 'Recusar', onclick: () => api.pedidos.recusar(p.id) }),
+      ),
+    ),
+  );
+}
+$('#pedidos-aceitar').addEventListener('change', (e) => api.pedidos.aceitar(e.target.checked));
+$('#pedidos-aviso').addEventListener('click', () => irPara('musica'));
+
+// --- Sessão (resumo) -----------------------------------------------------
+
+const ICONES_SESSAO = { cena: '🎬', momento: '📜', combate: '⚔️', critico: '✨', falha: '💀', musica: '🎵', pedido: '📨' };
+
+function renderSessao(estado) {
+  const inicio = new Date(estado.inicio);
+  $('#sessao-info').textContent = `Desde ${inicio.toLocaleDateString('pt-BR')} ${inicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${estado.eventos.length} registros`;
+  $('#sessao-eventos').replaceChildren(
+    ...estado.eventos
+      .slice(-200)
+      .reverse()
+      .map((e) =>
+        el(
+          'li',
+          {},
+          el('span', { className: 'hora', textContent: new Date(e.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }),
+          el('span', { className: 'nome', textContent: `${ICONES_SESSAO[e.tipo] ?? ''} ${e.texto}` }),
+        ),
+      ),
+  );
+}
+$('#sessao-postar').addEventListener('click', () => api.sessao.postarResumo());
+$('#sessao-nova').addEventListener('click', () => confirm('Começar uma nova sessão? O registro atual será apagado.') && api.sessao.nova());
+
 // --- Início ------------------------------------------------------------
 
 api.onBot(renderBot);
@@ -1075,6 +1123,8 @@ api.onErro(mostrarErro);
 api.onAviso((msg) => mostrarErro(msg, 'aviso'));
 api.onAtualizacao(renderAtualizacao);
 api.onRoteiro(renderRoteiro);
+api.onPedidos(renderPedidos);
+api.onSessao(renderSessao);
 
 (async () => {
   const estado = await api.estado();
@@ -1099,6 +1149,8 @@ api.onRoteiro(renderRoteiro);
   renderTimers(estado.timers);
   carregarTabelas();
   renderRoteiro(estado.roteiro);
+  renderPedidos(estado.pedidos);
+  renderSessao(estado.sessao);
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();
   carregarPlaylists();

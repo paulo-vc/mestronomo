@@ -92,6 +92,11 @@ O cartão **Mesa** tem três abas:
 | `/entrar` · `/sair` | Mestre | Chama o bot para o seu canal de voz, ou dispensa |
 | `/r 2d20kh1+5` | Todos | Rola dados. Aceita `NdM`, `kh`/`kl` (manter maiores/menores), `d%`, somas e subtrações, e os atalhos `vantagem` e `desvantagem`. Destaca 20 e 1 naturais no d20. Com `secreto: True`, só quem rolou vê |
 | `/canal` | Mestre | Escolhe o canal de texto para a mensagem **tocando agora** e para os **handouts** |
+| `/iniciativa bonus:3` | Todos | Rola 1d20 + bônus e entra (ou atualiza) na ordem de combate do app |
+| `/ordem` | Todos | Mostra a ordem de combate, sem revelar HP |
+| `/musica link` | Todos | Pede uma música; aparece no app para o mestre aprovar (do mestre, toca direto) |
+| `/som nome` | Todos | Pede um efeito da soundboard (com autocompletar); mesmo esquema de aprovação |
+| `/resumo` | Mestre | Posta o resumo da sessão: cenas, momentos, combates, críticos, músicas e pedidos |
 
 **Tocando agora**: o bot mantém uma mensagem no canal escolhido mostrando a música, a cena e o ambiente, editada sozinha quando algo muda (dá para desligar no ⚙).
 
