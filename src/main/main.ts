@@ -19,6 +19,7 @@ import { credentialsInfo, loadCredentials, saveCredentials } from './credentials
 import { createTray } from './tray';
 import { DEVELOPER_PORTAL, botIdFromToken, checkToken, inviteUrl } from './botSetup';
 import { exportBackup, importBackup } from './backup';
+import { Updater } from './updater';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
@@ -48,6 +49,7 @@ const ambience = new Ambience(mixer, AMBIENT_DIR);
 let soundboard: Soundboard;
 let combat: Combat;
 const timers = new Timers();
+const updater = new Updater(PORTABLE);
 let scenes: SceneManager;
 /** Capturas ativas, por nome do executável. Várias podem tocar juntas. */
 const captures = new Map<string, AppCaptureSource>();
@@ -237,6 +239,8 @@ function state() {
     anunciarTurnos: config.anunciarTurnos === true,
     timers: timers.state(),
     tabelas: listTables(TABLES_DIR),
+    versao: app.getVersion(),
+    atualizacao: updater.state,
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
     soundboard: soundboard.state(),
@@ -329,6 +333,10 @@ function registerIpc() {
   ipcMain.handle('discord-texto', (_e, texto: string) => postToDiscord(texto));
   ipcMain.handle('abrir-tabelas', () => shell.openPath(TABLES_DIR));
   ipcMain.handle('bot-verificar', (_e, token: string) => checkToken(token));
+  ipcMain.handle('atualizar', () => {
+    if (updater.state.estado === 'disponivel') shell.openExternal(updater.state.url);
+    else updater.installNow();
+  });
   ipcMain.handle('backup-exportar', (_e, includeFiles: boolean) => exportSettings(includeFiles));
   ipcMain.handle('backup-importar', () => importSettings());
   ipcMain.handle('bot-portal', () => shell.openExternal(DEVELOPER_PORTAL));
@@ -591,6 +599,8 @@ app.whenReady().then(() => {
   });
   startBot();
   createWindow();
+  updater.on('change', (s) => send('atualizacao', s));
+  updater.start();
   tray = createTray({
     show: showWindow,
     quit: () => app.quit(),

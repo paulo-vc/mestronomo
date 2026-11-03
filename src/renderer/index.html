@@ -10,6 +10,7 @@
     <header class="topo">
       <h1 class="marca"><img src="../../assets/icon.svg" alt="" /> Mestrônomo</h1>
       <div class="row">
+        <button id="atualizacao" class="atualizacao hidden"></button>
         <div id="bot" class="pill">Bot desligado</div>
         <button id="bot-botao">Chamar bot</button>
         <button id="abrir-handout" class="ghost icone-grande" title="Mandar uma imagem (mapa, retrato...) no Discord">🖼</button>
@@ -342,6 +343,8 @@
           <button type="button" id="backup-exportar" class="ghost">Exportar…</button>
           <button type="button" id="backup-importar" class="ghost">Importar…</button>
         </div>
+
+        <p id="versao" class="hint"></p>
 
         <div class="row fim">
           <button value="cancelar" class="ghost">Cancelar</button>

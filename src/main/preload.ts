@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('mestronomo', {
   botConvidar: invoke('bot-convidar'),
   backupExportar: invoke('backup-exportar'),
   backupImportar: invoke('backup-importar'),
+  atualizar: invoke('atualizar'),
   handout: invoke('handout'),
   discordTexto: invoke('discord-texto'),
   combate: {
@@ -98,5 +99,6 @@ contextBridge.exposeInMainWorld('mestronomo', {
   onTocando: on('tocando'),
   onErro: on('erro'),
   onAviso: on('aviso'),
+  onAtualizacao: on('atualizacao'),
   onPcm: on('pcm'),
 });

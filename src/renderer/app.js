@@ -146,6 +146,21 @@ dialogoHandout.addEventListener('close', async () => {
   if (await api.handout(form.legenda.value)) form.legenda.value = '';
 });
 
+// --- Atualização ---------------------------------------------------------
+
+function renderAtualizacao(s) {
+  const botao = $('#atualizacao');
+  const textos = {
+    baixando: () => `Baixando ${s.versao}… ${s.progresso}%`,
+    pronta: () => `Atualização ${s.versao} pronta — reiniciar`,
+    disponivel: () => `Versão ${s.versao} disponível — baixar`,
+  };
+  botao.classList.toggle('hidden', !textos[s.estado]);
+  if (textos[s.estado]) botao.textContent = textos[s.estado]();
+  botao.disabled = s.estado === 'baixando';
+}
+$('#atualizacao').addEventListener('click', () => api.atualizar());
+
 // --- Configurações -------------------------------------------------------
 
 const dialogo = $('#config');
@@ -819,10 +834,13 @@ api.onTimerFim((t) => mostrarErro(`⏰ ${t.nome}: o tempo acabou!`));
 api.onMixer(renderMixer);
 api.onErro(mostrarErro);
 api.onAviso((msg) => mostrarErro(msg, 'aviso'));
+api.onAtualizacao(renderAtualizacao);
 
 (async () => {
   const estado = await api.estado();
   renderBot(estado.bot);
+  renderAtualizacao(estado.atualizacao);
+  $('#versao').textContent = `Mestrônomo ${estado.versao}`;
   renderCapturas(estado.capturas);
   renderYoutube(estado.youtube);
   renderAmbiente(estado.ambiente);
