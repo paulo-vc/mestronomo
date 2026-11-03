@@ -139,6 +139,22 @@ O volume do fone não muda o que vai para a call.
 - **Busca**: digite um texto (ex.: "tavern music") e escolha entre os 5 primeiros resultados.
 - **Músicas locais**: cada subpasta de `musicas/` vira uma playlist (instalado: `Documentos\Mestrônomo\musicas`); escolha e clique em **Pôr na fila**. Links e arquivos locais podem ficar na mesma fila.
 
+## Roteiro da sessão
+
+Na página **Roteiro** (`Ctrl+1`), prepare a sessão em **momentos** ("Chegada à taverna", "A briga", "Fuga pela floresta"). Cada momento pode ter notas (o que narrar, falas de NPCs), uma cena que entra junto, atalhos de sons e um handout. Durante o jogo, **Próximo momento** (ou `/api/roteiro/proximo`, ou a tecla Próximo Momento do Ulanzi) troca a cena e mostra tudo daquele trecho.
+
+## Filtros de ambiente
+
+**Abafado** (atrás da porta, debaixo d'água), **Caverna** (reverberação) e **Eco** mudam todo o som da mesa. Ficam na barra de baixo e na página Áudio, e as cenas salvam os filtros ligados.
+
+## Freesound
+
+Na página Soundboard, busque efeitos gratuitos no [Freesound](https://freesound.org), ouça a prévia e baixe direto para a soundboard ou para o ambiente. Precisa de uma chave de API gratuita (⚙ → Freesound). Os créditos ficam em `CREDITOS-freesound.txt`.
+
+## Atualização automática
+
+A versão instalada baixa as atualizações sozinha e mostra **Atualização pronta — reiniciar** no topo. A portátil avisa que há versão nova e abre a página de download.
+
 ## Cenas
 
 Monte o clima (camadas de ambiente, sons ocasionais e, se quiser, a fila do YouTube) e clique em **Salvar cena atual**. Depois, um clique na cena troca tudo com **crossfade** (duração ajustável em "Transição"). Para cada cena você escolhe o que fazer com a música: usar a fila atual do YouTube, parar a música ou não mexer nela.
