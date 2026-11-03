@@ -53,12 +53,25 @@ function mostrarErro(msg, tipo = 'erro') {
   if (msg) erroTimer = setTimeout(() => (els.erro.textContent = ''), 8000);
 }
 
+/** Substitui o prompt() (que o Electron não suporta): pede um texto num diálogo. */
+function pedirTexto(titulo, valor = '') {
+  const dialogo = $('#pergunta');
+  const form = $('#pergunta-form');
+  $('#pergunta-titulo').textContent = titulo;
+  form.texto.value = valor;
+  dialogo.showModal();
+  form.texto.select();
+  return new Promise((resolve) => {
+    dialogo.addEventListener('close', () => resolve(dialogo.returnValue === 'ok' ? form.texto.value.trim() : null), { once: true });
+  });
+}
+
 // --- Navegação ---------------------------------------------------------
 
-const PAGINAS = ['cenas', 'musica', 'ambiente', 'soundboard', 'mesa', 'audio'];
+const PAGINAS = ['roteiro', 'cenas', 'musica', 'ambiente', 'soundboard', 'mesa', 'audio'];
 
 function irPara(pagina) {
-  if (!PAGINAS.includes(pagina)) pagina = 'cenas';
+  if (!PAGINAS.includes(pagina)) pagina = 'roteiro';
   for (const p of document.querySelectorAll('.pagina')) p.classList.toggle('ativa', p.dataset.pagina === pagina);
   for (const b of document.querySelectorAll('.menu button')) b.classList.toggle('ativo', b.dataset.ir === pagina);
   $('.conteudo').scrollTop = 0;
@@ -68,7 +81,7 @@ function irPara(pagina) {
 }
 
 for (const b of document.querySelectorAll('.menu button')) b.addEventListener('click', () => irPara(b.dataset.ir));
-// Ctrl+1..6 troca de página (com a janela em foco; os atalhos globais usam Ctrl+Alt).
+// Ctrl+1..7 troca de página (com a janela em foco; os atalhos globais usam Ctrl+Alt).
 window.addEventListener('keydown', (e) => {
   if (!e.ctrlKey || e.altKey || e.shiftKey) return;
   const i = Number(e.key) - 1;
@@ -78,9 +91,9 @@ window.addEventListener('keydown', (e) => {
   }
 });
 try {
-  irPara(localStorage.getItem('pagina') || 'cenas');
+  irPara(localStorage.getItem('pagina') || 'roteiro');
 } catch {
-  irPara('cenas');
+  irPara('roteiro');
 }
 
 // --- Barra fixa ----------------------------------------------------------
@@ -814,6 +827,162 @@ $('#tabela-discord').addEventListener('click', () => {
 $('#tabelas-pasta').addEventListener('click', () => api.tabelas.abrirPasta());
 window.addEventListener('focus', carregarTabelas);
 
+// --- Roteiro -------------------------------------------------------------
+
+let roteiro = { roteiros: [], indice: -1 };
+let handoutsUrl = '';
+let cenasConhecidas = [];
+let momentoEditado = null;
+let imagemEditada = null;
+
+const roteiroAtivo = () => roteiro.roteiros.find((r) => r.id === roteiro.ativo);
+
+function renderRoteiro(estado) {
+  roteiro = estado;
+  const ativo = roteiroAtivo();
+  const select = $('#roteiro-select');
+  select.replaceChildren(
+    ...(estado.roteiros.length ? estado.roteiros.map((r) => new Option(r.nome, r.id)) : [new Option('Nenhum roteiro — clique em + Novo', '')]),
+  );
+  select.value = estado.ativo ?? '';
+  for (const id of ['#roteiro-renomear', '#roteiro-apagar', '#momento-novo']) $(id).disabled = !ativo;
+
+  const momentos = ativo?.momentos ?? [];
+  $('#momentos').replaceChildren(
+    ...momentos.map((m, i) =>
+      el(
+        'li',
+        { className: i === estado.indice ? 'atual' : '', title: 'Ir para este momento', onclick: () => api.roteiro.ir(i) },
+        el('span', { className: 'num', textContent: String(i + 1) }),
+        el('span', { className: 'nome', textContent: m.titulo }),
+        el(
+          'span',
+          { className: 'acoes' },
+          botaoIcone('↑', 'Subir', () => api.roteiro.moverMomento(m.id, -1)),
+          botaoIcone('↓', 'Descer', () => api.roteiro.moverMomento(m.id, 1)),
+          botaoIcone('✎', 'Editar', () => abrirMomento(m)),
+          botaoIcone('✕', 'Apagar', () => confirm(`Apagar o momento "${m.titulo}"?`) && api.roteiro.removerMomento(m.id)),
+        ),
+      ),
+    ),
+  );
+
+  const atual = momentos[estado.indice];
+  $('#agora-vazio').classList.toggle('hidden', Boolean(atual));
+  $('#agora').classList.toggle('hidden', !atual);
+  $('#roteiro-comecar').disabled = momentos.length === 0;
+  $('#roteiro-anterior').disabled = !atual || estado.indice === 0;
+  $('#roteiro-proximo').disabled = !ativo || estado.indice >= momentos.length - 1;
+  $('#roteiro-proximo').textContent = atual ? 'Próximo momento ▶' : 'Começar ▶';
+  $('#momento-posicao').textContent = atual ? `${estado.indice + 1} de ${momentos.length}` : '';
+  if (!atual) return;
+
+  $('#agora-titulo').textContent = atual.titulo;
+  const cena = cenasConhecidas.find((c) => c.id === atual.cena);
+  $('#agora-cena').textContent = cena ? `Cena: ${cena.nome}` : '';
+  $('#agora-notas').textContent = atual.notas || '';
+  $('#agora-sons').replaceChildren(
+    ...atual.sons.map((id) => {
+      const som = soundboard.sons.find((s) => s.id === id);
+      const botao = el('button', { title: id, onclick: () => api.som(id, false) }, el('span', { className: 'nome', textContent: som?.nome ?? id }));
+      botao.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        api.som(id, true);
+      });
+      return botao;
+    }),
+  );
+  const handout = atual.handout;
+  $('#agora-handout').classList.toggle('hidden', !handout);
+  if (handout) {
+    $('#agora-handout-img').src = `${handoutsUrl}/${encodeURIComponent(handout.arquivo)}`;
+    $('#agora-handout-legenda').textContent = handout.legenda || handout.arquivo;
+  }
+}
+
+function botaoIcone(texto, titulo, acao) {
+  return el('button', {
+    className: 'ghost icone',
+    textContent: texto,
+    title: titulo,
+    onclick: (e) => {
+      e.stopPropagation();
+      acao();
+    },
+  });
+}
+
+$('#roteiro-select').addEventListener('change', (e) => e.target.value && api.roteiro.selecionar(e.target.value));
+$('#roteiro-novo').addEventListener('click', async () => {
+  const nome = await pedirTexto('Nome do roteiro (ex.: Sessão 12 — A cripta)');
+  if (nome !== null) api.roteiro.criar(nome);
+});
+$('#roteiro-renomear').addEventListener('click', async () => {
+  const ativo = roteiroAtivo();
+  const nome = ativo && (await pedirTexto('Novo nome do roteiro', ativo.nome));
+  if (nome) api.roteiro.renomear(ativo.id, nome);
+});
+$('#roteiro-apagar').addEventListener('click', () => {
+  const ativo = roteiroAtivo();
+  if (ativo && confirm(`Apagar o roteiro "${ativo.nome}" e todos os momentos dele?`)) api.roteiro.remover(ativo.id);
+});
+$('#roteiro-comecar').addEventListener('click', () => api.roteiro.ir(0));
+$('#roteiro-proximo').addEventListener('click', () => api.roteiro.proximo());
+$('#roteiro-anterior').addEventListener('click', () => api.roteiro.anterior());
+$('#agora-handout-enviar').addEventListener('click', () => {
+  const atual = roteiroAtivo()?.momentos[roteiro.indice];
+  if (atual) api.roteiro.enviarHandout(atual.id);
+});
+$('#momento-novo').addEventListener('click', () => abrirMomento(null));
+
+// Editor de momento
+
+const editor = $('#momento-editor');
+const formMomento = $('#momento-form');
+
+function abrirMomento(momento) {
+  momentoEditado = momento;
+  imagemEditada = momento?.handout?.arquivo ?? null;
+  $('#momento-editor-titulo').textContent = momento ? 'Editar momento' : 'Novo momento';
+  formMomento.titulo.value = momento?.titulo ?? '';
+  formMomento.notas.value = momento?.notas ?? '';
+  formMomento.cena.replaceChildren(new Option('Não trocar de cena', ''), ...cenasConhecidas.map((c) => new Option(c.nome, c.id)));
+  formMomento.cena.value = momento?.cena ?? '';
+  const escolhidos = new Set(momento?.sons ?? []);
+  formMomento.sons.replaceChildren(...soundboard.sons.map((s) => new Option(s.id, s.id, false, escolhidos.has(s.id))));
+  formMomento.legenda.value = momento?.handout?.legenda ?? '';
+  mostrarImagemEditada();
+  editor.showModal();
+}
+
+function mostrarImagemEditada() {
+  $('#momento-imagem-nome').textContent = imagemEditada ?? 'Nenhuma imagem';
+  $('#momento-imagem-tirar').classList.toggle('hidden', !imagemEditada);
+}
+
+$('#momento-imagem').addEventListener('click', async () => {
+  const nome = await api.roteiro.escolherImagem();
+  if (nome) {
+    imagemEditada = nome;
+    mostrarImagemEditada();
+  }
+});
+$('#momento-imagem-tirar').addEventListener('click', () => {
+  imagemEditada = null;
+  mostrarImagemEditada();
+});
+editor.addEventListener('close', () => {
+  if (editor.returnValue !== 'salvar') return;
+  api.roteiro.salvarMomento({
+    id: momentoEditado?.id,
+    titulo: formMomento.titulo.value,
+    notas: formMomento.notas.value,
+    cena: formMomento.cena.value,
+    sons: [...formMomento.sons.selectedOptions].map((o) => o.value),
+    handout: imagemEditada ? { arquivo: imagemEditada, legenda: formMomento.legenda.value } : undefined,
+  });
+});
+
 // --- Início ------------------------------------------------------------
 
 api.onBot(renderBot);
@@ -821,6 +990,7 @@ api.onCapturas(renderCapturas);
 api.onYoutube(renderYoutube);
 api.onAmbiente(renderAmbiente);
 api.onCenas((s) => {
+  cenasConhecidas = s.cenas;
   renderCenas(s);
   preencherCenasCombate(s);
 });
@@ -835,11 +1005,14 @@ api.onMixer(renderMixer);
 api.onErro(mostrarErro);
 api.onAviso((msg) => mostrarErro(msg, 'aviso'));
 api.onAtualizacao(renderAtualizacao);
+api.onRoteiro(renderRoteiro);
 
 (async () => {
   const estado = await api.estado();
   renderBot(estado.bot);
   renderAtualizacao(estado.atualizacao);
+  handoutsUrl = estado.handoutsUrl;
+  cenasConhecidas = estado.cenas.cenas;
   $('#versao').textContent = `Mestrônomo ${estado.versao}`;
   renderCapturas(estado.capturas);
   renderYoutube(estado.youtube);
@@ -855,6 +1028,7 @@ api.onAtualizacao(renderAtualizacao);
   $('#combate-anunciar').checked = estado.anunciarTurnos;
   renderTimers(estado.timers);
   carregarTabelas();
+  renderRoteiro(estado.roteiro);
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();
   carregarPlaylists();

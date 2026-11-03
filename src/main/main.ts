@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Notification, dialog, globalShortcut, ipcMain, shell } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import dotenv from 'dotenv';
 import { Mixer, type MixerSettings, type MonitorMode, type VolumeKey } from './mixer';
 import { AppCaptureSource, listAudioApps, type TrackInfo } from './sources';
@@ -20,6 +21,7 @@ import { createTray } from './tray';
 import { DEVELOPER_PORTAL, botIdFromToken, checkToken, inviteUrl } from './botSetup';
 import { exportBackup, importBackup } from './backup';
 import { Updater } from './updater';
+import { Scripts, type Moment, type ScriptState } from './script';
 
 if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
@@ -39,6 +41,7 @@ const SOUNDS_DIR = path.join(DATA_DIR, 'sons');
 const AMBIENT_DIR = path.join(DATA_DIR, 'ambientes');
 const MUSIC_DIR = path.join(DATA_DIR, 'musicas');
 const TABLES_DIR = path.join(DATA_DIR, 'tabelas');
+const HANDOUTS_DIR = path.join(DATA_DIR, 'handouts');
 /** Iniciado junto com o Windows: abre direto na bandeja, sem mostrar a janela. */
 const START_HIDDEN = process.argv.includes('--oculto');
 const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
@@ -48,6 +51,7 @@ const youtube = new YouTubePlayer(mixer);
 const ambience = new Ambience(mixer, AMBIENT_DIR);
 let soundboard: Soundboard;
 let combat: Combat;
+let scripts: Scripts;
 const timers = new Timers();
 const updater = new Updater(PORTABLE);
 let scenes: SceneManager;
@@ -81,6 +85,8 @@ interface SavedConfig {
   combate?: CombatState;
   /** Anunciar "vez de Fulano" no canal de texto a cada turno. */
   anunciarTurnos?: boolean;
+  /** Roteiros de sessão e o momento atual. */
+  roteiro?: ScriptState;
 }
 
 let config: SavedConfig = {};
@@ -215,16 +221,34 @@ function rollTableSafe(nome: string) {
   }
 }
 
+const IMAGE_FILTER = [{ name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }];
+
+async function pickImage(title: string) {
+  const escolha = await dialog.showOpenDialog(window!, { title, properties: ['openFile'], filters: IMAGE_FILTER });
+  return escolha.canceled ? undefined : escolha.filePaths[0];
+}
+
 async function sendHandout(legenda: string) {
   if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
-  const escolha = await dialog.showOpenDialog(window!, {
-    title: 'Escolha a imagem para mandar no Discord',
-    properties: ['openFile'],
-    filters: [{ name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
-  });
-  if (escolha.canceled || !escolha.filePaths[0]) return false;
-  await bot.sendHandout(escolha.filePaths[0], legenda);
+  const arquivo = await pickImage('Escolha a imagem para mandar no Discord');
+  if (!arquivo) return false;
+  await bot.sendHandout(arquivo, legenda);
   return true;
+}
+
+/** Manda o handout preparado num momento do roteiro. */
+async function sendMomentHandout(momentoId: string) {
+  const momento = scripts.state().roteiros.flatMap((r) => r.momentos).find((m) => m.id === momentoId);
+  if (!momento?.handout) return false;
+  try {
+    if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
+    await bot.sendHandout(scripts.handoutPath(momento.handout.arquivo), momento.handout.legenda);
+    send('aviso', `Handout "${momento.handout.legenda || momento.handout.arquivo}" enviado.`);
+    return true;
+  } catch (err) {
+    send('erro', (err as Error).message);
+    return false;
+  }
 }
 
 function state() {
@@ -240,6 +264,8 @@ function state() {
     timers: timers.state(),
     tabelas: listTables(TABLES_DIR),
     versao: app.getVersion(),
+    roteiro: scripts.state(),
+    handoutsUrl: pathToFileURL(HANDOUTS_DIR).href,
     atualizacao: updater.state,
     mixer: mixer.settings,
     tocando: { musica: mixer.isPlaying('musica'), efeitos: mixer.isPlaying('efeitos') },
@@ -333,6 +359,21 @@ function registerIpc() {
   ipcMain.handle('discord-texto', (_e, texto: string) => postToDiscord(texto));
   ipcMain.handle('abrir-tabelas', () => shell.openPath(TABLES_DIR));
   ipcMain.handle('bot-verificar', (_e, token: string) => checkToken(token));
+  ipcMain.handle('roteiro-criar', (_e, nome: string) => scripts.create(nome));
+  ipcMain.handle('roteiro-renomear', (_e, id: string, nome: string) => scripts.rename(id, nome));
+  ipcMain.handle('roteiro-remover', (_e, id: string) => scripts.remove(id));
+  ipcMain.handle('roteiro-selecionar', (_e, id: string) => scripts.select(id));
+  ipcMain.handle('roteiro-ir', (_e, indice: number) => scripts.goTo(indice));
+  ipcMain.handle('roteiro-proximo', () => scripts.next());
+  ipcMain.handle('roteiro-anterior', () => scripts.previous());
+  ipcMain.handle('momento-salvar', (_e, momento: Moment) => scripts.saveMoment(momento));
+  ipcMain.handle('momento-remover', (_e, id: string) => scripts.removeMoment(id));
+  ipcMain.handle('momento-mover', (_e, id: string, delta: -1 | 1) => scripts.moveMoment(id, delta));
+  ipcMain.handle('momento-imagem', async () => {
+    const arquivo = await pickImage('Escolha a imagem do handout');
+    return arquivo ? scripts.importHandout(arquivo) : undefined;
+  });
+  ipcMain.handle('momento-handout', (_e, id: string) => sendMomentHandout(id));
   ipcMain.handle('atualizar', () => {
     if (updater.state.estado === 'disponivel') shell.openExternal(updater.state.url);
     else updater.installNow();
@@ -541,6 +582,15 @@ app.whenReady().then(() => {
   });
 
   // Combate: ao começar ativa a cena de combate; ao encerrar volta para a cena de antes.
+  scripts = new Scripts(config.roteiro, HANDOUTS_DIR);
+  scripts.on('change', (s: ScriptState) => send('roteiro', s));
+  scripts.on('save', (s: ScriptState) => {
+    config.roteiro = s;
+    saveConfig();
+  });
+  // Entrar num momento ativa a cena dele.
+  scripts.on('momento', (m: Moment) => m.cena && scenes.activate(m.cena));
+
   combat = new Combat(config.combate);
   let cenaAntesDoCombate: string | undefined;
   combat.on('change', (s: CombatState) => {
@@ -593,6 +643,7 @@ app.whenReady().then(() => {
     combat,
     timers,
     rollTable: (nome: string) => rollTable(TABLES_DIR, nome),
+    scripts,
   }, (message) => {
     apiError = message;
     send('erro', message);

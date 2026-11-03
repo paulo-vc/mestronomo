@@ -11,7 +11,7 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const TAR = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe');
 /** Pastas de DATA_DIR que vão no backup quando os arquivos são incluídos. */
-export const DATA_FOLDERS = ['sons', 'ambientes', 'musicas', 'tabelas'];
+export const DATA_FOLDERS = ['sons', 'ambientes', 'musicas', 'tabelas', 'handouts'];
 const FORMAT = 1;
 
 interface Manifest {

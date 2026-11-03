@@ -3,6 +3,10 @@
   "Description": "Música, ambiente e soundboard para mestres de RPG no Discord",
   "Actions": [
     {
+      "Name": "Próximo Momento",
+      "Tooltip": "Avança para o próximo momento do roteiro da sessão"
+    },
+    {
       "Name": "Cena",
       "Tooltip": "Troca para uma cena (ambiente + música) com crossfade"
     },

@@ -6,6 +6,7 @@ import type { SceneManager } from './scenes';
 import type { Combat } from './combat';
 import type { Timers } from './timers';
 import type { TableResult } from './tables';
+import type { Scripts } from './script';
 
 export interface ApiActions {
   state(): unknown;
@@ -25,6 +26,7 @@ export interface ApiActions {
   combat: Combat;
   timers: Timers;
   rollTable(nome: string): TableResult;
+  scripts: Scripts;
 }
 
 const VOLUME_KEYS = ['musica', 'efeitos', 'ambiente', 'master', 'ducking', 'monitorVolume', 'youtube'];
@@ -53,12 +55,13 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/ambiente/<arquivo>              liga/desliga uma camada de ambiente
  *   /api/ambiente/parar                  desliga todo o ambiente
  *   /api/combate/<iniciar|proximo|anterior|encerrar>
+ *   /api/roteiro/<proximo|anterior>      avança ou volta um momento do roteiro
  *   /api/tabela/<nome>                   rola uma tabela e devolve o resultado
  *   /api/timer?min=<minutos>&nome=<nome> começa um timer
  *   /api/volume/<musica|efeitos|master|ducking|youtube>/<0-100>
  */
 export function startApi(port: number, actions: ApiActions, onError: (message: string) => void) {
-  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes, loadPlaylist, combat, timers, rollTable } = actions;
+  const { state, listSounds, listApps, playSound, stopEffects, startCapture, stopCapture, setVolume, joinBot, leaveBot, youtube, ambience, scenes, loadPlaylist, combat, timers, rollTable, scripts } = actions;
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
     // Divide antes de decodificar: ids de som têm "/" (ex.: Combate%2Fespada).
@@ -145,6 +148,11 @@ export function startApi(port: number, actions: ApiActions, onError: (message: s
         acao();
         return reply(200, combat.state());
       }
+      case 'roteiro':
+        if (a === 'proximo') scripts.next();
+        else if (a === 'anterior') scripts.previous();
+        else return reply(400, { erro: 'use /api/roteiro/proximo ou /api/roteiro/anterior' });
+        return reply(200, { momento: scripts.current()?.titulo });
       case 'tabela':
         try {
           return reply(200, rollTable(a ?? ''));

@@ -12,6 +12,24 @@
   "UUID": "com.ulanzi.ulanzistudio.mestronomo",
   "Actions": [
     {
+      "Name": "Next Moment",
+      "Icon": "assets/icons/momento.png",
+      "UUID": "com.ulanzi.ulanzistudio.mestronomo.momento",
+      "PropertyInspectorPath": "property-inspector/inspector.html",
+      "Tooltip": "Goes to the next moment of the session script",
+      "state": 0,
+      "States": [
+        {
+          "Name": "Next Moment",
+          "Image": "assets/icons/momento.png"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "SupportedInMultiActions": true
+    },
+    {
       "Name": "Scene",
       "Icon": "assets/icons/cena.png",
       "UUID": "com.ulanzi.ulanzistudio.mestronomo.cena",

@@ -45,6 +45,20 @@ contextBridge.exposeInMainWorld('mestronomo', {
   backupExportar: invoke('backup-exportar'),
   backupImportar: invoke('backup-importar'),
   atualizar: invoke('atualizar'),
+  roteiro: {
+    criar: invoke('roteiro-criar'),
+    renomear: invoke('roteiro-renomear'),
+    remover: invoke('roteiro-remover'),
+    selecionar: invoke('roteiro-selecionar'),
+    ir: invoke('roteiro-ir'),
+    proximo: invoke('roteiro-proximo'),
+    anterior: invoke('roteiro-anterior'),
+    salvarMomento: invoke('momento-salvar'),
+    removerMomento: invoke('momento-remover'),
+    moverMomento: invoke('momento-mover'),
+    escolherImagem: invoke('momento-imagem'),
+    enviarHandout: invoke('momento-handout'),
+  },
   handout: invoke('handout'),
   discordTexto: invoke('discord-texto'),
   combate: {
@@ -100,5 +114,6 @@ contextBridge.exposeInMainWorld('mestronomo', {
   onErro: on('erro'),
   onAviso: on('aviso'),
   onAtualizacao: on('atualizacao'),
+  onRoteiro: on('roteiro'),
   onPcm: on('pcm'),
 });
