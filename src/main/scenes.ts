@@ -15,6 +15,8 @@ export interface Scene {
   musica: SceneMusic;
   /** Filtros de ambiente da cena (abafado, caverna, eco). Cenas antigas não têm. */
   filtros?: FilterSettings;
+  /** Cena de exemplo de um pacote de sons; sai junto quando o pacote é removido. */
+  pacote?: string;
 }
 
 export interface ScenesState {
@@ -72,6 +74,21 @@ export class SceneManager extends EventEmitter {
     this.ativa = cena.id;
     this.changed();
     return true;
+  }
+
+  /** Acrescenta as cenas de exemplo de um pacote (sem duplicar nomes já existentes). */
+  addFromPack(cenas: Omit<Scene, 'id'>[]) {
+    for (const cena of cenas) {
+      if (this.cenas.some((c) => c.nome === cena.nome)) continue;
+      this.cenas.push({ ...cena, id: Math.random().toString(36).slice(2, 10) });
+    }
+    this.persist();
+  }
+
+  removePack(pacote: string) {
+    this.cenas = this.cenas.filter((c) => c.pacote !== pacote);
+    if (this.ativa && !this.cenas.some((c) => c.id === this.ativa)) this.ativa = undefined;
+    this.persist();
   }
 
   remove(id: string) {

@@ -415,3 +415,13 @@ button.pedidos-aviso { background: #2a2010; color: var(--accent); border-color: 
 .sessao-eventos li { grid-template-columns: 48px 1fr; }
 .sessao-eventos .hora { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .sessao-eventos .nome { white-space: normal; }
+
+/* Pacotes de sons */
+.pacotes li { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; row-gap: 2px; }
+.pacotes li .nome small { color: var(--muted); font-weight: normal; }
+.pacotes li .descricao { grid-column: 1; white-space: normal; }
+.pacotes li button { grid-column: 2; grid-row: 1 / span 2; }
+.pacotes-opcoes { display: flex; flex-direction: column; gap: 10px; }
+.pacote-opcao { align-items: flex-start; }
+.pacote-opcao small { color: var(--muted); }
+#pacotes-inicio p { margin: 0; }

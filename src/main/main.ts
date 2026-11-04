@@ -26,6 +26,7 @@ import { Scripts, type Moment, type ScriptState } from './script';
 import { FILTERS, type FilterName } from './dsp';
 import { Requests, type PlayerRequest } from './requests';
 import { PcmCache } from './pcmCache';
+import { Packs } from './packs';
 import { SessionLog, type SessionLogState } from './sessionLog';
 import type { BotHooks } from './discord';
 
@@ -51,6 +52,8 @@ const AMBIENT_DIR = path.join(DATA_DIR, 'ambientes');
 const MUSIC_DIR = path.join(DATA_DIR, 'musicas');
 const TABLES_DIR = path.join(DATA_DIR, 'tabelas');
 const HANDOUTS_DIR = path.join(DATA_DIR, 'handouts');
+// Pacotes de sons embutidos: no instalado ficam em resources/pacotes (fora do asar, para copiar direto).
+const PACKS_DIR = PACKAGED ? path.join(process.resourcesPath, 'pacotes') : path.join(ROOT, 'pacotes');
 /** Iniciado junto com o Windows: abre direto na bandeja, sem mostrar a janela. */
 const START_HIDDEN = process.argv.includes('--oculto');
 const API_PORT = Number(process.env.MESTRONOMO_PORT ?? 7777);
@@ -65,6 +68,7 @@ let combat: Combat;
 let scripts: Scripts;
 const timers = new Timers();
 const updater = new Updater(PORTABLE);
+const packs = new Packs(PACKS_DIR, SOUNDS_DIR, AMBIENT_DIR);
 const requests = new Requests();
 let sessionLog: SessionLog;
 let scenes: SceneManager;
@@ -102,6 +106,8 @@ interface SavedConfig {
   anunciarTurnos?: boolean;
   /** Roteiros de sessão e o momento atual. */
   roteiro?: ScriptState;
+  /** Já perguntou, na primeira execução, quais pacotes de sons instalar. */
+  pacotesPerguntado?: boolean;
   /** Aceitar /musica e /som dos jogadores. */
   aceitarPedidos?: boolean;
   /** Registro da sessão em andamento (para o resumo). */
@@ -186,6 +192,39 @@ function setVolume(key: VolumeKey | 'youtube', value: number) {
   else mixer.settings[key] = Math.min(1, Math.max(0, value));
   send('mixer', mixer.settings);
   saveConfig();
+}
+
+function refreshLibrary() {
+  send('soundboard', soundboard.state());
+  send('ambiente', ambience.state());
+  send('pacotes', packs.list());
+}
+
+function installPack(id: string) {
+  try {
+    scenes.addFromPack(packs.install(id));
+    refreshLibrary();
+    const pack = packs.list().find((p) => p.id === id);
+    send('aviso', `Pacote ${pack?.nome} instalado: ${pack?.efeitos} efeitos, ${pack?.ambientes} ambientes e cenas de exemplo.`);
+    // Já deixa os sons novos prontos na memória.
+    pcmCache.warm(soundboard.list().flatMap((s) => s.arquivos.map((a) => path.join(SOUNDS_DIR, a))));
+  } catch (err) {
+    send('erro', `Não consegui instalar o pacote: ${(err as Error).message}`);
+  }
+}
+
+function removePack(id: string) {
+  const pack = packs.list().find((p) => p.id === id);
+  if (!pack) return;
+  // Para na hora (sem fade) o que estiver tocando do pacote: o Windows não apaga arquivo aberto.
+  const prefixo = `${pack.nome}/`;
+  ambience.setLayers(ambience.state().camadas.filter((c) => !c.arquivo.startsWith(prefixo)), 0);
+  ambience.setOccasionals(ambience.state().ocasionais.filter((o) => !o.arquivos.some((a) => a.startsWith(prefixo))));
+  stopEffects();
+  scenes.removePack(id);
+  packs.remove(id);
+  refreshLibrary();
+  send('aviso', `Pacote ${pack.nome} removido.`);
 }
 
 /** Liga/desliga um filtro de ambiente; sem `ligado`, alterna. */
@@ -336,6 +375,8 @@ function state() {
     timers: timers.state(),
     tabelas: listTables(TABLES_DIR),
     versao: app.getVersion(),
+    pacotes: packs.list(),
+    perguntarPacotes: !config.pacotesPerguntado,
     cache: pcmCache.stats(),
     pedidos: requests.state(),
     sessao: sessionLog.state(),
@@ -488,6 +529,12 @@ function registerIpc() {
   });
   ipcMain.handle('resumo-postar', () => postSummary());
   ipcMain.handle('sessao-nova', () => sessionLog.reset());
+  ipcMain.handle('pacote-instalar', (_e, id: string) => installPack(id));
+  ipcMain.handle('pacote-remover', (_e, id: string) => removePack(id));
+  ipcMain.handle('pacotes-perguntado', () => {
+    config.pacotesPerguntado = true;
+    saveConfig();
+  });
   ipcMain.handle('filtro', (_e, nome: FilterName, ligado?: boolean) => setFilter(nome, ligado));
   ipcMain.handle('atualizar', () => {
     if (updater.state.estado === 'disponivel') shell.openExternal(updater.state.url);

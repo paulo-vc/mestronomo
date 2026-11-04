@@ -39,12 +39,24 @@ export class Ambience extends EventEmitter {
     super();
   }
 
+  /** Arquivos soltos e de uma subpasta (os pacotes ficam em ambientes/<Pacote>/). */
   files(): string[] {
     fs.mkdirSync(this.dir, { recursive: true });
-    return fs
-      .readdirSync(this.dir)
-      .filter((f) => AUDIO_EXT.has(path.extname(f).toLowerCase()))
-      .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+    const isAudio = (f: string) => AUDIO_EXT.has(path.extname(f).toLowerCase());
+    const arquivos: string[] = [];
+    for (const entry of fs.readdirSync(this.dir, { withFileTypes: true })) {
+      if (entry.isFile() && isAudio(entry.name)) arquivos.push(entry.name);
+      if (entry.isDirectory()) {
+        for (const f of fs.readdirSync(path.join(this.dir, entry.name))) if (isAudio(f)) arquivos.push(`${entry.name}/${f}`);
+      }
+    }
+    return arquivos.sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
+  }
+
+  /** Caminho de um arquivo da lista, sem deixar sair da pasta de ambientes. */
+  private resolve(arquivo: string) {
+    const file = path.resolve(this.dir, arquivo);
+    return file.startsWith(path.resolve(this.dir) + path.sep) ? file : undefined;
   }
 
   /** Liga ou desliga uma camada. Sem `on`, alterna. */
@@ -116,8 +128,8 @@ export class Ambience extends EventEmitter {
   }
 
   private startLayer(arquivo: string, volume: number, fadeMs: number) {
-    const file = path.join(this.dir, path.basename(arquivo));
-    if (!fs.existsSync(file) || this.layers.has(arquivo)) return;
+    const file = this.resolve(arquivo);
+    if (!file || !fs.existsSync(file) || this.layers.has(arquivo)) return;
     const source = playFile(this.cache, file, 'ambiente', false, true);
     source.volume = clamp(volume);
     this.layers.set(arquivo, source);
@@ -137,8 +149,8 @@ export class Ambience extends EventEmitter {
       const item = this.occasionals.get(config.id);
       if (!item) return;
       const arquivo = config.arquivos[Math.floor(Math.random() * config.arquivos.length)];
-      const file = path.join(this.dir, path.basename(arquivo));
-      if (fs.existsSync(file)) {
+      const file = this.resolve(arquivo);
+      if (file && fs.existsSync(file)) {
         const source = playFile(this.cache, file, 'ambiente');
         // Pequena variação de volume para o mesmo som não soar sempre igual.
         source.volume = clamp(config.volume * (0.75 + Math.random() * 0.25));

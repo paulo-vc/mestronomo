@@ -1,0 +1,26 @@
+Pacote Moderno do Mestrônomo — sons em domínio público (CC0).
+Créditos por cortesia aos autores:
+
+sons/Ação/tiro.ogg — mahecic, Freesound — CC0 — https://freesound.org/people/mahecic/sounds/803497/
+sons/Ação/explosão.ogg — Deganoth, Freesound — CC0 — https://freesound.org/people/Deganoth/sounds/165911/
+sons/Ação/vidro quebrando.ogg — Bricklover, Freesound — CC0 — https://freesound.org/people/Bricklover/sounds/560767/
+sons/Ação/soco.ogg — joe_anderson22, Freesound — CC0 — https://freesound.org/people/joe_anderson22/sounds/439747/
+sons/Cidade/sirene.ogg — TitanKaempfer, Freesound — CC0 — https://freesound.org/people/TitanKaempfer/sounds/746302/
+sons/Cidade/carro passando.ogg — brunobegot, Freesound — CC0 — https://freesound.org/people/brunobegot/sounds/441881/
+sons/Investigação/telefone.ogg — mycompasstv, Freesound — CC0 — https://freesound.org/people/mycompasstv/sounds/456433/
+sons/Investigação/batida na porta.ogg — Flem0527, Freesound — CC0 — https://freesound.org/people/Flem0527/sounds/629987/
+sons/Investigação/estática de rádio.ogg — Takimeko, Freesound — CC0 — https://freesound.org/people/Takimeko/sounds/684896/
+sons/Investigação/porta abrindo.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Investigação/porta fechando.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Investigação/passos 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Investigação/passos 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Terror/coração.ogg — Cloud-10, Freesound — CC0 — https://freesound.org/people/Cloud-10/sounds/688735/
+sons/Terror/rangido.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Mesa/dados 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Mesa/dados 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+ambientes/cidade.ogg — visionear, Freesound — CC0 — https://freesound.org/people/visionear/sounds/723607/
+ambientes/escritório.ogg — DavidFrbr, Freesound — CC0 — https://freesound.org/people/DavidFrbr/sounds/327497/
+ambientes/metrô.ogg — be_a_hero_not_a_patriot, Freesound — CC0 — https://freesound.org/people/be_a_hero_not_a_patriot/sounds/332784/
+ambientes/tempestade.ogg — Audeption, Freesound — CC0 — https://freesound.org/people/Audeption/sounds/698811/
+ambientes/hospital.ogg — martian, Freesound — CC0 — https://freesound.org/people/martian/sounds/557013/
+ambientes/chuva.ogg — samesamesame, Freesound — CC0 — https://freesound.org/people/samesamesame/sounds/242889/

@@ -1,0 +1,103 @@
+{
+  "_leia": "Fontes dos pacotes de sons. Todos CC0. Para refazer os pacotes: node scripts/montar-pacotes.js <pasta-de-downloads>. 'kenney:<arquivo>' vem dos zips RPG e Casino da Kenney (OpenGameArt); os outros são prévias HQ do Freesound.",
+  "kenney": {
+    "rpg": "https://opengameart.org/sites/default/files/RPGsounds_Kenney.zip",
+    "casino": "https://opengameart.org/sites/default/files/kenney_casino-audio.zip"
+  },
+  "pacotes": [
+    {
+      "id": "medieval",
+      "nome": "Medieval",
+      "descricao": "Fantasia medieval: espadas, magia, criaturas, taverna, floresta e masmorra.",
+      "efeitos": [
+        { "destino": "Combate/espada 1", "fonte": "https://freesound.org/people/JohnBuhr/sounds/326868/", "autor": "JohnBuhr" },
+        { "destino": "Combate/espada 2", "fonte": "https://freesound.org/people/Christopherderp/sounds/364530/", "autor": "Christopherderp" },
+        { "destino": "Combate/soco", "fonte": "https://freesound.org/people/joe_anderson22/sounds/439747/", "autor": "joe_anderson22" },
+        { "destino": "Combate/sacar adaga 1", "fonte": "kenney:drawKnife1.ogg" },
+        { "destino": "Combate/sacar adaga 2", "fonte": "kenney:drawKnife2.ogg" },
+        { "destino": "Combate/corte 1", "fonte": "kenney:knifeSlice.ogg" },
+        { "destino": "Combate/corte 2", "fonte": "kenney:knifeSlice2.ogg" },
+        { "destino": "Magia/bola de fogo", "fonte": "https://freesound.org/people/qubodup/sounds/442871/", "autor": "qubodup" },
+        { "destino": "Magia/cura", "fonte": "https://freesound.org/people/IENBA/sounds/752274/", "autor": "IENBA" },
+        { "destino": "Magia/raio", "fonte": "https://freesound.org/people/loganzsound/sounds/840628/", "autor": "loganzsound" },
+        { "destino": "Criaturas/dragão", "fonte": "https://freesound.org/people/qubodup/sounds/442964/", "autor": "qubodup" },
+        { "destino": "Criaturas/lobo", "fonte": "https://freesound.org/people/betchkal/sounds/500646/", "autor": "betchkal", "max": 8 },
+        { "destino": "Criaturas/goblin", "fonte": "https://freesound.org/people/spookymodem/sounds/202095/", "autor": "spookymodem", "max": 5 },
+        { "destino": "Criaturas/risada maligna", "fonte": "https://freesound.org/people/WannyManny/sounds/626796/", "autor": "WannyManny" },
+        { "destino": "Criaturas/coração", "fonte": "https://freesound.org/people/Cloud-10/sounds/688735/", "autor": "Cloud-10", "max": 12 },
+        { "destino": "Exploração/porta abrindo 1", "fonte": "kenney:doorOpen_1.ogg" },
+        { "destino": "Exploração/porta abrindo 2", "fonte": "kenney:doorOpen_2.ogg" },
+        { "destino": "Exploração/porta fechando 1", "fonte": "kenney:doorClose_1.ogg" },
+        { "destino": "Exploração/porta fechando 2", "fonte": "kenney:doorClose_2.ogg" },
+        { "destino": "Exploração/rangido 1", "fonte": "kenney:creak1.ogg" },
+        { "destino": "Exploração/rangido 2", "fonte": "kenney:creak2.ogg" },
+        { "destino": "Exploração/rangido 3", "fonte": "kenney:creak3.ogg" },
+        { "destino": "Exploração/passos 1", "fonte": "kenney:footstep00.ogg" },
+        { "destino": "Exploração/passos 2", "fonte": "kenney:footstep01.ogg" },
+        { "destino": "Exploração/passos 3", "fonte": "kenney:footstep02.ogg" },
+        { "destino": "Exploração/moedas 1", "fonte": "kenney:handleCoins.ogg" },
+        { "destino": "Exploração/moedas 2", "fonte": "kenney:handleCoins2.ogg" },
+        { "destino": "Exploração/baú", "fonte": "https://freesound.org/people/steprock/sounds/771164/", "autor": "steprock" },
+        { "destino": "Exploração/livro", "fonte": "kenney:bookFlip1.ogg" },
+        { "destino": "Mesa/dados 1", "fonte": "kenney:dice-throw-1.ogg" },
+        { "destino": "Mesa/dados 2", "fonte": "kenney:dice-throw-2.ogg" },
+        { "destino": "Mesa/dados 3", "fonte": "kenney:dice-throw-3.ogg" }
+      ],
+      "ambientes": [
+        { "destino": "chuva", "fonte": "https://freesound.org/people/samesamesame/sounds/242889/", "autor": "samesamesame" },
+        { "destino": "fogueira", "fonte": "https://freesound.org/people/NickTayloe/sounds/813328/", "autor": "NickTayloe" },
+        { "destino": "taverna", "fonte": "https://freesound.org/people/ivolipa/sounds/326313/", "autor": "ivolipa" },
+        { "destino": "floresta à noite", "fonte": "https://freesound.org/people/Borgory/sounds/751465/", "autor": "Borgory" },
+        { "destino": "vento", "fonte": "https://freesound.org/people/IanStarGem/sounds/341840/", "autor": "IanStarGem", "inicio": 6, "crossfade": 6 },
+        { "destino": "caverna", "fonte": "https://freesound.org/people/Kinoton/sounds/516566/", "autor": "Kinoton" },
+        { "destino": "mar", "fonte": "https://freesound.org/people/kkenny101/sounds/852826/", "autor": "kkenny101" },
+        { "destino": "cidade medieval", "fonte": "https://freesound.org/people/bolkmar/sounds/424790/", "autor": "bolkmar" },
+        { "destino": "lobo distante", "fonte": "https://freesound.org/people/betchkal/sounds/500646/", "autor": "betchkal", "curto": true, "max": 8 }
+      ],
+      "cenas": [
+        { "nome": "Taverna", "camadas": [["taverna", 0.8], ["fogueira", 0.4]] },
+        { "nome": "Floresta à noite", "camadas": [["floresta à noite", 0.8], ["vento", 0.3]], "ocasionais": [{ "arquivos": ["lobo distante"], "min": 40, "max": 90, "volume": 0.5 }] },
+        { "nome": "Masmorra", "camadas": [["caverna", 0.9]], "filtros": { "caverna": true } },
+        { "nome": "Viagem na chuva", "camadas": [["chuva", 0.8], ["vento", 0.4]] }
+      ]
+    },
+    {
+      "id": "moderno",
+      "nome": "Moderno",
+      "descricao": "Dias de hoje: investigação, ação e terror — tiros, sirenes, telefone, cidade e tempestade.",
+      "efeitos": [
+        { "destino": "Ação/tiro", "fonte": "https://freesound.org/people/mahecic/sounds/803497/", "autor": "mahecic" },
+        { "destino": "Ação/explosão", "fonte": "https://freesound.org/people/Deganoth/sounds/165911/", "autor": "Deganoth" },
+        { "destino": "Ação/vidro quebrando", "fonte": "https://freesound.org/people/Bricklover/sounds/560767/", "autor": "Bricklover" },
+        { "destino": "Ação/soco", "fonte": "https://freesound.org/people/joe_anderson22/sounds/439747/", "autor": "joe_anderson22" },
+        { "destino": "Cidade/sirene", "fonte": "https://freesound.org/people/TitanKaempfer/sounds/746302/", "autor": "TitanKaempfer", "max": 10 },
+        { "destino": "Cidade/carro passando", "fonte": "https://freesound.org/people/brunobegot/sounds/441881/", "autor": "brunobegot", "max": 10 },
+        { "destino": "Investigação/telefone", "fonte": "https://freesound.org/people/mycompasstv/sounds/456433/", "autor": "mycompasstv", "max": 10 },
+        { "destino": "Investigação/batida na porta", "fonte": "https://freesound.org/people/Flem0527/sounds/629987/", "autor": "Flem0527" },
+        { "destino": "Investigação/estática de rádio", "fonte": "https://freesound.org/people/Takimeko/sounds/684896/", "autor": "Takimeko", "max": 8 },
+        { "destino": "Investigação/porta abrindo", "fonte": "kenney:doorOpen_1.ogg" },
+        { "destino": "Investigação/porta fechando", "fonte": "kenney:doorClose_3.ogg" },
+        { "destino": "Investigação/passos 1", "fonte": "kenney:footstep04.ogg" },
+        { "destino": "Investigação/passos 2", "fonte": "kenney:footstep05.ogg" },
+        { "destino": "Terror/coração", "fonte": "https://freesound.org/people/Cloud-10/sounds/688735/", "autor": "Cloud-10", "max": 12 },
+        { "destino": "Terror/rangido", "fonte": "kenney:creak3.ogg" },
+        { "destino": "Mesa/dados 1", "fonte": "kenney:dice-throw-1.ogg" },
+        { "destino": "Mesa/dados 2", "fonte": "kenney:dice-throw-2.ogg" }
+      ],
+      "ambientes": [
+        { "destino": "cidade", "fonte": "https://freesound.org/people/visionear/sounds/723607/", "autor": "visionear" },
+        { "destino": "escritório", "fonte": "https://freesound.org/people/DavidFrbr/sounds/327497/", "autor": "DavidFrbr" },
+        { "destino": "metrô", "fonte": "https://freesound.org/people/be_a_hero_not_a_patriot/sounds/332784/", "autor": "be_a_hero_not_a_patriot" },
+        { "destino": "tempestade", "fonte": "https://freesound.org/people/Audeption/sounds/698811/", "autor": "Audeption" },
+        { "destino": "hospital", "fonte": "https://freesound.org/people/martian/sounds/557013/", "autor": "martian" },
+        { "destino": "chuva", "fonte": "https://freesound.org/people/samesamesame/sounds/242889/", "autor": "samesamesame" }
+      ],
+      "cenas": [
+        { "nome": "Cidade grande", "camadas": [["cidade", 0.8]] },
+        { "nome": "Delegacia", "camadas": [["escritório", 0.7]] },
+        { "nome": "Noite de tempestade", "camadas": [["tempestade", 0.9]] },
+        { "nome": "Hospital", "camadas": [["hospital", 0.7]], "filtros": { "abafado": true } }
+      ]
+    }
+  ]
+}

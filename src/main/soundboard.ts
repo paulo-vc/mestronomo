@@ -58,16 +58,21 @@ export class Soundboard extends EventEmitter {
     const groups = new Map<string, SoundGroup>();
     const add = (categoria: string, relative: string) => {
       const nome = groupName(relative);
-      const id = categoria === ROOT_CATEGORY ? nome : `${categoria}/${nome}`;
+      const id = categoria === ROOT_CATEGORY ? nome : `${categoria.replace(' › ', '/')}/${nome}`;
       const group = groups.get(id) ?? { id, nome, categoria, arquivos: [], ...DEFAULTS, ...this.options[id] };
       group.arquivos.push(relative);
       groups.set(id, group);
     };
     for (const entry of fs.readdirSync(this.dir, { withFileTypes: true })) {
       if (entry.isFile() && isAudio(entry.name)) add(ROOT_CATEGORY, entry.name);
-      if (entry.isDirectory()) {
-        for (const file of fs.readdirSync(path.join(this.dir, entry.name))) {
-          if (isAudio(file)) add(entry.name, `${entry.name}/${file}`);
+      if (!entry.isDirectory()) continue;
+      for (const sub of fs.readdirSync(path.join(this.dir, entry.name), { withFileTypes: true })) {
+        if (sub.isFile() && isAudio(sub.name)) add(entry.name, `${entry.name}/${sub.name}`);
+        // Segundo nível (pacotes de sons): sons/Medieval/Combate → categoria "Medieval › Combate".
+        if (sub.isDirectory()) {
+          for (const file of fs.readdirSync(path.join(this.dir, entry.name, sub.name))) {
+            if (isAudio(file)) add(`${entry.name} › ${sub.name}`, `${entry.name}/${sub.name}/${file}`);
+          }
         }
       }
     }
