@@ -1112,6 +1112,59 @@ function renderSessao(estado) {
 $('#sessao-postar').addEventListener('click', () => api.sessao.postarResumo());
 $('#sessao-nova').addEventListener('click', () => confirm('Começar uma nova sessão? O registro atual será apagado.') && api.sessao.nova());
 
+// --- Pacotes de sons ------------------------------------------------------
+
+function renderPacotes(lista) {
+  $('#pacotes-lista').replaceChildren(
+    ...lista.map((p) => {
+      const botao = el('button', {
+        className: p.instalado ? 'ghost pequeno' : 'primary pequeno',
+        textContent: p.instalado ? 'Remover' : 'Instalar',
+      });
+      botao.addEventListener('click', async () => {
+        if (p.instalado && !confirm(`Remover o pacote ${p.nome}? Os sons, ambientes e cenas de exemplo dele serão apagados.`)) return;
+        botao.disabled = true;
+        botao.textContent = '…';
+        await (p.instalado ? api.pacotes.remover(p.id) : api.pacotes.instalar(p.id));
+      });
+      return el(
+        'li',
+        {},
+        el('span', { className: 'nome' }, el('b', { textContent: p.nome }), el('small', { textContent: ` · ${p.efeitos} efeitos, ${p.ambientes} ambientes` })),
+        el('span', { className: 'detalhe descricao', textContent: p.descricao }),
+        botao,
+      );
+    }),
+  );
+}
+
+/** Primeira execução: oferece os pacotes (todos marcados). */
+function perguntarPacotes(lista) {
+  if (lista.length === 0) return;
+  const dialogo = $('#pacotes-inicio');
+  $('#pacotes-inicio-opcoes').replaceChildren(
+    ...lista.map((p) =>
+      el(
+        'label',
+        { className: 'check pacote-opcao' },
+        el('input', { type: 'checkbox', value: p.id, checked: true }),
+        el('span', {}, el('b', { textContent: p.nome }), el('small', { textContent: ` — ${p.descricao}` })),
+      ),
+    ),
+  );
+  dialogo.addEventListener(
+    'close',
+    async () => {
+      api.pacotes.perguntado();
+      if (dialogo.returnValue !== 'instalar') return;
+      for (const c of $('#pacotes-inicio-opcoes').querySelectorAll('input:checked')) await api.pacotes.instalar(c.value);
+      irPara('cenas');
+    },
+    { once: true },
+  );
+  dialogo.showModal();
+}
+
 // --- Início ------------------------------------------------------------
 
 api.onBot(renderBot);
@@ -1138,6 +1191,7 @@ api.onAtualizacao(renderAtualizacao);
 api.onRoteiro(renderRoteiro);
 api.onPedidos(renderPedidos);
 api.onSessao(renderSessao);
+api.onPacotes(renderPacotes);
 
 (async () => {
   const estado = await api.estado();
@@ -1165,6 +1219,8 @@ api.onSessao(renderSessao);
   renderRoteiro(estado.roteiro);
   renderPedidos(estado.pedidos);
   renderSessao(estado.sessao);
+  renderPacotes(estado.pacotes);
+  if (estado.perguntarPacotes) perguntarPacotes(estado.pacotes.filter((p) => !p.instalado));
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();
   carregarPlaylists();

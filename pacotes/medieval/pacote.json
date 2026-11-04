@@ -1,0 +1,68 @@
+{
+  "id": "medieval",
+  "nome": "Medieval",
+  "descricao": "Fantasia medieval: espadas, magia, criaturas, taverna, floresta e masmorra.",
+  "cenas": [
+    {
+      "nome": "Taverna",
+      "camadas": [
+        [
+          "taverna",
+          0.8
+        ],
+        [
+          "fogueira",
+          0.4
+        ]
+      ]
+    },
+    {
+      "nome": "Floresta à noite",
+      "camadas": [
+        [
+          "floresta à noite",
+          0.8
+        ],
+        [
+          "vento",
+          0.3
+        ]
+      ],
+      "ocasionais": [
+        {
+          "arquivos": [
+            "lobo distante"
+          ],
+          "min": 40,
+          "max": 90,
+          "volume": 0.5
+        }
+      ]
+    },
+    {
+      "nome": "Masmorra",
+      "camadas": [
+        [
+          "caverna",
+          0.9
+        ]
+      ],
+      "filtros": {
+        "caverna": true
+      }
+    },
+    {
+      "nome": "Viagem na chuva",
+      "camadas": [
+        [
+          "chuva",
+          0.8
+        ],
+        [
+          "vento",
+          0.4
+        ]
+      ]
+    }
+  ]
+}

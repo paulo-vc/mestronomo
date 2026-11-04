@@ -46,6 +46,11 @@ contextBridge.exposeInMainWorld('mestronomo', {
   backupImportar: invoke('backup-importar'),
   atualizar: invoke('atualizar'),
   filtro: invoke('filtro'),
+  pacotes: {
+    instalar: invoke('pacote-instalar'),
+    remover: invoke('pacote-remover'),
+    perguntado: invoke('pacotes-perguntado'),
+  },
   pedidos: {
     aprovar: invoke('pedido-aprovar'),
     recusar: invoke('pedido-recusar'),
@@ -132,5 +137,6 @@ contextBridge.exposeInMainWorld('mestronomo', {
   onRoteiro: on('roteiro'),
   onPedidos: on('pedidos'),
   onSessao: on('sessao'),
+  onPacotes: on('pacotes'),
   onPcm: on('pcm'),
 });

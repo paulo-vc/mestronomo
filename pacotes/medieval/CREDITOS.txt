@@ -1,0 +1,44 @@
+Pacote Medieval do Mestrônomo — sons em domínio público (CC0).
+Créditos por cortesia aos autores:
+
+sons/Combate/espada 1.ogg — JohnBuhr, Freesound — CC0 — https://freesound.org/people/JohnBuhr/sounds/326868/
+sons/Combate/espada 2.ogg — Christopherderp, Freesound — CC0 — https://freesound.org/people/Christopherderp/sounds/364530/
+sons/Combate/soco.ogg — joe_anderson22, Freesound — CC0 — https://freesound.org/people/joe_anderson22/sounds/439747/
+sons/Combate/sacar adaga 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Combate/sacar adaga 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Combate/corte 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Combate/corte 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Magia/bola de fogo.ogg — qubodup, Freesound — CC0 — https://freesound.org/people/qubodup/sounds/442871/
+sons/Magia/cura.ogg — IENBA, Freesound — CC0 — https://freesound.org/people/IENBA/sounds/752274/
+sons/Magia/raio.ogg — loganzsound, Freesound — CC0 — https://freesound.org/people/loganzsound/sounds/840628/
+sons/Criaturas/dragão.ogg — qubodup, Freesound — CC0 — https://freesound.org/people/qubodup/sounds/442964/
+sons/Criaturas/lobo.ogg — betchkal, Freesound — CC0 — https://freesound.org/people/betchkal/sounds/500646/
+sons/Criaturas/goblin.ogg — spookymodem, Freesound — CC0 — https://freesound.org/people/spookymodem/sounds/202095/
+sons/Criaturas/risada maligna.ogg — WannyManny, Freesound — CC0 — https://freesound.org/people/WannyManny/sounds/626796/
+sons/Criaturas/coração.ogg — Cloud-10, Freesound — CC0 — https://freesound.org/people/Cloud-10/sounds/688735/
+sons/Exploração/porta abrindo 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/porta abrindo 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/porta fechando 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/porta fechando 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/rangido 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/rangido 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/rangido 3.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/passos 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/passos 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/passos 3.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/moedas 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/moedas 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Exploração/baú.ogg — steprock, Freesound — CC0 — https://freesound.org/people/steprock/sounds/771164/
+sons/Exploração/livro.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Mesa/dados 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Mesa/dados 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Mesa/dados 3.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+ambientes/chuva.ogg — samesamesame, Freesound — CC0 — https://freesound.org/people/samesamesame/sounds/242889/
+ambientes/fogueira.ogg — NickTayloe, Freesound — CC0 — https://freesound.org/people/NickTayloe/sounds/813328/
+ambientes/taverna.ogg — ivolipa, Freesound — CC0 — https://freesound.org/people/ivolipa/sounds/326313/
+ambientes/floresta à noite.ogg — Borgory, Freesound — CC0 — https://freesound.org/people/Borgory/sounds/751465/
+ambientes/vento.ogg — IanStarGem, Freesound — CC0 — https://freesound.org/people/IanStarGem/sounds/341840/
+ambientes/caverna.ogg — Kinoton, Freesound — CC0 — https://freesound.org/people/Kinoton/sounds/516566/
+ambientes/mar.ogg — kkenny101, Freesound — CC0 — https://freesound.org/people/kkenny101/sounds/852826/
+ambientes/cidade medieval.ogg — bolkmar, Freesound — CC0 — https://freesound.org/people/bolkmar/sounds/424790/
+ambientes/lobo distante.ogg — betchkal, Freesound — CC0 — https://freesound.org/people/betchkal/sounds/500646/

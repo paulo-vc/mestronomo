@@ -141,6 +141,12 @@ O volume do fone não muda o que vai para a call.
 - **Busca**: digite um texto (ex.: "tavern music") e escolha entre os 5 primeiros resultados.
 - **Músicas locais**: cada subpasta de `musicas/` vira uma playlist (instalado: `Documentos\Mestrônomo\musicas`); escolha e clique em **Pôr na fila**. Links e arquivos locais podem ficar na mesma fila.
 
+## Pacotes de sons
+
+O app vem com dois pacotes prontos, todos em domínio público (CC0): **Medieval** (espadas, magia, criaturas, taverna, floresta, masmorra) e **Moderno** (tiros, sirenes, telefone, cidade, escritório, tempestade). Na primeira vez que abre, o Mestrônomo pergunta quais instalar; depois, dá para instalar ou remover na página **Soundboard → Pacotes de sons**. Cada pacote traz efeitos (`sons/<Pacote>/<Categoria>`), ambientes em loop (`ambientes/<Pacote>`) e cenas de exemplo. Os créditos ficam em `CREDITOS.txt`.
+
+Para refazer os pacotes a partir das fontes (`pacotes/fontes.json`): extraia os zips da Kenney indicados lá numa pasta e rode `node scripts/montar-pacotes.js <pasta>`.
+
 ## Roteiro da sessão
 
 Na página **Roteiro** (`Ctrl+1`), prepare a sessão em **momentos** ("Chegada à taverna", "A briga", "Fuga pela floresta"). Cada momento pode ter notas (o que narrar, falas de NPCs), uma cena que entra junto, atalhos de sons e um handout. Durante o jogo, **Próximo momento** (ou `/api/roteiro/proximo`, ou a tecla Próximo Momento do Ulanzi) troca a cena e mostra tudo daquele trecho.

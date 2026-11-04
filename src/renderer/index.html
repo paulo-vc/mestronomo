@@ -194,6 +194,12 @@
             <div id="sons" class="grid"></div>
           </section>
 
+          <section class="card" id="pacotes">
+            <h2>Pacotes de sons</h2>
+            <p class="hint">Efeitos, ambientes e cenas de exemplo prontos para usar. Todos em domínio público (CC0).</p>
+            <ul id="pacotes-lista" class="lista pacotes" data-vazio="Nenhum pacote disponível."></ul>
+          </section>
+
           <section class="card" id="freesound">
             <div class="card-head">
               <h2>Buscar sons no Freesound</h2>
@@ -386,6 +392,18 @@
         <div class="row fim">
           <button value="cancelar" class="ghost" formnovalidate>Cancelar</button>
           <button value="salvar" class="primary">Salvar momento</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="pacotes-inicio">
+      <form method="dialog" id="pacotes-inicio-form">
+        <h2>Bem-vindo ao Mestrônomo</h2>
+        <p>Quer começar com sons prontos? Cada pacote traz efeitos para a soundboard, ambientes em loop e algumas cenas de exemplo. Dá para instalar ou remover depois, na página Soundboard.</p>
+        <div id="pacotes-inicio-opcoes" class="pacotes-opcoes"></div>
+        <div class="row fim">
+          <button value="cancelar" class="ghost">Agora não</button>
+          <button value="instalar" class="primary">Instalar</button>
         </div>
       </form>
     </dialog>

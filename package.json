@@ -1,6 +1,6 @@
 {
   "name": "mestronomo",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "Ferramentas de áudio para mestres de RPG: música, ambiente e soundboard direto no Discord",
   "main": "dist/main/main.js",
   "scripts": {
@@ -49,6 +49,14 @@
       {
         "from": "vendor",
         "to": "bin"
+      },
+      {
+        "from": "pacotes",
+        "to": "pacotes",
+        "filter": [
+          "**/*",
+          "!fontes.json"
+        ]
       }
     ],
     "win": {

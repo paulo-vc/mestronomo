@@ -1,0 +1,46 @@
+{
+  "id": "moderno",
+  "nome": "Moderno",
+  "descricao": "Dias de hoje: investigação, ação e terror — tiros, sirenes, telefone, cidade e tempestade.",
+  "cenas": [
+    {
+      "nome": "Cidade grande",
+      "camadas": [
+        [
+          "cidade",
+          0.8
+        ]
+      ]
+    },
+    {
+      "nome": "Delegacia",
+      "camadas": [
+        [
+          "escritório",
+          0.7
+        ]
+      ]
+    },
+    {
+      "nome": "Noite de tempestade",
+      "camadas": [
+        [
+          "tempestade",
+          0.9
+        ]
+      ]
+    },
+    {
+      "nome": "Hospital",
+      "camadas": [
+        [
+          "hospital",
+          0.7
+        ]
+      ],
+      "filtros": {
+        "abafado": true
+      }
+    }
+  ]
+}
