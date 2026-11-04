@@ -101,9 +101,15 @@ export class DiscordBot extends EventEmitter {
   private client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
   private player: AudioPlayer;
   private guildId: string | undefined;
-  /** Canal de texto para "tocando agora" e handouts, escolhido com /canal. */
-  textChannelId: string | undefined;
-  private nowPlayingMessage: Message | undefined;
+  /**
+   * Canal de texto de cada servidor (id do servidor → id do canal), escolhido com /canal.
+   * As mensagens só vão para o servidor ativo — nunca para os outros em que o bot está.
+   */
+  textChannels: Record<string, string> = {};
+  /** Canal único das versões antigas (antes de ser por servidor); convertido ao conectar. */
+  legacyTextChannelId: string | undefined;
+  /** Mensagem "tocando agora" de cada servidor, editada no lugar. */
+  private nowPlayingMessages = new Map<string, Message>();
   private nowPlayingTimer: NodeJS.Timeout | undefined;
 
   constructor(
@@ -132,6 +138,7 @@ export class DiscordBot extends EventEmitter {
       }
       this.setStatus({ state: 'aguardando', bot: this.client.user!.tag });
       for (const guild of this.client.guilds.cache.values()) this.registerCommands(guild);
+      await this.migrateLegacyChannel();
     });
     this.client.on('guildCreate', (guild) => this.registerCommands(guild));
     this.client.on('interactionCreate', (interaction) => {
@@ -212,15 +219,20 @@ export class DiscordBot extends EventEmitter {
 
     if (interaction.commandName === 'resumo') {
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-      await this.postSummary();
-      return interaction.editReply('Resumo postado no canal.');
+      try {
+        // Digitado no Discord: posta no próprio servidor, não no "ativo".
+        await this.postSummary(interaction.guild.id);
+        return interaction.editReply('Resumo postado no canal.');
+      } catch (err) {
+        return interaction.editReply((err as Error).message);
+      }
     }
 
     if (interaction.commandName === 'canal') {
-      this.textChannelId = interaction.channelId;
-      this.nowPlayingMessage = undefined;
-      this.emit('canal', this.textChannelId);
-      return reply('Pronto: vou usar este canal para "tocando agora" e handouts.');
+      this.textChannels[interaction.guild.id] = interaction.channelId;
+      this.nowPlayingMessages.delete(interaction.guild.id);
+      this.emit('canais', { ...this.textChannels });
+      return reply(`Pronto: neste servidor vou usar este canal para "tocando agora" e handouts. Mensagens automáticas só saem enquanto eu estiver numa call daqui.`);
     }
 
     if (interaction.commandName === 'sair') {
@@ -272,8 +284,10 @@ export class DiscordBot extends EventEmitter {
   }
 
   private async postNowPlaying(info: NowPlaying) {
-    const channel = await this.textChannel();
-    if (!channel) return;
+    // Automática: só no servidor em cuja call o bot está.
+    const guildId = this.guildId;
+    const { channel } = await this.textChannel(guildId);
+    if (!guildId || !channel) return;
     const embed = new EmbedBuilder()
       .setColor(BRAND_COLOR)
       .setAuthor({ name: 'Mestrônomo · tocando agora' })
@@ -281,21 +295,21 @@ export class DiscordBot extends EventEmitter {
       .setTimestamp();
     if (info.cena) embed.addFields({ name: 'Cena', value: info.cena, inline: true });
     if (info.ambiente.length) embed.addFields({ name: 'Ambiente', value: info.ambiente.join(', '), inline: true });
-    if (this.nowPlayingMessage) {
+    const anterior = this.nowPlayingMessages.get(guildId);
+    if (anterior && anterior.channelId === channel.id) {
       try {
-        await this.nowPlayingMessage.edit({ embeds: [embed] });
+        await anterior.edit({ embeds: [embed] });
         return;
       } catch {
         // A mensagem foi apagada: manda uma nova.
       }
     }
-    this.nowPlayingMessage = await channel.send({ embeds: [embed] });
+    this.nowPlayingMessages.set(guildId, await channel.send({ embeds: [embed] }));
   }
 
-  /** Posta o resumo da sessão como embed no canal do /canal. */
-  async postSummary() {
-    const channel = await this.textChannel();
-    if (!channel) throw new Error('Escolha o canal de texto antes: use /canal no Discord, dentro do canal desejado.');
+  /** Posta o resumo da sessão no canal do /canal do servidor ativo (ou do servidor indicado). */
+  async postSummary(guildId = this.activeGuildId()) {
+    const channel = await this.requireTextChannel(guildId);
     const { titulo, linhas } = this.hooks.resumo();
     // Embeds aceitam até 4096 caracteres na descrição.
     let descricao = '';
@@ -307,24 +321,64 @@ export class DiscordBot extends EventEmitter {
     await channel.send({ embeds: [embed] });
   }
 
-  /** Manda um texto no canal escolhido com /canal (turnos, tabelas...). */
-  async sendMessage(content: string) {
-    const channel = await this.textChannel();
-    if (!channel) throw new Error('Escolha o canal de texto antes: use /canal no Discord, dentro do canal desejado.');
+  /**
+   * Manda um texto no canal do /canal. Automática (turnos, "tocando a pedido"): só se o bot estiver
+   * numa call, e no servidor dela; senão é descartada em silêncio. Manual (tabelas): servidor ativo.
+   */
+  async sendMessage(content: string, automatica = false) {
+    if (automatica) {
+      const { channel } = await this.textChannel(this.guildId);
+      if (channel) await channel.send({ content });
+      return;
+    }
+    const channel = await this.requireTextChannel(this.activeGuildId());
     await channel.send({ content });
   }
 
-  /** Manda uma imagem (mapa, retrato, carta...) para o canal escolhido com /canal. */
+  /** Manda uma imagem (mapa, retrato, carta...) para o canal do /canal do servidor ativo. */
   async sendHandout(file: string, caption?: string) {
-    const channel = await this.textChannel();
-    if (!channel) throw new Error('Escolha o canal de texto antes: use /canal no Discord, dentro do canal desejado.');
+    const channel = await this.requireTextChannel(this.activeGuildId());
     await channel.send({ content: caption || undefined, files: [file] });
   }
 
-  private async textChannel(): Promise<SendableChannels | undefined> {
-    if (!this.textChannelId || !this.client.isReady()) return undefined;
-    const channel = await this.client.channels.fetch(this.textChannelId).catch(() => null);
-    return channel?.isSendable() ? channel : undefined;
+  /**
+   * Servidor ativo: o da call em que o bot está; sem bot em call, o da call em que o mestre está.
+   * Nunca "qualquer servidor" — é isso que evita mandar mensagem onde ninguém está jogando.
+   */
+  activeGuildId(): string | undefined {
+    return this.guildId ?? this.findOwnerChannel()?.guild.id;
+  }
+
+  private async textChannel(guildId: string | undefined): Promise<{ channel?: SendableChannels; motivo?: string }> {
+    if (!this.client.isReady()) return { motivo: 'O bot ainda está conectando ao Discord.' };
+    if (!guildId) return { motivo: 'Chame o bot para uma call (ou entre numa) para eu saber em qual servidor mandar.' };
+    const guild = this.client.guilds.cache.get(guildId);
+    const doServidor = guild ? `de ${guild.name}` : 'deste servidor';
+    const channelId = this.textChannels[guildId];
+    if (!channelId) return { motivo: `Use /canal no canal de texto ${doServidor} para eu saber onde mandar.` };
+    const channel = await this.client.channels.fetch(channelId).catch(() => null);
+    // Confere que o canal é mesmo deste servidor, por segurança.
+    if (!channel?.isSendable() || !('guildId' in channel) || channel.guildId !== guildId) {
+      return { motivo: `O canal escolhido ${doServidor} não existe mais. Use /canal de novo.` };
+    }
+    return { channel };
+  }
+
+  private async requireTextChannel(guildId: string | undefined) {
+    const { channel, motivo } = await this.textChannel(guildId);
+    if (!channel) throw new Error(motivo);
+    return channel;
+  }
+
+  /** Converte o canal único das versões antigas para o formato por servidor. */
+  private async migrateLegacyChannel() {
+    if (!this.legacyTextChannelId) return;
+    const channel = await this.client.channels.fetch(this.legacyTextChannelId).catch(() => null);
+    if (channel && 'guildId' in channel && channel.guildId && !this.textChannels[channel.guildId]) {
+      this.textChannels[channel.guildId] = channel.id;
+    }
+    this.legacyTextChannelId = undefined;
+    this.emit('canais', { ...this.textChannels });
   }
 
   private playMixer() {

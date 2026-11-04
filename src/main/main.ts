@@ -90,7 +90,9 @@ interface SavedConfig {
   sons?: Record<string, SoundOptions>;
   /** Duração do crossfade entre cenas, em ms. */
   fadeMs?: number;
-  /** Canal de texto escolhido com /canal (tocando agora e handouts). */
+  /** Canal de texto de cada servidor (id do servidor → id do canal), escolhido com /canal. */
+  canaisTexto?: Record<string, string>;
+  /** Canal único das versões até a 1.2.0; o bot converte para canaisTexto ao conectar. */
   canalTexto?: string;
   /** Postar e atualizar a mensagem "tocando agora" no canal de texto. */
   tocandoAgora?: boolean;
@@ -221,7 +223,7 @@ function runRequest(pedido: PlayerRequest) {
   else playSound(soundboard.find(pedido.valor)?.id ?? pedido.valor);
   if (pedido.id) {
     sessionLog.add('pedido', `${pedido.jogador.nome} pediu ${pedido.tipo === 'musica' ? 'uma música' : `o som "${pedido.valor}"`}`);
-    if (config.canalTexto) postToDiscord(`${pedido.tipo === 'musica' ? '🎵' : '🔊'} Tocando a pedido de **${pedido.jogador.nome}**.`);
+    postToDiscord(`${pedido.tipo === 'musica' ? '🎵' : '🔊'} Tocando a pedido de **${pedido.jogador.nome}**.`, true);
   }
 }
 
@@ -258,7 +260,8 @@ function nowPlaying(): NowPlaying {
 let lastNowPlaying = '';
 /** Chamado a cada mudança de música, cena ou ambiente; só posta quando o resumo muda de fato. */
 function refreshNowPlaying() {
-  if (!bot || config.tocandoAgora === false || !config.canalTexto) return;
+  // O bot só posta se estiver numa call, no canal do /canal daquele servidor.
+  if (!bot || config.tocandoAgora === false) return;
   const info = nowPlaying();
   const assinatura = JSON.stringify(info);
   if (assinatura === lastNowPlaying) return;
@@ -266,14 +269,17 @@ function refreshNowPlaying() {
   bot.updateNowPlaying(info);
 }
 
-/** Manda texto no canal do /canal, avisando na interface se algo der errado. */
-async function postToDiscord(content: string) {
+/**
+ * Manda texto no canal do /canal do servidor ativo, avisando na interface se algo der errado.
+ * Automática (turnos, pedidos): só sai se o bot estiver numa call, e sem avisos.
+ */
+async function postToDiscord(content: string, automatica = false) {
   try {
     if (!bot) throw new Error('Configure o bot primeiro (botão ⚙ no topo).');
-    await bot.sendMessage(content);
+    await bot.sendMessage(content, automatica);
     return true;
   } catch (err) {
-    send('erro', (err as Error).message);
+    if (!automatica) send('erro', (err as Error).message);
     return false;
   }
 }
@@ -397,7 +403,7 @@ function registerIpc() {
     ...credentialsInfo(),
     autoStart: isAutoStart(),
     tocandoAgora: config.tocandoAgora !== false,
-    canalTexto: Boolean(config.canalTexto),
+    canalTexto: Object.keys(config.canaisTexto ?? {}).length > 0 || Boolean(config.canalTexto),
   }));
   ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean, tocandoAgora: boolean, freesoundKey: string) => {
     saveFreesoundKey(freesoundKey ?? '');
@@ -620,14 +626,21 @@ function startBot() {
   const credentials = loadCredentials();
   if (!credentials) return send('bot', state().bot);
   bot = new DiscordBot(mixer, credentials.token, credentials.ownerId, botHooks);
-  bot.textChannelId = config.canalTexto;
-  bot.on('canal', (id: string) => {
-    config.canalTexto = id;
+  bot.textChannels = { ...config.canaisTexto };
+  bot.legacyTextChannelId = config.canalTexto;
+  bot.on('canais', (canais: Record<string, string>) => {
+    config.canaisTexto = canais;
+    delete config.canalTexto;
     saveConfig();
     lastNowPlaying = '';
     refreshNowPlaying();
   });
-  bot.on('status', (status) => {
+  bot.on('status', (status: BotStatus) => {
+    // Entrou numa call: o "tocando agora" vai para o canal deste servidor.
+    if (status.state === 'no-canal') {
+      lastNowPlaying = '';
+      refreshNowPlaying();
+    }
     send('bot', status);
     tray?.rebuild();
   });
@@ -754,7 +767,7 @@ app.whenReady().then(() => {
     cenaAntesDoCombate = undefined;
   });
   combat.on('turno', (c: { nome: string; jogador: boolean }, rodada: number) => {
-    if (config.anunciarTurnos) postToDiscord(`⚔️ **Rodada ${rodada}** — vez de **${c.nome}**`);
+    if (config.anunciarTurnos) postToDiscord(`⚔️ **Rodada ${rodada}** — vez de **${c.nome}**`, true);
   });
 
   timers.on('change', (s: TimerState[]) => send('timers', s));

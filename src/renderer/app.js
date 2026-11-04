@@ -201,8 +201,8 @@ async function abrirConfig() {
   configForm.freesound.placeholder = info.hasFreesound ? '•••••••• (salva; deixe vazio para manter)' : 'Cole a chave aqui';
   configForm.tocandoAgora.checked = info.tocandoAgora;
   $('#config-canal').textContent = info.canalTexto
-    ? 'Canal de texto definido. Para trocar, use /canal no canal desejado.'
-    : 'Para "tocando agora" e handouts, use /canal no canal de texto desejado.';
+    ? 'Cada servidor tem o seu canal (/canal). As mensagens só vão para o servidor em cuja call o bot está.'
+    : 'Para "tocando agora" e handouts, use /canal no canal de texto desejado de cada servidor.';
   configForm.token.disabled = configForm.ownerId.disabled = info.fromEnv;
   $('#bot-verificar').disabled = info.fromEnv;
   $('#config-env').classList.toggle('hidden', !info.fromEnv);
