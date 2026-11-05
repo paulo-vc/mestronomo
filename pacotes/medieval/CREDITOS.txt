@@ -11,7 +11,7 @@ sons/Combate/corte 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — htt
 sons/Magia/bola de fogo.ogg — qubodup, Freesound — CC0 — https://freesound.org/people/qubodup/sounds/442871/
 sons/Magia/cura.ogg — IENBA, Freesound — CC0 — https://freesound.org/people/IENBA/sounds/752274/
 sons/Magia/raio.ogg — loganzsound, Freesound — CC0 — https://freesound.org/people/loganzsound/sounds/840628/
-sons/Criaturas/dragão.ogg — qubodup, Freesound — CC0 — https://freesound.org/people/qubodup/sounds/442964/
+sons/Criaturas/dragão 1.ogg — qubodup, Freesound — CC0 — https://freesound.org/people/qubodup/sounds/442964/
 sons/Criaturas/lobo.ogg — betchkal, Freesound — CC0 — https://freesound.org/people/betchkal/sounds/500646/
 sons/Criaturas/goblin.ogg — spookymodem, Freesound — CC0 — https://freesound.org/people/spookymodem/sounds/202095/
 sons/Criaturas/risada maligna.ogg — WannyManny, Freesound — CC0 — https://freesound.org/people/WannyManny/sounds/626796/
@@ -33,6 +33,12 @@ sons/Exploração/livro.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — 
 sons/Mesa/dados 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
 sons/Mesa/dados 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
 sons/Mesa/dados 3.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Combate/flecha 1.ogg — MHockett, Freesound — CC0 — https://freesound.org/people/MHockett/sounds/249160/
+sons/Combate/flecha 2.ogg — omerbhatti34, Freesound — CC0 — https://freesound.org/people/omerbhatti34/sounds/521552/
+sons/Exploração/armadilha.ogg — qubodup, Freesound — CC0 — https://freesound.org/people/qubodup/sounds/752067/
+sons/Criaturas/dragão 2.ogg — Breviceps, Freesound — CC0 — https://freesound.org/people/Breviceps/sounds/479380/
+sons/Mesa/sino.ogg — Hano_van_Dalen, Freesound — CC0 — https://freesound.org/people/Hano_van_Dalen/sounds/767307/
+sons/Mesa/suspense.ogg — nomiqbomi, Freesound — CC0 — https://freesound.org/people/nomiqbomi/sounds/578358/
 ambientes/chuva.ogg — samesamesame, Freesound — CC0 — https://freesound.org/people/samesamesame/sounds/242889/
 ambientes/fogueira.ogg — NickTayloe, Freesound — CC0 — https://freesound.org/people/NickTayloe/sounds/813328/
 ambientes/taverna.ogg — ivolipa, Freesound — CC0 — https://freesound.org/people/ivolipa/sounds/326313/

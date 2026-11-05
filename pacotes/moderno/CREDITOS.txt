@@ -1,8 +1,8 @@
 Pacote Moderno do Mestrônomo — sons em domínio público (CC0).
 Créditos por cortesia aos autores:
 
-sons/Ação/tiro.ogg — mahecic, Freesound — CC0 — https://freesound.org/people/mahecic/sounds/803497/
-sons/Ação/explosão.ogg — Deganoth, Freesound — CC0 — https://freesound.org/people/Deganoth/sounds/165911/
+sons/Ação/tiro 1.ogg — mahecic, Freesound — CC0 — https://freesound.org/people/mahecic/sounds/803497/
+sons/Ação/explosão 1.ogg — Deganoth, Freesound — CC0 — https://freesound.org/people/Deganoth/sounds/165911/
 sons/Ação/vidro quebrando.ogg — Bricklover, Freesound — CC0 — https://freesound.org/people/Bricklover/sounds/560767/
 sons/Ação/soco.ogg — joe_anderson22, Freesound — CC0 — https://freesound.org/people/joe_anderson22/sounds/439747/
 sons/Cidade/sirene.ogg — TitanKaempfer, Freesound — CC0 — https://freesound.org/people/TitanKaempfer/sounds/746302/
@@ -18,6 +18,10 @@ sons/Terror/coração.ogg — Cloud-10, Freesound — CC0 — https://freesound.
 sons/Terror/rangido.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
 sons/Mesa/dados 1.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
 sons/Mesa/dados 2.ogg — Kenney (kenney.nl), via OpenGameArt — CC0 — https://opengameart.org/users/kenney
+sons/Ação/tiro 2.ogg — morganpurkis, Freesound — CC0 — https://freesound.org/people/morganpurkis/sounds/391846/
+sons/Ação/explosão 2.ogg — IdkMrGarcia, Freesound — CC0 — https://freesound.org/people/IdkMrGarcia/sounds/446624/
+sons/Terror/suspense.ogg — nomiqbomi, Freesound — CC0 — https://freesound.org/people/nomiqbomi/sounds/578370/
+sons/Mesa/sino.ogg — Hano_van_Dalen, Freesound — CC0 — https://freesound.org/people/Hano_van_Dalen/sounds/767307/
 ambientes/cidade.ogg — visionear, Freesound — CC0 — https://freesound.org/people/visionear/sounds/723607/
 ambientes/escritório.ogg — DavidFrbr, Freesound — CC0 — https://freesound.org/people/DavidFrbr/sounds/327497/
 ambientes/metrô.ogg — be_a_hero_not_a_patriot, Freesound — CC0 — https://freesound.org/people/be_a_hero_not_a_patriot/sounds/332784/
