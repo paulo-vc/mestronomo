@@ -123,7 +123,7 @@
               <button id="yt-proxima" class="ghost" title="Próxima">⏭</button>
               <button id="yt-parar" class="ghost" title="Parar">⏹</button>
               <button id="yt-repetir" class="ghost" title="Repetir"></button>
-              <button id="yt-aleatorio" class="ghost" title="Ordem aleatória">🔀</button>
+              <button id="yt-aleatorio" class="ghost" title="Ordem aleatória">⤨</button>
               <label class="slider compacto"><input type="range" data-volume="youtube" min="0" max="100" /><output></output></label>
             </div>
             <div class="row player-ajustes">
@@ -351,6 +351,18 @@
             <h3>Integrações</h3>
             <p class="hint">API para Ulanzi / Stream Deck: <code id="api"></code></p>
           </section>
+
+          <section class="card atalhos-card">
+            <div class="card-head">
+              <h2>Atalhos de teclado</h2>
+              <div class="row">
+                <button id="atalho-novo" class="ghost pequeno">+ Atalho</button>
+                <button id="atalhos-padrao" class="ghost pequeno">Restaurar padrão</button>
+              </div>
+            </div>
+            <p class="hint">Funcionam mesmo com o Mestrônomo em segundo plano. Clique no campo da tecla e aperte a combinação; use Ctrl, Alt ou Shift (só as teclas F funcionam sozinhas). Tudo é salvo na hora.</p>
+            <ul id="atalhos-lista" class="lista atalhos" data-vazio="Nenhum atalho."></ul>
+          </section>
         </div>
       </main>
     </div>
@@ -372,7 +384,7 @@
           <button data-filtro="caverna" title="Reverberação de masmorra">Caverna</button>
           <button data-filtro="eco" title="Eco de abismo">Eco</button>
         </div>
-        <button id="parar-efeitos" class="ghost" title="Para todos os efeitos, inclusive loops (Ctrl+Alt+0)">⏹ Efeitos</button>
+        <button id="parar-efeitos" class="ghost" title="Para todos os efeitos, inclusive loops">⏹ Efeitos</button>
         <label class="slider compacto barra-volume" title="Volume geral">
           <span>🔊</span><input type="range" data-volume="master" min="0" max="100" /><output></output>
         </label>

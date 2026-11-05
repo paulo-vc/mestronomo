@@ -27,6 +27,7 @@ import { FILTERS, type FilterName } from './dsp';
 import { Requests, type PlayerRequest } from './requests';
 import { PcmCache } from './pcmCache';
 import { Packs } from './packs';
+import { DEFAULT_HOTKEYS, registerHotkeys, type Hotkey, type HotkeyAction, type RegisterResult } from './hotkeys';
 import { SessionLog, type SessionLogState } from './sessionLog';
 import type { BotHooks } from './discord';
 
@@ -106,6 +107,8 @@ interface SavedConfig {
   anunciarTurnos?: boolean;
   /** Roteiros de sessão e o momento atual. */
   roteiro?: ScriptState;
+  /** Atalhos de teclado globais; ausente = os padrões (Ctrl+Alt+1..9 e Ctrl+Alt+0). */
+  atalhos?: Hotkey[];
   /** Já perguntou, na primeira execução, quais pacotes de sons instalar. */
   pacotesPerguntado?: boolean;
   /** Aceitar /musica e /som dos jogadores. */
@@ -375,6 +378,7 @@ function state() {
     timers: timers.state(),
     tabelas: listTables(TABLES_DIR),
     versao: app.getVersion(),
+    atalhos: { lista: config.atalhos ?? DEFAULT_HOTKEYS, falhas: hotkeyFailures },
     pacotes: packs.list(),
     perguntarPacotes: !config.pacotesPerguntado,
     cache: pcmCache.stats(),
@@ -547,6 +551,14 @@ function registerIpc() {
     config.pacotesPerguntado = true;
     saveConfig();
   });
+  ipcMain.handle('atalhos-salvar', (_e, lista: Hotkey[] | null) => {
+    // null volta para os atalhos padrão.
+    config.atalhos = lista ?? undefined;
+    saveConfig();
+    const resultado = registerShortcuts();
+    send('atalhos', { lista: config.atalhos ?? DEFAULT_HOTKEYS, falhas: resultado.falhas });
+    return resultado;
+  });
   ipcMain.handle('filtro', (_e, nome: FilterName, ligado?: boolean) => setFilter(nome, ligado));
   ipcMain.handle('atualizar', () => {
     if (updater.state.estado === 'disponivel') shell.openExternal(updater.state.url);
@@ -671,14 +683,39 @@ function createWindow() {
 }
 
 /** Ctrl+Alt+1..9 tocam os primeiros sons; Ctrl+Alt+0 para os efeitos. Funcionam com o app em segundo plano. */
-function registerShortcuts() {
-  for (let i = 1; i <= 9; i++) {
-    globalShortcut.register(`Control+Alt+${i}`, () => {
-      const sound = listSounds()[i - 1];
-      if (sound) playSound(sound);
-    });
+let hotkeyFailures: RegisterResult['falhas'] = [];
+
+function runHotkey(acao: HotkeyAction) {
+  switch (acao.tipo) {
+    case 'som':
+      return playSound(acao.id);
+    case 'somPosicao': {
+      const som = listSounds()[acao.n - 1];
+      return som && playSound(som);
+    }
+    case 'cena':
+      return scenes.activate(acao.id);
+    case 'momento':
+      return acao.dir === 'proximo' ? scripts.next() : scripts.previous();
+    case 'filtro':
+      return setFilter(acao.nome);
+    case 'player':
+      return acao.cmd === 'pausar' ? youtube.togglePause() : youtube.next();
+    case 'turno':
+      return combat.state().ativo ? combat.next() : combat.start();
+    case 'pararEfeitos':
+      return stopEffects();
+    case 'bot':
+      return bot?.status.state === 'no-canal' ? leaveBot() : joinBot();
   }
-  globalShortcut.register('Control+Alt+0', stopEffects);
+}
+
+/** (Re)registra os atalhos globais a partir da configuração. */
+function registerShortcuts() {
+  globalShortcut.unregisterAll();
+  const resultado = registerHotkeys(config.atalhos ?? DEFAULT_HOTKEYS, runHotkey, (tecla, fn) => globalShortcut.register(tecla, fn));
+  hotkeyFailures = resultado.falhas;
+  return resultado;
 }
 
 function startBot() {

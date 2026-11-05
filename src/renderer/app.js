@@ -612,7 +612,8 @@ function renderSoundboard(estado) {
           el('span', { className: 'nome', textContent: som.nome }),
         );
         const detalhes = el('span', { className: 'detalhes' });
-        if (i < 9) detalhes.append(el('kbd', { textContent: `Ctrl+Alt+${i + 1}` }));
+        const tecla = teclaDoSom(som, i);
+        if (tecla) detalhes.append(el('kbd', { textContent: tecla }));
         if (som.arquivos.length > 1) detalhes.append(el('span', { className: 'tag', textContent: `×${som.arquivos.length}` }));
         if (som.loop) detalhes.append(el('span', { className: 'tag', textContent: '↻ loop' }));
         if (som.volume < 1) detalhes.append(el('span', { className: 'tag', textContent: `${Math.round(som.volume * 100)}%` }));
@@ -1176,6 +1177,133 @@ function perguntarPacotes(lista) {
   dialogo.showModal();
 }
 
+// --- Atalhos de teclado -------------------------------------------------
+
+let atalhos = { lista: [], falhas: [] };
+
+const ACOES = {
+  somPosicao: 'Tocar o som da posição',
+  som: 'Tocar o som',
+  cena: 'Ativar a cena',
+  momento: 'Roteiro',
+  filtro: 'Ligar/desligar filtro',
+  player: 'Player',
+  turno: 'Próximo turno',
+  pararEfeitos: 'Parar efeitos',
+  bot: 'Chamar/dispensar bot',
+};
+
+/** "Control+Alt+1" → "Ctrl+Alt+1" (como aparece para a pessoa). */
+const mostrarTecla = (tecla) => tecla.replace('Control', 'Ctrl').replace('Super', 'Win');
+
+/** Converte um keydown na combinação que o Electron entende, ou undefined se só há modificadores. */
+function teclaDoEvento(e) {
+  const nomes = {
+    Space: 'Space', Enter: 'Return', Tab: 'Tab', Backspace: 'Backspace', Delete: 'Delete', Insert: 'Insert',
+    Home: 'Home', End: 'End', PageUp: 'PageUp', PageDown: 'PageDown',
+    ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
+    Minus: '-', Equal: '=', Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'",
+    BracketLeft: '[', BracketRight: ']', Backslash: '\\', Backquote: '`',
+    NumpadAdd: 'numadd', NumpadSubtract: 'numsub', NumpadMultiply: 'nummult', NumpadDivide: 'numdiv', NumpadDecimal: 'numdec',
+  };
+  let principal;
+  if (/^Key[A-Z]$/.test(e.code)) principal = e.code.slice(3);
+  else if (/^Digit\d$/.test(e.code)) principal = e.code.slice(5);
+  else if (/^Numpad\d$/.test(e.code)) principal = `num${e.code.slice(6)}`;
+  else if (/^F\d{1,2}$/.test(e.code)) principal = e.code;
+  else principal = nomes[e.code];
+  if (!principal) return undefined;
+  const mods = [e.ctrlKey && 'Control', e.altKey && 'Alt', e.shiftKey && 'Shift', e.metaKey && 'Super'].filter(Boolean);
+  return [...mods, principal].join('+');
+}
+
+/** Opções do segundo select, conforme o tipo de ação. */
+function alvosDe(tipo) {
+  switch (tipo) {
+    case 'somPosicao':
+      return Array.from({ length: 20 }, (_, i) => [String(i + 1), `${i + 1}º`]);
+    case 'som':
+      return soundboard.sons.map((s) => [s.id, s.id]);
+    case 'cena':
+      return cenasConhecidas.map((c) => [c.id, c.nome]);
+    case 'momento':
+      return [['proximo', 'próximo momento'], ['anterior', 'momento anterior']];
+    case 'filtro':
+      return [['abafado', 'abafado'], ['caverna', 'caverna'], ['eco', 'eco']];
+    case 'player':
+      return [['pausar', 'tocar/pausar'], ['proxima', 'próxima faixa']];
+    default:
+      return [];
+  }
+}
+
+function acaoDe(tipo, alvo) {
+  switch (tipo) {
+    case 'somPosicao': return { tipo, n: Number(alvo) || 1 };
+    case 'som': return { tipo, id: alvo };
+    case 'cena': return { tipo, id: alvo };
+    case 'momento': return { tipo, dir: alvo || 'proximo' };
+    case 'filtro': return { tipo, nome: alvo || 'abafado' };
+    case 'player': return { tipo, cmd: alvo || 'pausar' };
+    default: return { tipo };
+  }
+}
+
+const alvoDe = (acao) => String(acao.n ?? acao.id ?? acao.dir ?? acao.nome ?? acao.cmd ?? '');
+
+function salvarAtalhos(lista) {
+  api.salvarAtalhos(lista);
+}
+
+function renderAtalhos(estado) {
+  atalhos = estado;
+  renderSoundboard(soundboard);
+  const falhas = new Map(estado.falhas.map((f) => [f.indice, f.motivo]));
+  $('#atalhos-lista').replaceChildren(
+    ...estado.lista.map((h, i) => {
+      const atualizar = (mudanca) => salvarAtalhos(estado.lista.map((x, j) => (j === i ? { ...x, ...mudanca } : x)));
+      const campo = el('input', { type: 'text', readOnly: true, className: 'tecla', value: mostrarTecla(h.tecla), title: 'Clique e aperte a combinação (Esc cancela)' });
+      campo.addEventListener('focus', () => (campo.value = 'Aperte…'));
+      campo.addEventListener('blur', () => (campo.value = mostrarTecla(h.tecla)));
+      campo.addEventListener('keydown', (e) => {
+        e.preventDefault();
+        if (e.key === 'Escape') return campo.blur();
+        const tecla = teclaDoEvento(e);
+        if (!tecla) return;
+        campo.blur();
+        atualizar({ tecla });
+      });
+      const tipo = el('select', {}, ...Object.entries(ACOES).map(([v, t]) => new Option(t, v)));
+      tipo.value = h.acao.tipo;
+      tipo.addEventListener('change', () => {
+        const [primeiro] = alvosDe(tipo.value);
+        atualizar({ acao: acaoDe(tipo.value, primeiro?.[0]) });
+      });
+      const opcoes = alvosDe(h.acao.tipo);
+      // Ações sem alvo (parar efeitos, turno, bot) ganham um espaço vazio para a linha não desalinhar.
+      let alvo = el('span');
+      if (opcoes.length) {
+        alvo = el('select', {}, ...opcoes.map(([v, t]) => new Option(t, v)));
+        alvo.value = alvoDe(h.acao);
+        alvo.addEventListener('change', () => atualizar({ acao: acaoDe(h.acao.tipo, alvo.value) }));
+      }
+      const remover = el('button', { className: 'ghost icone', textContent: '✕', title: 'Remover', onclick: () => salvarAtalhos(estado.lista.filter((_, j) => j !== i)) });
+      const linha = el('li', { className: falhas.has(i) ? 'com-falha' : '' }, campo, tipo, alvo, remover);
+      if (falhas.has(i)) linha.append(el('small', { className: 'falha', textContent: falhas.get(i) }));
+      return linha;
+    }),
+  );
+}
+
+$('#atalho-novo').addEventListener('click', () => salvarAtalhos([...atalhos.lista, { tecla: 'Control+Alt+F1', acao: { tipo: 'pararEfeitos' } }]));
+$('#atalhos-padrao').addEventListener('click', () => confirm('Voltar aos atalhos padrão (Ctrl+Alt+1..9 e Ctrl+Alt+0)?') && salvarAtalhos(null));
+
+/** Atalho que toca este som (pelo id ou pela posição), para mostrar no botão. */
+function teclaDoSom(som, posicao) {
+  const h = atalhos.lista.find((x) => (x.acao.tipo === 'som' && x.acao.id === som.id) || (x.acao.tipo === 'somPosicao' && x.acao.n === posicao + 1));
+  return h ? mostrarTecla(h.tecla) : undefined;
+}
+
 // --- Início ------------------------------------------------------------
 
 api.onBot(renderBot);
@@ -1203,6 +1331,7 @@ api.onRoteiro(renderRoteiro);
 api.onPedidos(renderPedidos);
 api.onSessao(renderSessao);
 api.onPacotes(renderPacotes);
+api.onAtalhos(renderAtalhos);
 
 (async () => {
   const estado = await api.estado();
@@ -1231,6 +1360,7 @@ api.onPacotes(renderPacotes);
   renderPedidos(estado.pedidos);
   renderSessao(estado.sessao);
   renderPacotes(estado.pacotes);
+  renderAtalhos(estado.atalhos);
   if (estado.perguntarPacotes) perguntarPacotes(estado.pacotes.filter((p) => !p.instalado));
   els.api.textContent = `http://127.0.0.1:${estado.apiPort}/api/som/1`;
   carregarApps();

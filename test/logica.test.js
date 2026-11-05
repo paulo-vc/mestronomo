@@ -147,3 +147,28 @@ test('versões: comparação número a número', () => {
   assert.equal(isNewer('1.1.0', '1.1.0'), false);
   assert.equal(isNewer('1.0.9', '1.1.0'), false);
 });
+
+test('atalhos: valida combinações, recusa repetidas e avisa quando outro programa usa', () => {
+  const { DEFAULT_HOTKEYS, registerHotkeys, validateAccelerator } = load('hotkeys');
+  assert.equal(validateAccelerator('Control+Alt+1'), undefined);
+  assert.equal(validateAccelerator('F5'), undefined, 'teclas F podem ir sozinhas');
+  assert.match(validateAccelerator('A'), /Ctrl, Alt ou Shift/);
+  assert.match(validateAccelerator('Control+Alt'), /Falta a tecla principal/);
+
+  const ocupadas = new Set(['Control+Alt+9']);
+  const registradas = new Map();
+  const executadas = [];
+  const { falhas } = registerHotkeys(
+    [...DEFAULT_HOTKEYS, { tecla: 'Control+Alt+1', acao: { tipo: 'turno' } }, { tecla: 'B', acao: { tipo: 'bot' } }],
+    (acao) => executadas.push(acao.tipo),
+    (tecla, fn) => !ocupadas.has(tecla) && (registradas.set(tecla, fn), true),
+  );
+  assert.deepEqual(
+    falhas.map((f) => `${f.indice}:${f.tecla}`),
+    ['8:Control+Alt+9', '10:Control+Alt+1', '11:B'],
+  );
+  assert.equal(registradas.size, 9, '1..8 e 0 registrados');
+  registradas.get('Control+Alt+0')();
+  registradas.get('Control+Alt+2')();
+  assert.deepEqual(executadas, ['pararEfeitos', 'somPosicao']);
+});
