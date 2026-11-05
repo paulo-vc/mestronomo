@@ -123,7 +123,16 @@
               <button id="yt-proxima" class="ghost" title="Próxima">⏭</button>
               <button id="yt-parar" class="ghost" title="Parar">⏹</button>
               <button id="yt-repetir" class="ghost" title="Repetir"></button>
+              <button id="yt-aleatorio" class="ghost" title="Ordem aleatória">🔀</button>
               <label class="slider compacto"><input type="range" data-volume="youtube" min="0" max="100" /><output></output></label>
+            </div>
+            <div class="row player-ajustes">
+              <label class="slider compacto" title="Uma faixa entra enquanto a outra sai. 0 desliga.">
+                <span>Transição entre faixas</span><input type="range" id="yt-crossfade" min="0" max="12" step="1" /><output></output>
+              </label>
+              <label class="check" title="Deixa todas as músicas com o mesmo volume percebido (vale a partir da próxima faixa)">
+                <input type="checkbox" id="yt-normalizar" /> Igualar volume
+              </label>
             </div>
             <ol id="yt-fila" class="lista fila" data-vazio="Fila vazia."></ol>
             <button id="yt-limpar" class="ghost pequeno">Limpar fila</button>

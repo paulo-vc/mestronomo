@@ -294,6 +294,11 @@ function renderYoutube(estado) {
   els.ytRepetir.textContent = repetir.icone;
   els.ytRepetir.title = repetir.titulo;
   els.ytRepetir.classList.toggle('ativo', estado.repetir !== 'nenhum');
+  $('#yt-aleatorio').classList.toggle('ativo', estado.aleatorio);
+  $('#yt-normalizar').checked = estado.normalizar;
+  const crossfade = $('#yt-crossfade');
+  if (document.activeElement !== crossfade) crossfade.value = estado.crossfadeMs / 1000;
+  crossfade.nextElementSibling.textContent = `${crossfade.value} s`;
   els.ytVolume.value = Math.round(estado.volume * 100);
   els.ytVolume.nextElementSibling.textContent = `${els.ytVolume.value}%`;
 
@@ -378,6 +383,12 @@ $('#yt-proxima').addEventListener('click', () => api.yt.proxima());
 $('#yt-anterior').addEventListener('click', () => api.yt.anterior());
 $('#yt-parar').addEventListener('click', () => api.yt.parar());
 $('#yt-limpar').addEventListener('click', () => api.yt.limpar());
+$('#yt-aleatorio').addEventListener('click', () => api.yt.aleatorio(!yt?.aleatorio));
+$('#yt-normalizar').addEventListener('change', (e) => api.yt.normalizar(e.target.checked));
+$('#yt-crossfade').addEventListener('input', (e) => {
+  e.target.nextElementSibling.textContent = `${e.target.value} s`;
+  api.yt.crossfade(e.target.value * 1000);
+});
 els.ytRepetir.addEventListener('click', () => api.yt.repetir(REPETIR[yt?.repetir ?? 'nenhum'].proximo));
 
 // --- Cenas -------------------------------------------------------------

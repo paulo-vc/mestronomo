@@ -108,10 +108,10 @@ export class FfmpegSource implements Source {
   private decoded = false;
   private stopped = false;
 
-  constructor(readonly bus: Bus, input: string, inputArgs: string[] = []) {
+  constructor(readonly bus: Bus, input: string, inputArgs: string[] = [], audioFilter?: string) {
     this.ffmpeg = spawn(
       FFMPEG,
-      ['-hide_banner', '-loglevel', 'error', ...inputArgs, '-i', input, '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
+      ['-hide_banner', '-loglevel', 'error', ...inputArgs, '-i', input, ...(audioFilter ? ['-af', audioFilter] : []), '-f', 's16le', '-ar', String(SAMPLE_RATE), '-ac', String(CHANNELS), 'pipe:1'],
       { windowsHide: true },
     );
     const stdout = this.ffmpeg.stdout!;
@@ -145,11 +145,17 @@ export class FfmpegSource implements Source {
 
 /** Um arquivo local (efeitos da soundboard). Com `preview`, toca só no monitor local. */
 export class FileSource extends FfmpegSource {
-  constructor(readonly file: string, bus: Bus, readonly preview = false, loop = false) {
+  constructor(readonly file: string, bus: Bus, readonly preview = false, loop = false, audioFilter?: string) {
     // -stream_loop -1 repete o arquivo sem fim, sem o intervalo que reabrir o arquivo causaria.
-    super(bus, file, loop ? ['-stream_loop', '-1'] : []);
+    super(bus, file, loop ? ['-stream_loop', '-1'] : [], audioFilter);
   }
 }
+
+/**
+ * Normalização de loudness (EBU R128) para músicas: cada faixa sai perto de -18 LUFS, então uma
+ * música baixinha e outra estourada ficam no mesmo volume percebido.
+ */
+export const NORMALIZE_MUSIC = 'loudnorm=I=-18:TP=-2:LRA=11';
 
 /**
  * Uma faixa do YouTube (ou outro site suportado pelo yt-dlp): yt-dlp baixa o áudio
@@ -158,8 +164,8 @@ export class FileSource extends FfmpegSource {
 export class StreamSource extends FfmpegSource {
   private ytdlp: ChildProcess;
 
-  constructor(readonly url: string, bus: Bus = 'musica') {
-    super(bus, 'pipe:0');
+  constructor(readonly url: string, bus: Bus = 'musica', audioFilter?: string) {
+    super(bus, 'pipe:0', [], audioFilter);
     this.ytdlp = spawn(
       YTDLP,
       ['-q', '--no-warnings', '--no-playlist', '-f', 'bestaudio/best', ...YTDLP_JS_RUNTIME.args, '-o', '-', url],

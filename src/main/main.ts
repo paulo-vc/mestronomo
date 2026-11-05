@@ -86,7 +86,7 @@ interface SavedConfig {
   mixer?: Partial<MixerSettings>;
   /** Último volume usado para cada app capturado. */
   appVolumes?: Record<string, number>;
-  youtube?: { volume: number; repetir: LoopMode };
+  youtube?: { volume: number; repetir: LoopMode; aleatorio?: boolean; crossfadeMs?: number; normalizar?: boolean };
   /** deviceId da saída de áudio do monitor local. */
   monitorDevice?: string;
   cenas?: Scene[];
@@ -130,7 +130,7 @@ let importingBackup = false;
 function saveConfig() {
   if (importingBackup) return;
   config.mixer = mixer.settings;
-  config.youtube = { volume: youtube.volume, repetir: youtube.loop };
+  config.youtube = { volume: youtube.volume, repetir: youtube.loop, aleatorio: youtube.shuffle, crossfadeMs: youtube.crossfadeMs, normalizar: youtube.normalize };
   fs.writeFileSync(configFile(), JSON.stringify(config, null, 2));
 }
 
@@ -426,6 +426,18 @@ function registerIpc() {
   ipcMain.handle('yt-parar', () => youtube.stop());
   ipcMain.handle('yt-remover', (_e, index: number) => youtube.remove(index));
   ipcMain.handle('yt-limpar', () => youtube.clear());
+  ipcMain.handle('yt-aleatorio', (_e, sim: boolean) => {
+    youtube.setShuffle(sim);
+    saveConfig();
+  });
+  ipcMain.handle('yt-crossfade', (_e, ms: number) => {
+    youtube.setCrossfade(ms);
+    saveConfig();
+  });
+  ipcMain.handle('yt-normalizar', (_e, sim: boolean) => {
+    youtube.setNormalize(sim);
+    saveConfig();
+  });
   ipcMain.handle('yt-repetir', (_e, mode: LoopMode) => {
     youtube.setLoop(mode);
     saveConfig();
@@ -727,6 +739,9 @@ app.whenReady().then(() => {
   if (config.youtube) {
     youtube.volume = config.youtube.volume;
     youtube.loop = config.youtube.repetir;
+    youtube.shuffle = config.youtube.aleatorio ?? false;
+    youtube.crossfadeMs = config.youtube.crossfadeMs ?? youtube.crossfadeMs;
+    youtube.normalize = config.youtube.normalizar ?? true;
   }
   mixer.on('change', () => send('tocando', state().tocando));
   // ~50 mensagens por segundo de 3,8 KB: o IPC do Electron dá conta tranquilo.
