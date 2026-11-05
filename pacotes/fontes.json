@@ -10,6 +10,8 @@
       "nome": "Medieval",
       "descricao": "Fantasia medieval: espadas, magia, criaturas, taverna, floresta e masmorra.",
       "efeitos": [
+        { "destino": "Combate/flecha 1", "fonte": "https://freesound.org/people/MHockett/sounds/249160/", "autor": "MHockett", "max": 3 },
+        { "destino": "Combate/flecha 2", "fonte": "https://freesound.org/people/omerbhatti34/sounds/521552/", "autor": "omerbhatti34" },
         { "destino": "Combate/espada 1", "fonte": "https://freesound.org/people/JohnBuhr/sounds/326868/", "autor": "JohnBuhr" },
         { "destino": "Combate/espada 2", "fonte": "https://freesound.org/people/Christopherderp/sounds/364530/", "autor": "Christopherderp" },
         { "destino": "Combate/soco", "fonte": "https://freesound.org/people/joe_anderson22/sounds/439747/", "autor": "joe_anderson22" },
@@ -20,15 +22,17 @@
         { "destino": "Magia/bola de fogo", "fonte": "https://freesound.org/people/qubodup/sounds/442871/", "autor": "qubodup" },
         { "destino": "Magia/cura", "fonte": "https://freesound.org/people/IENBA/sounds/752274/", "autor": "IENBA" },
         { "destino": "Magia/raio", "fonte": "https://freesound.org/people/loganzsound/sounds/840628/", "autor": "loganzsound" },
-        { "destino": "Criaturas/dragão", "fonte": "https://freesound.org/people/qubodup/sounds/442964/", "autor": "qubodup" },
+        { "destino": "Criaturas/dragão 1", "fonte": "https://freesound.org/people/qubodup/sounds/442964/", "autor": "qubodup" },
         { "destino": "Criaturas/lobo", "fonte": "https://freesound.org/people/betchkal/sounds/500646/", "autor": "betchkal", "max": 8 },
         { "destino": "Criaturas/goblin", "fonte": "https://freesound.org/people/spookymodem/sounds/202095/", "autor": "spookymodem", "max": 5 },
         { "destino": "Criaturas/risada maligna", "fonte": "https://freesound.org/people/WannyManny/sounds/626796/", "autor": "WannyManny" },
+        { "destino": "Criaturas/dragão 2", "fonte": "https://freesound.org/people/Breviceps/sounds/479380/", "autor": "Breviceps", "max": 4 },
         { "destino": "Criaturas/coração", "fonte": "https://freesound.org/people/Cloud-10/sounds/688735/", "autor": "Cloud-10", "max": 12 },
         { "destino": "Exploração/porta abrindo 1", "fonte": "kenney:doorOpen_1.ogg" },
         { "destino": "Exploração/porta abrindo 2", "fonte": "kenney:doorOpen_2.ogg" },
         { "destino": "Exploração/porta fechando 1", "fonte": "kenney:doorClose_1.ogg" },
         { "destino": "Exploração/porta fechando 2", "fonte": "kenney:doorClose_2.ogg" },
+        { "destino": "Exploração/armadilha", "fonte": "https://freesound.org/people/qubodup/sounds/752067/", "autor": "qubodup" },
         { "destino": "Exploração/rangido 1", "fonte": "kenney:creak1.ogg" },
         { "destino": "Exploração/rangido 2", "fonte": "kenney:creak2.ogg" },
         { "destino": "Exploração/rangido 3", "fonte": "kenney:creak3.ogg" },
@@ -41,7 +45,9 @@
         { "destino": "Exploração/livro", "fonte": "kenney:bookFlip1.ogg" },
         { "destino": "Mesa/dados 1", "fonte": "kenney:dice-throw-1.ogg" },
         { "destino": "Mesa/dados 2", "fonte": "kenney:dice-throw-2.ogg" },
-        { "destino": "Mesa/dados 3", "fonte": "kenney:dice-throw-3.ogg" }
+        { "destino": "Mesa/dados 3", "fonte": "kenney:dice-throw-3.ogg" },
+        { "destino": "Mesa/sino", "fonte": "https://freesound.org/people/Hano_van_Dalen/sounds/767307/", "autor": "Hano_van_Dalen", "max": 4 },
+        { "destino": "Mesa/suspense", "fonte": "https://freesound.org/people/nomiqbomi/sounds/578358/", "autor": "nomiqbomi" }
       ],
       "ambientes": [
         { "destino": "chuva", "fonte": "https://freesound.org/people/samesamesame/sounds/242889/", "autor": "samesamesame" },
@@ -66,8 +72,10 @@
       "nome": "Moderno",
       "descricao": "Dias de hoje: investigação, ação e terror — tiros, sirenes, telefone, cidade e tempestade.",
       "efeitos": [
-        { "destino": "Ação/tiro", "fonte": "https://freesound.org/people/mahecic/sounds/803497/", "autor": "mahecic" },
-        { "destino": "Ação/explosão", "fonte": "https://freesound.org/people/Deganoth/sounds/165911/", "autor": "Deganoth" },
+        { "destino": "Ação/tiro 1", "fonte": "https://freesound.org/people/mahecic/sounds/803497/", "autor": "mahecic" },
+        { "destino": "Ação/explosão 1", "fonte": "https://freesound.org/people/Deganoth/sounds/165911/", "autor": "Deganoth" },
+        { "destino": "Ação/tiro 2", "fonte": "https://freesound.org/people/morganpurkis/sounds/391846/", "autor": "morganpurkis" },
+        { "destino": "Ação/explosão 2", "fonte": "https://freesound.org/people/IdkMrGarcia/sounds/446624/", "autor": "IdkMrGarcia" },
         { "destino": "Ação/vidro quebrando", "fonte": "https://freesound.org/people/Bricklover/sounds/560767/", "autor": "Bricklover" },
         { "destino": "Ação/soco", "fonte": "https://freesound.org/people/joe_anderson22/sounds/439747/", "autor": "joe_anderson22" },
         { "destino": "Cidade/sirene", "fonte": "https://freesound.org/people/TitanKaempfer/sounds/746302/", "autor": "TitanKaempfer", "max": 10 },
@@ -81,8 +89,10 @@
         { "destino": "Investigação/passos 2", "fonte": "kenney:footstep05.ogg" },
         { "destino": "Terror/coração", "fonte": "https://freesound.org/people/Cloud-10/sounds/688735/", "autor": "Cloud-10", "max": 12 },
         { "destino": "Terror/rangido", "fonte": "kenney:creak3.ogg" },
+        { "destino": "Terror/suspense", "fonte": "https://freesound.org/people/nomiqbomi/sounds/578370/", "autor": "nomiqbomi" },
         { "destino": "Mesa/dados 1", "fonte": "kenney:dice-throw-1.ogg" },
-        { "destino": "Mesa/dados 2", "fonte": "kenney:dice-throw-2.ogg" }
+        { "destino": "Mesa/dados 2", "fonte": "kenney:dice-throw-2.ogg" },
+        { "destino": "Mesa/sino", "fonte": "https://freesound.org/people/Hano_van_Dalen/sounds/767307/", "autor": "Hano_van_Dalen", "max": 4 }
       ],
       "ambientes": [
         { "destino": "cidade", "fonte": "https://freesound.org/people/visionear/sounds/723607/", "autor": "visionear" },

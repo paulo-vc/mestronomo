@@ -52,6 +52,7 @@ const LOOP_MODES: LoopMode[] = ['nenhum', 'fila', 'faixa'];
  *   /api/youtube/pasta/<nome>            adiciona uma pasta de músicas locais à fila
  *   /api/youtube/<pausar|proxima|anterior|parar|limpar>
  *   /api/youtube/repetir/<nenhum|fila|faixa>
+ *   /api/youtube/aleatorio[/on|off]      liga, desliga ou alterna a ordem aleatória
  *   /api/cenas                           lista de cenas
  *   /api/cena/<nome ou número>           ativa uma cena (crossfade)
  *   /api/ambiente/<arquivo>              liga/desliga uma camada de ambiente
@@ -128,6 +129,9 @@ export function startApi(port: number, actions: ApiActions, onError: (message: s
           case 'anterior': youtube.previous(); return ok();
           case 'parar': youtube.stop(); return ok();
           case 'limpar': youtube.clear(); return ok();
+          case 'aleatorio':
+            youtube.setShuffle(b === 'on' ? true : b === 'off' ? false : !youtube.shuffle);
+            return ok();
           case 'repetir':
             if (!LOOP_MODES.includes(b as LoopMode)) return reply(400, { erro: 'use nenhum, fila ou faixa' });
             youtube.setLoop(b as LoopMode);

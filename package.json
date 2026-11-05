@@ -1,6 +1,6 @@
 {
   "name": "mestronomo",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Ferramentas de áudio para mestres de RPG: música, ambiente e soundboard direto no Discord",
   "main": "dist/main/main.js",
   "scripts": {
@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "icons": "electron scripts/render-icons.js",
     "plugin:ulanzi": "node scripts/instalar-plugin-ulanzi.js",
-    "dist": "npm run build:capture && tsc && npm run icons && node scripts/preparar-vendor.js && electron-builder --win nsis --publish never && electron-builder --win --config scripts/electron-builder-portatil.js --publish never"
+    "dist": "npm run build:capture && tsc && npm run icons && node scripts/preparar-vendor.js && electron-builder --win nsis --publish never && electron-builder --win --config scripts/electron-builder-portatil.js --publish never",
+    "test": "tsc && node --test --test-force-exit --test-concurrency=1 --test-timeout=60000 \"test/*.test.js\""
   },
   "author": "paulo-vc",
   "license": "MIT",

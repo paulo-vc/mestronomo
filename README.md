@@ -42,6 +42,14 @@ Quem criou o bot é o mestre (só ele usa `/entrar`, `/sair` e `/canal`). Para o
 
 O convite também está no menu do ícone da bandeja.
 
+## Testes
+
+```bash
+npm test
+```
+
+Compila e roda os testes de `test/` (mixer, filtros, cache de áudio, dados, combate, cenas, pacotes, backup e o roteamento de mensagens do bot com um Discord simulado). Os que precisam do ffmpeg são pulados se ele não estiver no PATH. O GitHub Actions roda tudo a cada push e pull request (`.github/workflows/ci.yml`).
+
 ## Instalador e versão portátil
 
 Baixe em [Releases](https://github.com/paulo-vc/mestronomo/releases):
@@ -186,7 +194,7 @@ Coloque os efeitos na pasta `sons/` (instalado: `Documentos\Mestrônomo\sons`):
 - **Variações**: arquivos com o mesmo nome e um número no fim (`espada 1.mp3`, `espada 2.mp3`, `espada (3).ogg`) viram **um botão** que sorteia entre eles, sem repetir o último.
 - **⋯ em cada botão**: volume próprio, **loop** (clique liga e desliga; loops não abaixam a música) e cor.
 - **Botão direito**: pré-escuta, só no seu fone.
-- **Atalhos**: `Ctrl+Alt+1..9` tocam os nove primeiros; `Ctrl+Alt+0` para todos os efeitos (inclusive loops). Use prefixos como `01 `, `02 ` para controlar a ordem.
+- **Atalhos**: por padrão `Ctrl+Alt+1..9` tocam os nove primeiros e `Ctrl+Alt+0` para todos os efeitos (inclusive loops). Em **Áudio → Atalhos de teclado** dá para trocar as teclas e criar atalhos para sons específicos, cenas, roteiro, filtros, player, turno e bot; o app avisa quando outro programa já usa a combinação.
 
 ## API local (Ulanzi Studio / Stream Deck)
 

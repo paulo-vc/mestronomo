@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld('mestronomo', {
   backupImportar: invoke('backup-importar'),
   atualizar: invoke('atualizar'),
   filtro: invoke('filtro'),
+  salvarAtalhos: invoke('atalhos-salvar'),
   pacotes: {
     instalar: invoke('pacote-instalar'),
     remover: invoke('pacote-remover'),
@@ -119,6 +120,9 @@ contextBridge.exposeInMainWorld('mestronomo', {
     remover: invoke('yt-remover'),
     limpar: invoke('yt-limpar'),
     repetir: invoke('yt-repetir'),
+    aleatorio: invoke('yt-aleatorio'),
+    crossfade: invoke('yt-crossfade'),
+    normalizar: invoke('yt-normalizar'),
   },
   onBot: on('bot'),
   onCapturas: on('capturas'),
@@ -138,5 +142,6 @@ contextBridge.exposeInMainWorld('mestronomo', {
   onPedidos: on('pedidos'),
   onSessao: on('sessao'),
   onPacotes: on('pacotes'),
+  onAtalhos: on('atalhos'),
   onPcm: on('pcm'),
 });
