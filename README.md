@@ -42,6 +42,14 @@ Quem criou o bot é o mestre (só ele usa `/entrar`, `/sair` e `/canal`). Para o
 
 O convite também está no menu do ícone da bandeja.
 
+## Testes
+
+```bash
+npm test
+```
+
+Compila e roda os testes de `test/` (mixer, filtros, cache de áudio, dados, combate, cenas, pacotes, backup e o roteamento de mensagens do bot com um Discord simulado). Os que precisam do ffmpeg são pulados se ele não estiver no PATH. O GitHub Actions roda tudo a cada push e pull request (`.github/workflows/ci.yml`).
+
 ## Instalador e versão portátil
 
 Baixe em [Releases](https://github.com/paulo-vc/mestronomo/releases):

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  testes:
+    # Windows: o app, o capturador (WASAPI) e o backup (tar.exe) são do Windows.
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      # Os testes rodam no Node; o binário do Electron não é necessário aqui.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Dependências
+        run: npm ci
+
+      - name: ffmpeg (testes de decodificação)
+        run: choco install ffmpeg -y --no-progress
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm test
+
+      - name: Capturador (Rust)
+        run: cargo build --release --manifest-path capture/Cargo.toml

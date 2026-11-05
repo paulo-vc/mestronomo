@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { EventEmitter } from 'node:events';
+import { isNewer } from './version';
 
 // Atualização pelas releases do GitHub.
 // - Instalado (NSIS): baixa em segundo plano e instala ao reiniciar (ou ao fechar o app).
@@ -64,14 +65,4 @@ export class Updater extends EventEmitter {
     this.state = state;
     this.emit('change', state);
   }
-}
-
-/** Compara versões "1.2.3" número a número. */
-export function isNewer(a: string, b: string) {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) > (pb[i] ?? 0);
-  }
-  return false;
 }
