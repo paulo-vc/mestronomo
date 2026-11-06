@@ -463,7 +463,27 @@
         </div>
 
         <div data-config="geral" class="config-painel hidden">
+          <label class="campo"><span>Ao clicar no X da janela</span>
+            <select name="fecharNoX">
+              <option value="bandeja">Continuar na bandeja (o bot e os atalhos seguem funcionando)</option>
+              <option value="sair">Fechar o Mestrônomo</option>
+            </select>
+          </label>
           <label class="check"><input type="checkbox" name="autoStart" /> Iniciar com o Windows (abre na bandeja)</label>
+
+          <h3>Atualizações</h3>
+          <div class="row atualizacoes">
+            <span id="versao" class="versao"></span>
+            <button type="button" id="atualizacoes-buscar" class="ghost pequeno">Buscar agora</button>
+          </div>
+          <p id="atualizacoes-status" class="hint hidden" role="status"></p>
+          <label class="check"><input type="checkbox" name="atualizarAuto" /> Buscar e baixar atualizações sozinho</label>
+
+          <h3>Arquivos</h3>
+          <div class="row">
+            <button type="button" id="abrir-dados" class="ghost"><svg class="i"><use href="#i-pasta" /></svg> Abrir a pasta do Mestrônomo</button>
+          </div>
+          <p class="hint">Sons, ambientes, músicas, tabelas e handouts ficam nela.</p>
           <label class="campo">
             <span>Chave da API do Freesound (opcional)</span>
             <input type="password" name="freesound" autocomplete="off" spellcheck="false" />
@@ -478,7 +498,6 @@
           </div>
           <h3>Integrações</h3>
           <p class="hint">API para Ulanzi / Stream Deck: <code id="api"></code></p>
-          <p id="versao" class="hint"></p>
         </div>
 
         <div class="row fim">

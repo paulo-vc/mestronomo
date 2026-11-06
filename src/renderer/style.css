@@ -484,3 +484,7 @@ button.pedidos-aviso { background: var(--accent-fundo); color: var(--accent); bo
 #yt-pausar { background: var(--surface-3); }
 .barra .slider.barra-volume svg.i { color: var(--muted); }
 #parar-efeitos svg.i { width: 12px; height: 12px; }
+.atualizacoes { justify-content: space-between; }
+.atualizacoes .versao { font-weight: 600; }
+#atualizacoes-status.ok { color: var(--ok); }
+#atualizacoes-status.err { color: var(--danger); }

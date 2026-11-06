@@ -234,6 +234,9 @@ async function abrirConfig(aba = 'discord') {
   configForm.freesound.value = '';
   configForm.freesound.placeholder = info.hasFreesound ? '•••••••• (salva; deixe vazio para manter)' : 'Cole a chave aqui';
   configForm.tocandoAgora.checked = info.tocandoAgora;
+  configForm.fecharNoX.value = info.fecharNoX;
+  configForm.atualizarAuto.checked = info.atualizarAuto;
+  $('#atualizacoes-status').classList.add('hidden');
   $('#config-canal').textContent = info.canalTexto
     ? 'Cada servidor tem o seu canal (/canal). As mensagens só vão para o servidor em cuja call o bot está.'
     : 'Para "tocando agora" e handouts, use /canal no canal de texto desejado de cada servidor.';
@@ -249,6 +252,18 @@ $('#bot-portal').addEventListener('click', () => api.botPortal());
 $('#fs-chave').addEventListener('click', () => api.freesound.pedirChave());
 $('#backup-exportar').addEventListener('click', () => api.backupExportar($('#backup-arquivos').checked));
 $('#backup-importar').addEventListener('click', () => api.backupImportar());
+$('#abrir-dados').addEventListener('click', () => api.abrirDados());
+$('#atualizacoes-buscar').addEventListener('click', async (e) => {
+  const botao = e.currentTarget;
+  const status = $('#atualizacoes-status');
+  botao.disabled = true;
+  status.className = 'hint';
+  status.textContent = 'Buscando…';
+  const r = await api.buscarAtualizacoes();
+  status.textContent = r.mensagem;
+  status.className = `hint ${r.ok ? 'ok' : 'err'}`;
+  botao.disabled = false;
+});
 $('#bot-convidar').addEventListener('click', () => api.botConvidar(configForm.token.value));
 $('#bot-verificar').addEventListener('click', async () => {
   const token = configForm.token.value.trim();
@@ -263,6 +278,7 @@ dialogo.addEventListener('close', () => {
   api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked, configForm.tocandoAgora.checked, configForm.freesound.value);
   if (configForm.anunciar.checked !== anunciarTurnos) api.combate.anunciar((anunciarTurnos = configForm.anunciar.checked));
   if (configForm.pedidos.checked !== aceitandoPedidos) api.pedidos.aceitar(configForm.pedidos.checked);
+  api.configGeral({ fecharNoX: configForm.fecharNoX.value, atualizarAuto: configForm.atualizarAuto.checked });
   configForm.freesound.value = '';
   configForm.token.value = '';
 });
@@ -1389,7 +1405,7 @@ api.onAtalhos(renderAtalhos);
   renderAtualizacao(estado.atualizacao);
   handoutsUrl = estado.handoutsUrl;
   cenasConhecidas = estado.cenas.cenas;
-  $('#versao').textContent = `Mestrônomo ${estado.versao}`;
+  $('#versao').textContent = `Versão ${estado.versao}`;
   renderCapturas(estado.capturas);
   renderYoutube(estado.youtube);
   renderAmbiente(estado.ambiente);

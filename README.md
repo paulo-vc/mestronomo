@@ -66,7 +66,7 @@ npm run dist
 Gera os dois em `release/<versão>/`, que já levam o capturador, o ffmpeg e o yt-dlp (copiados do seu PATH). Instalado:
 
 - os sons ficam em `Documentos\Mestrônomo\sons`;
-- fechar a janela deixa o app na **bandeja** (o bot e os atalhos continuam funcionando); para sair, use **Sair** no ícone;
+- fechar a janela deixa o app na **bandeja** (o bot e os atalhos continuam funcionando); para sair, use **Sair** no ícone. Se preferir que o X feche o app de vez, mude em **⚙ → Geral**;
 - "Iniciar com o Windows" (no ⚙ ou no menu da bandeja) abre o app direto na bandeja.
 
 ## Rodando
@@ -170,7 +170,7 @@ Em **Sons → + Mais sons**, busque efeitos gratuitos no [Freesound](https://fre
 
 ## Atualização automática
 
-A versão instalada baixa as atualizações sozinha e mostra **Atualização pronta — reiniciar** no topo. A portátil avisa que há versão nova e abre a página de download.
+A versão instalada baixa as atualizações sozinha e mostra **Atualização pronta — reiniciar** no topo. A portátil avisa que há versão nova e abre a página de download. Em **⚙ → Geral** dá para buscar na hora (**Buscar agora**) ou desligar a busca automática.
 
 ## Cenas
 

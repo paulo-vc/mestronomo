@@ -115,6 +115,10 @@ interface SavedConfig {
   aceitarPedidos?: boolean;
   /** Registro da sessão em andamento (para o resumo). */
   sessao?: SessionLogState;
+  /** O X da janela: esconder na bandeja (padrão) ou fechar o app. */
+  fecharNoX?: 'bandeja' | 'sair';
+  /** Buscar atualizações sozinho ao abrir e a cada 6 horas (padrão: sim). */
+  atualizarAuto?: boolean;
 }
 
 let config: SavedConfig = {};
@@ -461,7 +465,18 @@ function registerIpc() {
     autoStart: isAutoStart(),
     tocandoAgora: config.tocandoAgora !== false,
     canalTexto: Object.keys(config.canaisTexto ?? {}).length > 0 || Boolean(config.canalTexto),
+    fecharNoX: config.fecharNoX ?? 'bandeja',
+    atualizarAuto: config.atualizarAuto !== false,
+    portatil: PORTABLE,
   }));
+  ipcMain.handle('config-geral', (_e, opcoes: { fecharNoX: 'bandeja' | 'sair'; atualizarAuto: boolean }) => {
+    config.fecharNoX = opcoes.fecharNoX === 'sair' ? 'sair' : 'bandeja';
+    config.atualizarAuto = Boolean(opcoes.atualizarAuto);
+    saveConfig();
+    updater.setAuto(config.atualizarAuto);
+  });
+  ipcMain.handle('atualizacoes-buscar', () => updater.checkNow());
+  ipcMain.handle('abrir-dados', () => shell.openPath(DATA_DIR));
   ipcMain.handle('config-salvar', async (_e, token: string, ownerId: string, autoStart: boolean, tocandoAgora: boolean, freesoundKey: string) => {
     saveFreesoundKey(freesoundKey ?? '');
     if (!credentialsInfo().fromEnv) saveCredentials(token, ownerId);
@@ -669,15 +684,20 @@ function createWindow() {
   window.loadFile(path.join(ROOT, 'src', 'renderer', 'index.html'));
   window.webContents.on('did-finish-load', () => apiError && send('erro', apiError));
 
-  // Fechar a janela só esconde: o bot e os atalhos continuam funcionando pela bandeja.
+  // Por padrão, fechar a janela só esconde: o bot e os atalhos continuam funcionando pela bandeja.
+  // Em ⚙ → Geral dá para fazer o X fechar o app de vez.
   let avisou = false;
   window.on('close', (event) => {
     if (quitting) return;
     event.preventDefault();
+    if (config.fecharNoX === 'sair') return app.quit();
     window?.hide();
     if (!avisou && Notification.isSupported()) {
       avisou = true;
-      new Notification({ title: 'Mestrônomo continua aberto', body: 'Ele fica na bandeja do Windows. Para sair, use "Sair" no ícone.' }).show();
+      new Notification({
+        title: 'Mestrônomo continua aberto',
+        body: 'Ele fica na bandeja do Windows. Para sair, use "Sair" no ícone. Para o X fechar de vez: ⚙ → Geral.',
+      }).show();
     }
   });
 }
@@ -917,7 +937,7 @@ app.whenReady().then(() => {
     const ambientes = ambience.files().map((a) => path.join(AMBIENT_DIR, a));
     pcmCache.warm([...sons, ...ambientes]);
   }, 3000);
-  updater.start();
+  updater.start(config.atualizarAuto !== false);
   tray = createTray({
     show: showWindow,
     quit: () => app.quit(),
