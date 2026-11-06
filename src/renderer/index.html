@@ -41,346 +41,223 @@
     </svg>
     <header class="topo">
       <h1 class="marca"><img src="../../assets/icon.svg" alt="" /> Mestrônomo</h1>
-      <div class="row">
+      <nav class="menu" aria-label="Seções">
+        <button data-ir="sessao" title="Ctrl+1"><svg class="i"><use href="#i-roteiro" /></svg><span>Sessão</span></button>
+        <button data-ir="musica" title="Ctrl+2"><svg class="i"><use href="#i-musica" /></svg><span>Música</span></button>
+        <button data-ir="sons" title="Ctrl+3"><svg class="i"><use href="#i-soundboard" /></svg><span>Sons</span></button>
+      </nav>
+      <div class="row topo-acoes">
         <button id="pedidos-aviso" class="pedidos-aviso hidden" title="Pedidos dos jogadores esperando você"></button>
         <button id="atualizacao" class="atualizacao hidden"></button>
         <div id="bot" class="pill">Bot desligado</div>
         <button id="bot-botao">Chamar bot</button>
         <button id="abrir-handout" class="ghost icone-grande" title="Mandar uma imagem (mapa, retrato...) no Discord"><svg class="i"><use href="#i-imagem" /></svg></button>
-        <button id="abrir-config" class="ghost icone-grande" title="Configurações"><svg class="i"><use href="#i-config" /></svg></button>
+        <button id="abrir-config" class="ghost icone-grande" title="Configurações, mixer e atalhos"><svg class="i"><use href="#i-config" /></svg></button>
       </div>
     </header>
 
-    <div class="corpo">
-      <nav class="menu" aria-label="Seções">
-        <button data-ir="roteiro" title="Ctrl+1"><svg class="i ic"><use href="#i-roteiro" /></svg><span>Roteiro</span><kbd>Ctrl+1</kbd></button>
-        <button data-ir="cenas" title="Ctrl+2"><svg class="i ic"><use href="#i-cenas" /></svg><span>Cenas</span><kbd>Ctrl+2</kbd></button>
-        <button data-ir="musica" title="Ctrl+3"><svg class="i ic"><use href="#i-musica" /></svg><span>Música</span><kbd>Ctrl+3</kbd></button>
-        <button data-ir="ambiente" title="Ctrl+4"><svg class="i ic"><use href="#i-ambiente" /></svg><span>Ambiente</span><kbd>Ctrl+4</kbd></button>
-        <button data-ir="soundboard" title="Ctrl+5"><svg class="i ic"><use href="#i-soundboard" /></svg><span>Soundboard</span><kbd>Ctrl+5</kbd></button>
-        <button data-ir="mesa" title="Ctrl+6"><svg class="i ic"><use href="#i-mesa" /></svg><span>Mesa</span><kbd>Ctrl+6</kbd></button>
-        <button data-ir="audio" title="Ctrl+7"><svg class="i ic"><use href="#i-audio" /></svg><span>Áudio</span><kbd>Ctrl+7</kbd></button>
-      </nav>
-
-      <main class="conteudo">
-        <!-- Roteiro -->
-        <div class="pagina roteiro-pagina" data-pagina="roteiro">
-          <section class="card roteiro-lista">
-            <div class="card-head">
-              <h2>Roteiro</h2>
-              <div class="row">
-                <button id="roteiro-novo" class="ghost pequeno" title="Novo roteiro">+ Novo</button>
-                <button id="roteiro-renomear" class="ghost pequeno" title="Renomear"><svg class="i"><use href="#i-editar" /></svg></button>
-                <button id="roteiro-apagar" class="ghost pequeno" title="Apagar roteiro"><svg class="i"><use href="#i-lixo" /></svg></button>
-              </div>
-            </div>
+    <main class="conteudo">
+      <!-- Sessão: roteiro + ferramentas da mesa -->
+      <div class="pagina sessao-pagina" data-pagina="sessao">
+        <section class="card roteiro-lista">
+          <div class="card-head">
             <select id="roteiro-select" title="Roteiro desta sessão"></select>
-            <ol id="momentos" class="lista momentos" data-vazio="Nenhum momento ainda."></ol>
-            <button id="momento-novo">+ Momento</button>
-          </section>
+            <button id="roteiro-menu" class="ghost icone" title="Novo, renomear ou apagar roteiro"><svg class="i"><use href="#i-mais" /></svg></button>
+          </div>
+          <div id="roteiro-menu-opcoes" class="menu-opcoes hidden">
+            <button id="roteiro-novo" class="ghost pequeno">Novo roteiro</button>
+            <button id="roteiro-renomear" class="ghost pequeno">Renomear</button>
+            <button id="roteiro-apagar" class="ghost pequeno">Apagar</button>
+          </div>
+          <ol id="momentos" class="lista momentos" data-vazio="Nenhum momento ainda."></ol>
+          <button id="momento-novo" class="ghost">+ Momento</button>
+        </section>
 
-          <section class="card roteiro-agora">
+        <section class="card roteiro-agora">
+          <div id="agora-vazio" class="vazio-grande">
+            <p>Divida a sessão em momentos — "Chegada à taverna", "A briga", "Fuga pela floresta". Cada um troca a cena e mostra suas notas, sons e handout.</p>
+          </div>
+          <div id="agora" class="hidden">
             <div class="card-head">
-              <h2>Agora</h2>
+              <h2 id="agora-titulo" class="agora-titulo"></h2>
               <span id="momento-posicao" class="hint"></span>
             </div>
-            <div id="agora-vazio" class="vazio-grande">
-              <p>Divida a sessão em momentos — "Chegada à taverna", "A briga", "Fuga pela floresta". Cada um troca a cena e mostra suas notas, sons e handout.</p>
-            </div>
-            <div id="agora" class="hidden">
-              <h3 id="agora-titulo" class="agora-titulo"></h3>
-              <p id="agora-cena" class="hint"></p>
-              <div id="agora-notas" class="agora-notas"></div>
-              <div id="agora-sons" class="grid agora-sons"></div>
-              <div id="agora-handout" class="agora-handout hidden">
-                <img id="agora-handout-img" alt="" />
-                <div>
-                  <p id="agora-handout-legenda"></p>
-                  <button id="agora-handout-enviar" class="ghost pequeno">Mandar no Discord</button>
-                </div>
+            <p id="agora-cena" class="hint"></p>
+            <div id="agora-notas" class="agora-notas"></div>
+            <div id="agora-sons" class="grid agora-sons"></div>
+            <div id="agora-handout" class="agora-handout hidden">
+              <img id="agora-handout-img" alt="" />
+              <div>
+                <p id="agora-handout-legenda"></p>
+                <button id="agora-handout-enviar" class="ghost pequeno">Mandar no Discord</button>
               </div>
             </div>
-            <div class="row roteiro-nav">
-              <button id="roteiro-anterior" class="ghost"><svg class="i"><use href="#i-esquerda" /></svg> Anterior</button>
-              <button id="roteiro-proximo" class="primary">Próximo momento <svg class="i"><use href="#i-direita" /></svg></button>
-            </div>
-          </section>
-        </div>
+          </div>
+          <div class="row roteiro-nav">
+            <button id="roteiro-anterior" class="ghost"><svg class="i"><use href="#i-esquerda" /></svg> Anterior</button>
+            <button id="roteiro-proximo" class="primary">Próximo momento <svg class="i"><use href="#i-direita" /></svg></button>
+          </div>
+        </section>
 
-        <!-- Cenas -->
-        <div class="pagina" data-pagina="cenas">
-          <section class="card" id="cenas">
-            <div class="card-head">
-              <h2>Cenas</h2>
-              <label class="slider compacto transicao" title="Duração do crossfade ao trocar de cena">
-                <span>Transição</span><input type="range" id="cena-fade" min="0" max="10" step="0.5" /><output></output>
-              </label>
-            </div>
-            <div id="cenas-lista" class="cenas"></div>
-            <form id="cena-form" class="row cena-form">
-              <input name="nome" type="text" placeholder="Nome da cena (ex.: Taverna, Combate)" required maxlength="40" />
-              <select name="musica" title="O que a cena faz com a música">
-                <option value="youtube">Com a fila atual do player</option>
-                <option value="manter">Sem mexer na música</option>
-                <option value="parar">Parando a música</option>
-              </select>
-              <button class="primary" title="Guarda a música, os ambientes e os filtros que estão tocando agora">Salvar cena atual</button>
-            </form>
-          </section>
-        </div>
+        <section class="card mesa" id="mesa">
+          <div class="chips abas" id="mesa-abas">
+            <button data-aba="iniciativa" class="ativo">Combate</button>
+            <button data-aba="timers">Timers</button>
+            <button data-aba="tabelas">Tabelas</button>
+            <button data-aba="sessao">Registro</button>
+          </div>
 
-        <!-- Música -->
-        <div class="pagina duas-colunas" data-pagina="musica">
-          <section class="card" id="youtube">
-            <h2>Player</h2>
-            <form id="yt-form" class="row">
-              <input id="yt-url" type="text" placeholder="Link do YouTube ou busca" required />
-              <button>Adicionar</button>
+          <div data-painel="iniciativa">
+            <div id="combate-fora" class="row">
+              <button id="combate-iniciar">Começar combate</button>
+              <select id="combate-cena" title="Cena ativada ao começar o combate (volta para a anterior ao encerrar)"></select>
+            </div>
+            <div id="combate-dentro" class="combate-dentro hidden">
+              <span id="combate-status" class="status on"></span>
+              <div class="row">
+                <button id="combate-anterior" class="ghost" title="Turno anterior"><svg class="i"><use href="#i-esquerda" /></svg></button>
+                <button id="combate-proximo" class="primary" title="Próximo turno">Próximo turno <svg class="i"><use href="#i-direita" /></svg></button>
+                <button id="combate-encerrar" class="ghost">Encerrar</button>
+              </div>
+            </div>
+            <ol id="combatentes" class="lista combatentes" data-vazio="Adicione jogadores e criaturas abaixo."></ol>
+            <form id="combate-form" class="combate-form">
+              <input name="nome" type="text" placeholder="Nome" required maxlength="40" />
+              <input name="iniciativa" type="text" placeholder="Init" title="15 define · +3 rola 1d20+3 · vazio rola 1d20" />
+              <input name="hp" type="number" placeholder="HP" min="0" />
+              <label class="check" title="Jogadores ficam ao limpar os NPCs"><input type="checkbox" name="jogador" /> PJ</label>
+              <button title="Adicionar"><svg class="i"><use href="#i-ok" /></svg></button>
             </form>
-            <ul id="yt-resultados" class="lista resultados"></ul>
+            <div class="row mesa-rodape">
+              <span class="hint">HP: -7 dano · +5 cura · 30 define</span>
+              <button id="combate-limpar" class="ghost pequeno" title="Tira os NPCs e mantém os jogadores">Limpar NPCs</button>
+            </div>
+          </div>
+
+          <div data-painel="timers" class="hidden">
+            <ul id="timers" class="lista" data-vazio="Nenhum timer rodando."></ul>
+            <form id="timer-form" class="timer-form">
+              <input name="nome" type="text" placeholder="Ex.: A tocha apaga" maxlength="40" />
+              <input name="tempo" type="text" value="10" title="Minutos (10) ou minutos:segundos (1:30)" />
+              <select name="som" title="Som tocado quando acabar"></select>
+              <button title="Começar"><svg class="i"><use href="#i-play" /></svg></button>
+            </form>
+          </div>
+
+          <div data-painel="tabelas" class="hidden">
             <div class="row">
-              <select id="playlists" title="Pastas dentro de musicas/"></select>
-              <button id="playlist-carregar" class="ghost">Pôr na fila</button>
-              <button id="playlist-pasta" class="ghost" title="Abrir a pasta de músicas"><svg class="i"><use href="#i-pasta" /></svg></button>
+              <select id="tabelas" title="Cada .txt da pasta tabelas/ é uma tabela: uma opção por linha, &quot;3x&quot; no começo dá peso e [[1d6]] é rolado na hora."></select>
+              <button id="tabela-rolar" class="primary">Rolar</button>
+              <button id="tabelas-pasta" class="ghost icone" title="Abrir a pasta de tabelas"><svg class="i"><use href="#i-pasta" /></svg></button>
             </div>
-            <div class="tocando">
-              <div id="yt-titulo" class="titulo">Nada tocando</div>
-              <div id="yt-tempo" class="tempo"></div>
+            <div id="tabela-resultado" class="resultado hidden">
+              <p id="tabela-texto"></p>
+              <button id="tabela-discord" class="ghost pequeno">Mandar no Discord</button>
             </div>
-            <div class="row controles">
-              <button id="yt-anterior" class="ghost" title="Anterior"><svg class="i"><use href="#i-anterior" /></svg></button>
-              <button id="yt-pausar" title="Tocar/pausar"><svg class="i"><use href="#i-play" /></svg></button>
-              <button id="yt-proxima" class="ghost" title="Próxima"><svg class="i"><use href="#i-proxima" /></svg></button>
-              <button id="yt-parar" class="ghost" title="Parar"><svg class="i"><use href="#i-parar" /></svg></button>
-              <button id="yt-repetir" class="ghost" title="Repetir"><svg class="i"><use href="#i-repetir" /></svg></button>
-              <button id="yt-aleatorio" class="ghost" title="Ordem aleatória"><svg class="i"><use href="#i-aleatorio" /></svg></button>
-              <label class="slider compacto"><input type="range" data-volume="youtube" min="0" max="100" /><output></output></label>
-            </div>
-            <div class="row player-ajustes">
-              <label class="slider compacto" title="Uma faixa entra enquanto a outra sai. 0 desliga.">
-                <span>Transição</span><input type="range" id="yt-crossfade" min="0" max="12" step="1" /><output></output>
-              </label>
-              <label class="check" title="Deixa todas as músicas com o mesmo volume percebido (vale a partir da próxima faixa)">
-                <input type="checkbox" id="yt-normalizar" /> Igualar volume
-              </label>
-            </div>
-            <ol id="yt-fila" class="lista fila" data-vazio="Fila vazia."></ol>
-            <button id="yt-limpar" class="ghost pequeno">Limpar fila</button>
-          </section>
+          </div>
 
-          <section class="card" id="pedidos">
-            <div class="card-head">
-              <h2>Pedidos dos jogadores</h2>
-              <label class="check"><input type="checkbox" id="pedidos-aceitar" /> Aceitar pedidos</label>
+          <div data-painel="sessao" class="hidden">
+            <div class="row">
+              <button id="sessao-postar" class="ghost pequeno" title="Também dá para usar /resumo no Discord">Postar resumo</button>
+              <button id="sessao-nova" class="ghost pequeno" title="Limpa o registro e começa a contar de novo">Nova sessão</button>
             </div>
-            <ul id="pedidos-lista" class="lista pedidos" data-vazio="Nenhum pedido. Os jogadores pedem com /musica e /som no Discord; nada toca sem você aprovar."></ul>
+            <span id="sessao-info" class="hint"></span>
+            <ol id="sessao-eventos" class="lista sessao-eventos" data-vazio="Cenas, momentos, combates, críticos e músicas aparecem aqui."></ol>
+          </div>
+        </section>
+      </div>
+
+      <!-- Música -->
+      <div class="pagina musica-pagina" data-pagina="musica">
+        <section class="card" id="youtube">
+          <form id="yt-form" class="row">
+            <input id="yt-url" type="text" placeholder="Link do YouTube ou busca" required />
+            <button>Adicionar</button>
+          </form>
+          <ul id="yt-resultados" class="lista resultados"></ul>
+          <div class="tocando">
+            <div id="yt-titulo" class="titulo">Nada tocando</div>
+            <div id="yt-tempo" class="tempo"></div>
+          </div>
+          <div class="row controles">
+            <button id="yt-anterior" class="ghost" title="Anterior"><svg class="i"><use href="#i-anterior" /></svg></button>
+            <button id="yt-pausar" title="Tocar/pausar"><svg class="i"><use href="#i-play" /></svg></button>
+            <button id="yt-proxima" class="ghost" title="Próxima"><svg class="i"><use href="#i-proxima" /></svg></button>
+            <button id="yt-parar" class="ghost" title="Parar"><svg class="i"><use href="#i-parar" /></svg></button>
+            <button id="yt-repetir" class="ghost" title="Repetir"><svg class="i"><use href="#i-repetir" /></svg></button>
+            <button id="yt-aleatorio" class="ghost" title="Ordem aleatória"><svg class="i"><use href="#i-aleatorio" /></svg></button>
+            <label class="slider compacto" title="Volume do player"><input type="range" data-volume="youtube" min="0" max="100" /><output></output></label>
+          </div>
+          <div class="card-head fila-head">
+            <h2>Fila</h2>
+            <div class="row">
+              <select id="playlists" title="Pôr na fila uma pasta de músicas/"></select>
+              <button id="playlist-pasta" class="ghost icone" title="Abrir a pasta de músicas"><svg class="i"><use href="#i-pasta" /></svg></button>
+              <button id="yt-limpar" class="ghost pequeno">Limpar</button>
+            </div>
+          </div>
+          <ol id="yt-fila" class="lista fila" data-vazio="Fila vazia. Cole um link, busque ou escolha uma pasta."></ol>
+        </section>
+
+        <div class="coluna">
+          <section class="card hidden" id="pedidos">
+            <h2>Pedidos dos jogadores</h2>
+            <ul id="pedidos-lista" class="lista pedidos" data-vazio="Nenhum pedido. Os jogadores pedem com /musica e /som no Discord."></ul>
           </section>
 
           <section class="card" id="programas">
-            <h2 title="Transmite o som de um ou mais programas ao mesmo tempo (Spotify, navegador…)">Áudio de programas</h2>
+            <h2 title="Transmite o som de um programa (Spotify, navegador…) para a call">Som de outro programa</h2>
+            <ul id="capturas" class="lista"></ul>
             <div class="row">
               <select id="apps"><option value="">Carregando apps…</option></select>
-              <button id="recarregar" class="ghost" title="Atualizar lista"><svg class="i"><use href="#i-atualizar" /></svg></button>
-              <button id="capturar">Adicionar</button>
+              <button id="recarregar" class="ghost icone" title="Atualizar lista"><svg class="i"><use href="#i-atualizar" /></svg></button>
+              <button id="capturar">Transmitir</button>
             </div>
-            <ul id="capturas" class="lista" data-vazio="Nenhum programa sendo capturado."></ul>
           </section>
         </div>
+      </div>
 
-        <!-- Ambiente -->
-        <div class="pagina duas-colunas" data-pagina="ambiente">
-          <section class="card" id="ambiente">
-            <div class="card-head">
-              <h2 title="Sons contínuos em loop; várias camadas tocam juntas">Camadas</h2>
-              <div class="row">
-                <button id="amb-pasta" class="ghost pequeno">Abrir pasta</button>
-                <button id="amb-parar" class="ghost pequeno">Parar tudo</button>
-              </div>
-            </div>
-            <div id="amb-arquivos" class="chips"></div>
-            <ul id="amb-camadas" class="lista" data-vazio="Nenhuma camada tocando."></ul>
-          </section>
+      <!-- Sons: cenas, ambiente e efeitos -->
+      <div class="pagina sons-pagina" data-pagina="sons">
+        <section class="card" id="cenas">
+          <div class="card-head">
+            <h2 title="Um clique troca música, ambiente e filtros de uma vez">Cenas</h2>
+            <button id="cena-salvar" class="ghost pequeno" title="Guarda a música, os ambientes e os filtros que estão tocando agora">+ Salvar o que está tocando</button>
+          </div>
+          <div id="cenas-lista" class="cenas"></div>
+        </section>
 
-          <section class="card">
-            <h2 title="Um som sorteado da lista de tempos em tempos (um corvo, um trovão distante…)">Sons ocasionais</h2>
-            <ul id="amb-ocasionais" class="lista" data-vazio="Nenhum som ocasional."></ul>
+        <section class="card" id="ambiente">
+          <div class="card-head">
+            <h2 title="Sons contínuos em loop; vários tocam juntos">Ambiente</h2>
+            <button id="amb-parar" class="ghost pequeno hidden">Parar tudo</button>
+          </div>
+          <div id="amb-arquivos" class="chips"></div>
+          <ul id="amb-camadas" class="lista camadas"></ul>
+          <details class="ocasionais">
+            <summary>Sons ocasionais <span id="amb-ocasionais-n"></span></summary>
+            <ul id="amb-ocasionais" class="lista"></ul>
             <form id="amb-ocasional-form" class="ocasional-form">
               <select name="arquivos" multiple size="4" title="Ctrl+clique para escolher vários"></select>
               <div class="row">
                 <label>a cada <input type="number" name="min" value="30" min="1" /></label>
-                <label>– <input type="number" name="max" value="90" min="1" /> s</label>
-                <button>Adicionar</button>
+                <label>a <input type="number" name="max" value="90" min="1" /> s</label>
+                <button class="pequeno">Adicionar</button>
               </div>
             </form>
-          </section>
-        </div>
+          </details>
+        </section>
 
-        <!-- Soundboard -->
-        <div class="pagina" data-pagina="soundboard">
-          <section class="card" id="soundboard">
-            <div class="card-head">
-              <h2 title="Clique toca na call · botão direito toca só no seu fone · ⋯ ajusta volume, loop e cor. Subpastas viram abas; &quot;espada 1&quot;, &quot;espada 2&quot;… viram um botão que sorteia.">Soundboard</h2>
-              <div class="row">
-                <button id="abrir-sons" class="ghost pequeno">Abrir pasta</button>
-              </div>
-            </div>
-            <div id="sons-abas" class="chips abas"></div>
-            <div id="sons" class="grid"></div>
-          </section>
-
-          <section class="card" id="pacotes">
-            <h2 title="Efeitos, ambientes e cenas de exemplo prontos para usar. Todos em domínio público (CC0).">Pacotes de sons</h2>
-            <ul id="pacotes-lista" class="lista pacotes" data-vazio="Nenhum pacote disponível."></ul>
-          </section>
-
-          <section class="card" id="freesound">
-            <div class="card-head">
-              <h2 title="A prévia toca só para você. CC0 é livre; CC BY pede crédito (anotado em CREDITOS-freesound.txt na pasta); CC BY-NC não permite uso comercial.">Buscar no Freesound</h2>
-            </div>
-            <form id="fs-form" class="row">
-              <input id="fs-busca" type="text" placeholder="Em inglês funciona melhor: sword, dragon roar, door creak…" required />
-              <select id="fs-destino" title="Para onde vai o som baixado"></select>
-              <button>Buscar</button>
-            </form>
-            <ul id="fs-resultados" class="lista fs-resultados"></ul>
-          </section>
-        </div>
-
-        <!-- Mesa -->
-        <div class="pagina" data-pagina="mesa">
-          <section class="card" id="mesa">
-            <div class="card-head">
-              <h2>Mesa</h2>
-              <div class="chips abas" id="mesa-abas">
-                <button data-aba="iniciativa" class="ativo">Iniciativa</button>
-                <button data-aba="timers">Timers</button>
-                <button data-aba="tabelas">Tabelas</button>
-                <button data-aba="sessao">Sessão</button>
-              </div>
-            </div>
-
-            <div data-painel="iniciativa">
-              <div class="row combate-barra">
-                <span id="combate-status" class="status"></span>
-                <select id="combate-cena" title="Cena ativada ao começar o combate (volta para a anterior ao encerrar)"></select>
-                <label class="check" title="Posta 'vez de Fulano' no canal do /canal"><input type="checkbox" id="combate-anunciar" /> Anunciar no Discord</label>
-              </div>
-              <div class="row">
-                <button id="combate-iniciar" class="primary">Começar combate</button>
-                <button id="combate-anterior" class="ghost" title="Turno anterior"><svg class="i"><use href="#i-esquerda" /></svg></button>
-                <button id="combate-proximo" class="primary" title="Próximo turno">Próximo turno <svg class="i"><use href="#i-direita" /></svg></button>
-                <button id="combate-encerrar" class="ghost">Encerrar</button>
-                <button id="combate-limpar" class="ghost" title="Tira os NPCs e mantém os jogadores">Limpar NPCs</button>
-              </div>
-              <ol id="combatentes" title="HP: -7 causa dano, +5 cura, 30 define. Enter aplica." class="lista combatentes" data-vazio="Adicione jogadores e criaturas abaixo."></ol>
-              <form id="combate-form" class="row combate-form">
-                <input name="nome" type="text" placeholder="Nome" required maxlength="40" />
-                <input name="iniciativa" type="number" placeholder="Iniciativa" title="Deixe vazio para rolar 1d20 + modificador" />
-                <input name="modificador" type="number" placeholder="Mod." title="Modificador de iniciativa (usado se a iniciativa estiver vazia)" />
-                <input name="hp" type="number" placeholder="HP" min="0" title="Na lista, o campo de HP aceita -7 (dano), +5 (cura) ou 30 (define). Enter aplica." />
-                <label class="check"><input type="checkbox" name="jogador" /> Jogador</label>
-                <button>Adicionar</button>
-              </form>
-            </div>
-
-            <div data-painel="timers" class="hidden">
-              <ul id="timers" class="lista" data-vazio="Nenhum timer rodando."></ul>
-              <form id="timer-form" class="row timer-form">
-                <input name="nome" type="text" placeholder="Ex.: A tocha apaga" maxlength="40" />
-                <input name="min" type="number" min="0" value="10" title="Minutos" /> min
-                <input name="seg" type="number" min="0" max="59" value="0" title="Segundos" /> s
-                <select name="som" title="Som tocado quando acabar"></select>
-                <button class="primary">Começar</button>
-              </form>
-            </div>
-
-            <div data-painel="sessao" class="hidden">
-              <div class="row">
-                <span id="sessao-info" class="status"></span>
-                <button id="sessao-postar" class="primary" title="Também dá para usar /resumo no Discord">Postar resumo no Discord</button>
-                <button id="sessao-nova" class="ghost" title="Limpa o registro e começa a contar de novo">Nova sessão</button>
-              </div>
-              <ol id="sessao-eventos" class="lista sessao-eventos" data-vazio="Nada registrado ainda. Cenas, momentos do roteiro, combates, críticos e músicas aparecem aqui."></ol>
-            </div>
-
-            <div data-painel="tabelas" class="hidden">
-              <div class="row">
-                <select id="tabelas" title="Cada .txt da pasta tabelas/ é uma tabela: uma opção por linha, &quot;3x&quot; no começo dá peso e [[1d6]] é rolado na hora."></select>
-                <button id="tabela-rolar" class="primary">Rolar</button>
-                <button id="tabelas-pasta" class="ghost" title="Abrir a pasta de tabelas"><svg class="i"><use href="#i-pasta" /></svg></button>
-              </div>
-              <div id="tabela-resultado" class="resultado hidden">
-                <p id="tabela-texto"></p>
-                <button id="tabela-discord" class="ghost pequeno">Mandar no Discord</button>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Áudio -->
-        <div class="pagina duas-colunas" data-pagina="audio">
-          <section class="card" id="mixer">
-            <h2 title="Volume final = volume do som × volume do grupo × geral">Mixer</h2>
-            <label class="slider">
-              <span>Geral<small>tudo que sai pelo bot</small></span>
-              <input type="range" data-volume="master" min="0" max="100" /><output></output>
-            </label>
-            <label class="slider">
-              <span>Música<small>programas + player</small></span>
-              <input type="range" data-volume="musica" min="0" max="100" /><output></output>
-            </label>
-            <label class="slider">
-              <span>Efeitos<small>soundboard</small></span>
-              <input type="range" data-volume="efeitos" min="0" max="100" /><output></output>
-            </label>
-            <label class="slider">
-              <span>Ambiente<small>camadas e sons ocasionais</small></span>
-              <input type="range" data-volume="ambiente" min="0" max="100" /><output></output>
-            </label>
-            <label class="slider">
-              <span>Ducking<small>música enquanto um efeito toca</small></span>
-              <input type="range" data-volume="ducking" min="0" max="100" /><output></output>
-            </label>
-            <h3 title="Mudam todo o som da mesa (também na barra de baixo). Salvar uma cena guarda os filtros ligados.">Filtros de ambiente</h3>
-            <div class="chips filtros">
-              <button data-filtro="abafado">Abafado</button>
-              <button data-filtro="caverna">Caverna</button>
-              <button data-filtro="eco">Eco</button>
-            </div>
-          </section>
-
-          <section class="card">
-            <h2 title="O que você ouve no seu PC. Não muda o que vai para a call.">Seu fone</h2>
-            <label class="campo"><span>O que ouvir</span>
-              <select id="monitor-modo">
-                <option value="sem-capturas">Efeitos, ambiente e player</option>
-                <option value="tudo">Tudo (inclui os programas capturados)</option>
-                <option value="previa">Só a pré-escuta</option>
-                <option value="desligado">Nada</option>
-              </select>
-            </label>
-            <label class="campo"><span>Saída</span><select id="monitor-saida"></select></label>
-            <label class="slider">
-              <span>Volume no fone</span>
-              <input type="range" data-volume="monitorVolume" min="0" max="100" /><output></output>
-            </label>
-            <h3>Integrações</h3>
-            <p class="hint">API para Ulanzi / Stream Deck: <code id="api"></code></p>
-          </section>
-
-          <section class="card atalhos-card">
-            <div class="card-head">
-              <h2 title="Funcionam mesmo com o Mestrônomo em segundo plano. Clique no campo da tecla e aperte a combinação; use Ctrl, Alt ou Shift (só as teclas F funcionam sozinhas). Tudo é salvo na hora.">Atalhos de teclado</h2>
-              <div class="row">
-                <button id="atalho-novo" class="ghost pequeno">+ Atalho</button>
-                <button id="atalhos-padrao" class="ghost pequeno">Restaurar padrão</button>
-              </div>
-            </div>
-            <ul id="atalhos-lista" class="lista atalhos" data-vazio="Nenhum atalho."></ul>
-          </section>
-        </div>
-      </main>
-    </div>
+        <section class="card" id="soundboard">
+          <div class="card-head">
+            <h2 title="Clique toca na call · botão direito toca só no seu fone · ⋯ ajusta volume e loop">Efeitos</h2>
+            <button id="abrir-adicionar" class="ghost pequeno">+ Mais sons</button>
+          </div>
+          <div id="sons-abas" class="chips abas"></div>
+          <div id="sons" class="grid"></div>
+        </section>
+      </div>
+    </main>
 
     <!-- Barra fixa: o essencial sempre à mão -->
     <footer class="barra">
@@ -394,7 +271,7 @@
       </div>
       <span id="erro" class="erro" role="status"></span>
       <div class="barra-acoes">
-        <div class="chips filtros" title="Filtros de ambiente sobre todo o som da mesa">
+        <div class="chips filtros" title="Filtros sobre todo o som da mesa">
           <button data-filtro="abafado" title="Atrás da porta, debaixo d'água">Abafado</button>
           <button data-filtro="caverna" title="Reverberação de masmorra">Caverna</button>
           <button data-filtro="eco" title="Eco de abismo">Eco</button>
@@ -432,10 +309,35 @@
       </form>
     </dialog>
 
+    <dialog id="adicionar" class="largo">
+      <div class="dialogo-corpo">
+        <div class="card-head">
+          <h2>Mais sons</h2>
+          <button type="button" id="adicionar-fechar" class="ghost icone" title="Fechar"><svg class="i"><use href="#i-x" /></svg></button>
+        </div>
+        <div class="row">
+          <button type="button" id="abrir-sons" class="ghost"><svg class="i"><use href="#i-pasta" /></svg> Pasta de efeitos</button>
+          <button type="button" id="amb-pasta" class="ghost"><svg class="i"><use href="#i-pasta" /></svg> Pasta de ambientes</button>
+        </div>
+        <p class="hint">Subpastas viram abas; "espada 1", "espada 2"… viram um botão que sorteia.</p>
+
+        <h3 title="Todos em domínio público (CC0)">Pacotes prontos</h3>
+        <ul id="pacotes-lista" class="lista pacotes" data-vazio="Nenhum pacote disponível."></ul>
+
+        <h3 title="A prévia toca só para você. CC0 é livre; CC BY pede crédito (anotado em CREDITOS-freesound.txt); CC BY-NC não permite uso comercial.">Buscar no Freesound</h3>
+        <form id="fs-form" class="row">
+          <input id="fs-busca" type="text" autofocus placeholder="Em inglês: sword, dragon roar, door creak…" required />
+          <select id="fs-destino" title="Para onde vai o som baixado"></select>
+          <button>Buscar</button>
+        </form>
+        <ul id="fs-resultados" class="lista fs-resultados"></ul>
+      </div>
+    </dialog>
+
     <dialog id="pacotes-inicio">
       <form method="dialog" id="pacotes-inicio-form">
         <h2>Bem-vindo ao Mestrônomo</h2>
-        <p>Quer começar com sons prontos? Cada pacote traz efeitos para a soundboard, ambientes em loop e algumas cenas de exemplo. Dá para instalar ou remover depois, na página Soundboard.</p>
+        <p>Quer começar com sons prontos? Cada pacote traz efeitos, ambientes em loop e algumas cenas de exemplo. Dá para instalar ou remover depois, em Sons → Mais sons.</p>
         <div id="pacotes-inicio-opcoes" class="pacotes-opcoes"></div>
         <div class="row fim">
           <button value="cancelar" class="ghost">Agora não</button>
@@ -460,8 +362,7 @@
         <h2 id="som-opcoes-titulo">Som</h2>
         <p id="som-opcoes-arquivos" class="hint"></p>
         <label class="slider"><span>Volume</span><input type="range" name="volume" min="0" max="100" /><output></output></label>
-        <label class="check"><input type="checkbox" name="loop" /> Tocar em loop (clique liga e desliga; não abaixa a música)</label>
-        <div class="campo"><span>Cor</span><div id="som-cores" class="row"></div></div>
+        <label class="check"><input type="checkbox" name="loop" /> Tocar em loop (clique liga e desliga)</label>
         <div class="row fim"><button value="ok" class="primary">Pronto</button></div>
       </form>
     </dialog>
@@ -480,62 +381,105 @@
 
     <dialog id="config" class="largo">
       <form method="dialog" id="config-form">
-        <h2>Configurações</h2>
-
-        <h3>Bot do Discord</h3>
-        <p id="config-env" class="hint hidden">O bot está configurado pelo arquivo .env (modo desenvolvimento).</p>
-        <ol class="passos">
-          <li>
-            <span>Crie um bot (2 minutos, uma vez só).</span>
-            <button type="button" id="bot-portal" class="ghost pequeno">Abrir o Discord Developer Portal</button>
-            <details>
-              <summary>Como?</summary>
-              <p class="hint">New Application → dê um nome → aba <b>Bot</b> → <b>Reset Token</b> → copie o token. Na aba Installation, deixe Install Link em "None" e desmarque Public Bot se quiser que só você o use.</p>
-            </details>
-          </li>
-          <li>
-            <span>Cole o token aqui.</span>
-            <div class="row">
-              <input type="password" name="token" autocomplete="off" spellcheck="false" />
-              <button type="button" id="bot-verificar" class="ghost">Verificar</button>
-            </div>
-            <small id="bot-check" class="hint">Fica guardado criptografado neste PC.</small>
-          </li>
-          <li>
-            <span>Convide o bot para o servidor da mesa.</span>
-            <button type="button" id="bot-convidar" class="primary pequeno">Convidar o bot</button>
-          </li>
-        </ol>
-        <details class="avancado">
-          <summary>Avançado</summary>
-          <label class="campo">
-            <span>ID do mestre (opcional)</span>
-            <input type="text" name="ownerId" inputmode="numeric" autocomplete="off" placeholder="Vazio: quem criou o bot é o mestre" />
-            <small>Só o mestre usa /entrar, /sair e /canal. Para outra pessoa mestrar com o seu bot, cole o ID dela (Modo desenvolvedor → botão direito no nome → Copiar ID).</small>
-          </label>
-        </details>
-
-        <h3>Freesound</h3>
-        <label class="campo">
-          <span>Chave da API do Freesound (opcional)</span>
-          <input type="password" name="freesound" autocomplete="off" spellcheck="false" />
-          <small>Para buscar efeitos dentro do app. É grátis: <button type="button" id="fs-chave" class="link">pegar uma chave</button> (escolha "API key" e copie a chave).</small>
-        </label>
-
-        <h3>Geral</h3>
-        <label class="check"><input type="checkbox" name="autoStart" /> Iniciar com o Windows (abre na bandeja)</label>
-        <label class="check"><input type="checkbox" name="tocandoAgora" /> Postar "tocando agora" no canal de texto</label>
-        <p id="config-canal" class="hint"></p>
-
-        <h3>Backup</h3>
-        <p class="hint">Leve cenas, soundboard, volumes e (se quiser) seus arquivos de som para outro PC. O token do bot nunca é exportado.</p>
-        <label class="check"><input type="checkbox" id="backup-arquivos" checked /> Incluir os arquivos (sons, ambientes, músicas e tabelas)</label>
-        <div class="row">
-          <button type="button" id="backup-exportar" class="ghost">Exportar…</button>
-          <button type="button" id="backup-importar" class="ghost">Importar…</button>
+        <div class="card-head">
+          <h2>Configurações</h2>
+          <div class="chips abas" id="config-abas">
+            <button type="button" data-aba="discord" class="ativo">Discord</button>
+            <button type="button" data-aba="audio">Áudio</button>
+            <button type="button" data-aba="atalhos">Atalhos</button>
+            <button type="button" data-aba="geral">Geral</button>
+          </div>
         </div>
 
-        <p id="versao" class="hint"></p>
+        <div data-config="discord" class="config-painel">
+          <p id="config-env" class="hint hidden">O bot está configurado pelo arquivo .env (modo desenvolvimento).</p>
+          <ol class="passos">
+            <li>
+              <span>Crie um bot (2 minutos, uma vez só).</span>
+              <button type="button" id="bot-portal" class="ghost pequeno">Abrir o Discord Developer Portal</button>
+              <details>
+                <summary>Como?</summary>
+                <p class="hint">New Application → dê um nome → aba <b>Bot</b> → <b>Reset Token</b> → copie o token. Na aba Installation, deixe Install Link em "None" e desmarque Public Bot se quiser que só você o use.</p>
+              </details>
+            </li>
+            <li>
+              <span>Cole o token aqui.</span>
+              <div class="row">
+                <input type="password" name="token" autocomplete="off" spellcheck="false" />
+                <button type="button" id="bot-verificar" class="ghost">Verificar</button>
+              </div>
+              <small id="bot-check" class="hint">Fica guardado criptografado neste PC.</small>
+            </li>
+            <li>
+              <span>Convide o bot para o servidor da mesa.</span>
+              <button type="button" id="bot-convidar" class="primary pequeno">Convidar o bot</button>
+            </li>
+          </ol>
+          <h3>No canal de texto</h3>
+          <label class="check"><input type="checkbox" name="tocandoAgora" /> Postar "tocando agora"</label>
+          <label class="check"><input type="checkbox" name="anunciar" /> Anunciar "vez de Fulano" no combate</label>
+          <label class="check"><input type="checkbox" name="pedidos" /> Aceitar pedidos dos jogadores (/musica e /som; nada toca sem você aprovar)</label>
+          <p id="config-canal" class="hint"></p>
+          <details class="avancado">
+            <summary>Avançado</summary>
+            <label class="campo">
+              <span>ID do mestre (opcional)</span>
+              <input type="text" name="ownerId" inputmode="numeric" autocomplete="off" placeholder="Vazio: quem criou o bot é o mestre" />
+              <small>Só o mestre usa /entrar, /sair e /canal. Para outra pessoa mestrar com o seu bot, cole o ID dela (Modo desenvolvedor → botão direito no nome → Copiar ID).</small>
+            </label>
+          </details>
+        </div>
+
+        <div data-config="audio" class="config-painel hidden" id="mixer">
+          <label class="slider"><span>Geral<small>tudo que sai pelo bot</small></span><input type="range" data-volume="master" min="0" max="100" /><output></output></label>
+          <label class="slider"><span>Música<small>player e programas</small></span><input type="range" data-volume="musica" min="0" max="100" /><output></output></label>
+          <label class="slider"><span>Efeitos</span><input type="range" data-volume="efeitos" min="0" max="100" /><output></output></label>
+          <label class="slider"><span>Ambiente</span><input type="range" data-volume="ambiente" min="0" max="100" /><output></output></label>
+          <label class="slider"><span>Ducking<small>música enquanto um efeito toca</small></span><input type="range" data-volume="ducking" min="0" max="100" /><output></output></label>
+          <h3>Transições</h3>
+          <label class="slider" title="Duração do crossfade ao trocar de cena"><span>Ao trocar de cena</span><input type="range" id="cena-fade" min="0" max="10" step="0.5" /><output></output></label>
+          <label class="slider" title="Uma faixa entra enquanto a outra sai. 0 desliga."><span>Entre faixas do player</span><input type="range" id="yt-crossfade" min="0" max="12" step="1" /><output></output></label>
+          <label class="check" title="Vale a partir da próxima faixa"><input type="checkbox" id="yt-normalizar" /> Igualar o volume das músicas</label>
+          <h3 title="O que você ouve no seu PC. Não muda o que vai para a call.">Seu fone</h3>
+          <label class="campo"><span>O que ouvir</span>
+            <select id="monitor-modo">
+              <option value="sem-capturas">Efeitos, ambiente e player</option>
+              <option value="tudo">Tudo (inclui os programas transmitidos)</option>
+              <option value="previa">Só a pré-escuta</option>
+              <option value="desligado">Nada</option>
+            </select>
+          </label>
+          <label class="campo"><span>Saída</span><select id="monitor-saida"></select></label>
+          <label class="slider"><span>Volume no fone</span><input type="range" data-volume="monitorVolume" min="0" max="100" /><output></output></label>
+        </div>
+
+        <div data-config="atalhos" class="config-painel hidden">
+          <p class="hint">Funcionam com o Mestrônomo em segundo plano. Clique na tecla e aperte a combinação (use Ctrl, Alt ou Shift; só as teclas F funcionam sozinhas). Salvo na hora.</p>
+          <ul id="atalhos-lista" class="lista atalhos" data-vazio="Nenhum atalho."></ul>
+          <div class="row">
+            <button type="button" id="atalho-novo" class="ghost pequeno">+ Atalho</button>
+            <button type="button" id="atalhos-padrao" class="ghost pequeno">Restaurar padrão</button>
+          </div>
+        </div>
+
+        <div data-config="geral" class="config-painel hidden">
+          <label class="check"><input type="checkbox" name="autoStart" /> Iniciar com o Windows (abre na bandeja)</label>
+          <label class="campo">
+            <span>Chave da API do Freesound (opcional)</span>
+            <input type="password" name="freesound" autocomplete="off" spellcheck="false" />
+            <small>Para buscar efeitos em Sons → Mais sons. É grátis: <button type="button" id="fs-chave" class="link">pegar uma chave</button> (escolha "API key").</small>
+          </label>
+          <h3>Backup</h3>
+          <p class="hint">Leve cenas, sons, volumes e (se quiser) seus arquivos para outro PC. O token do bot nunca é exportado.</p>
+          <label class="check"><input type="checkbox" id="backup-arquivos" checked /> Incluir os arquivos (sons, ambientes, músicas e tabelas)</label>
+          <div class="row">
+            <button type="button" id="backup-exportar" class="ghost">Exportar…</button>
+            <button type="button" id="backup-importar" class="ghost">Importar…</button>
+          </div>
+          <h3>Integrações</h3>
+          <p class="hint">API para Ulanzi / Stream Deck: <code id="api"></code></p>
+          <p id="versao" class="hint"></p>
+        </div>
 
         <div class="row fim">
           <button value="cancelar" class="ghost">Cancelar</button>

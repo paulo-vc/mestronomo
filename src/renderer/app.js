@@ -91,15 +91,13 @@ function pedirTexto(titulo, valor = '') {
 
 // --- Navegação ---------------------------------------------------------
 
-const PAGINAS = ['roteiro', 'cenas', 'musica', 'ambiente', 'soundboard', 'mesa', 'audio'];
-
-let paginaAtual = 'roteiro';
+const PAGINAS = ['sessao', 'musica', 'sons'];
+// Páginas de versões anteriores (o localStorage pode lembrar delas).
+const PAGINAS_ANTIGAS = { roteiro: 'sessao', mesa: 'sessao', audio: 'sessao', cenas: 'sons', ambiente: 'sons', soundboard: 'sons' };
 
 function irPara(pagina) {
-  if (!PAGINAS.includes(pagina)) pagina = 'roteiro';
-  paginaAtual = pagina;
-  // A lista de saídas do fone só é montada aqui (ver carregarSaidas).
-  if (pagina === 'audio') carregarSaidas($('#monitor-saida').value);
+  pagina = PAGINAS_ANTIGAS[pagina] ?? pagina;
+  if (!PAGINAS.includes(pagina)) pagina = 'sessao';
   for (const p of document.querySelectorAll('.pagina')) p.classList.toggle('ativa', p.dataset.pagina === pagina);
   for (const b of document.querySelectorAll('.menu button')) b.classList.toggle('ativo', b.dataset.ir === pagina);
   $('.conteudo').scrollTop = 0;
@@ -109,7 +107,7 @@ function irPara(pagina) {
 }
 
 for (const b of document.querySelectorAll('.menu button')) b.addEventListener('click', () => irPara(b.dataset.ir));
-// Ctrl+1..7 troca de página (com a janela em foco; os atalhos globais usam Ctrl+Alt).
+// Ctrl+1..3 troca de página (com a janela em foco; os atalhos globais usam Ctrl+Alt).
 window.addEventListener('keydown', (e) => {
   if (!e.ctrlKey || e.altKey || e.shiftKey) return;
   const i = Number(e.key) - 1;
@@ -119,9 +117,9 @@ window.addEventListener('keydown', (e) => {
   }
 });
 try {
-  irPara(localStorage.getItem('pagina') || 'roteiro');
+  irPara(localStorage.getItem('pagina') || 'sessao');
 } catch {
-  irPara('roteiro');
+  irPara('sessao');
 }
 
 // --- Barra fixa ----------------------------------------------------------
@@ -207,6 +205,16 @@ $('#atualizacao').addEventListener('click', () => api.atualizar());
 
 const dialogo = $('#config');
 const configForm = $('#config-form');
+let anunciarTurnos = false;
+let aceitandoPedidos = false;
+
+function mostrarAbaConfig(aba) {
+  for (const b of document.querySelectorAll('#config-abas button')) b.classList.toggle('ativo', b.dataset.aba === aba);
+  for (const p of document.querySelectorAll('[data-config]')) p.classList.toggle('hidden', p.dataset.config !== aba);
+  // A lista de saídas do fone só é montada aqui (ver carregarSaidas).
+  if (aba === 'audio') carregarSaidas($('#monitor-saida').value);
+}
+for (const b of document.querySelectorAll('#config-abas button')) b.addEventListener('click', () => mostrarAbaConfig(b.dataset.aba));
 
 function mostrarCheck(texto, classe = '') {
   const check = $('#bot-check');
@@ -214,8 +222,10 @@ function mostrarCheck(texto, classe = '') {
   check.className = `hint ${classe}`;
 }
 
-async function abrirConfig() {
+async function abrirConfig(aba = 'discord') {
   const info = await api.configInfo();
+  configForm.anunciar.checked = anunciarTurnos;
+  configForm.pedidos.checked = aceitandoPedidos;
   mostrarCheck(info.hasToken ? 'Token salvo e guardado criptografado neste PC.' : 'Fica guardado criptografado neste PC.');
   configForm.token.value = '';
   configForm.token.placeholder = info.hasToken ? '•••••••• (salvo; deixe vazio para manter)' : 'Cole o token aqui';
@@ -230,10 +240,11 @@ async function abrirConfig() {
   configForm.token.disabled = configForm.ownerId.disabled = info.fromEnv;
   $('#bot-verificar').disabled = info.fromEnv;
   $('#config-env').classList.toggle('hidden', !info.fromEnv);
+  mostrarAbaConfig(aba);
   dialogo.showModal();
 }
 
-$('#abrir-config').addEventListener('click', abrirConfig);
+$('#abrir-config').addEventListener('click', () => abrirConfig());
 $('#bot-portal').addEventListener('click', () => api.botPortal());
 $('#fs-chave').addEventListener('click', () => api.freesound.pedirChave());
 $('#backup-exportar').addEventListener('click', () => api.backupExportar($('#backup-arquivos').checked));
@@ -250,6 +261,8 @@ $('#bot-verificar').addEventListener('click', async () => {
 dialogo.addEventListener('close', () => {
   if (dialogo.returnValue !== 'salvar') return;
   api.configSalvar(configForm.token.value, configForm.ownerId.value, configForm.autoStart.checked, configForm.tocandoAgora.checked, configForm.freesound.value);
+  if (configForm.anunciar.checked !== anunciarTurnos) api.combate.anunciar((anunciarTurnos = configForm.anunciar.checked));
+  if (configForm.pedidos.checked !== aceitandoPedidos) api.pedidos.aceitar(configForm.pedidos.checked);
   configForm.freesound.value = '';
   configForm.token.value = '';
 });
@@ -323,6 +336,7 @@ function renderYoutube(estado) {
   const crossfade = $('#yt-crossfade');
   if (document.activeElement !== crossfade) crossfade.value = estado.crossfadeMs / 1000;
   crossfade.nextElementSibling.textContent = `${crossfade.value} s`;
+  $('#yt-limpar').disabled = estado.fila.length === 0;
   els.ytVolume.value = Math.round(estado.volume * 100);
   els.ytVolume.nextElementSibling.textContent = `${els.ytVolume.value}%`;
 
@@ -393,12 +407,13 @@ $('#yt-form').addEventListener('submit', async (e) => {
 async function carregarPlaylists() {
   const pastas = await api.yt.playlists();
   $('#playlists').replaceChildren(
-    ...(pastas.length ? pastas.map((p) => new Option(p, p)) : [new Option('Nenhuma pasta em musicas/', '')]),
+    new Option(pastas.length ? 'Pôr uma pasta na fila…' : 'Nenhuma pasta em musicas/', ''),
+    ...pastas.map((p) => new Option(p, p)),
   );
 }
-$('#playlist-carregar').addEventListener('click', () => {
-  const pasta = $('#playlists').value;
-  if (pasta) api.yt.carregarPasta(pasta);
+$('#playlists').addEventListener('change', (e) => {
+  if (e.target.value) api.yt.carregarPasta(e.target.value);
+  e.target.value = '';
 });
 $('#playlist-pasta').addEventListener('click', () => api.yt.abrirPasta());
 window.addEventListener('focus', carregarPlaylists);
@@ -440,14 +455,14 @@ function renderCenas(estado) {
     ),
   );
   const fade = $('#cena-fade');
-  fade.value = estado.fadeMs / 1000;
+  if (document.activeElement !== fade) fade.value = estado.fadeMs / 1000;
   fade.nextElementSibling.textContent = `${fade.value} s`;
 }
 
-$('#cena-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  api.cenas.salvar(e.target.nome.value, e.target.musica.value);
-  e.target.nome.value = '';
+$('#cena-salvar').addEventListener('click', async () => {
+  const nome = await pedirTexto('Nome da cena (ex.: Taverna, Combate)');
+  // "youtube" guarda a fila do player; sem fila, a cena não mexe na música.
+  if (nome) api.cenas.salvar(nome, 'youtube');
 });
 $('#cena-fade').addEventListener('input', (e) => {
   e.target.nextElementSibling.textContent = `${e.target.value} s`;
@@ -464,6 +479,8 @@ function renderAmbiente(estado) {
   const nomeAmb = (a) => semExtensao(pastas.size === 1 ? a.slice(a.indexOf('/') + 1) : a);
   barra.camadas = estado.camadas.length;
   renderBarra();
+  $('#amb-parar').classList.toggle('hidden', estado.camadas.length === 0);
+  $('#amb-ocasionais-n').textContent = estado.ocasionais.length ? `(${estado.ocasionais.length})` : '';
   const ativas = new Set(estado.camadas.map((c) => c.arquivo));
   $('#amb-arquivos').replaceChildren(
     ...estado.arquivos.map((arquivo) =>
@@ -545,7 +562,7 @@ async function escolherSaida(deviceId) {
 
 /**
  * Lista os dispositivos de saída. enumerateDevices() liga também o serviço de captura de vídeo
- * do Chromium (~110 MB que ninguém usa), então só chamamos ao abrir a página Áudio.
+ * do Chromium (~110 MB que ninguém usa), então só chamamos ao abrir a aba Áudio das configurações.
  */
 async function carregarSaidas(atual) {
   const select = $('#monitor-saida');
@@ -556,7 +573,7 @@ async function carregarSaidas(atual) {
   select.value = saidas.some((d) => d.deviceId === atual) ? atual : 'default';
 }
 
-/** Antes de abrir a página Áudio, mostra só o dispositivo salvo (sem enumerar). */
+/** Antes de abrir a aba Áudio, mostra só o dispositivo salvo (sem enumerar). */
 function mostrarSaidaSalva(atual) {
   $('#monitor-saida').replaceChildren(new Option(atual && atual !== 'default' ? 'Dispositivo escolhido' : 'Saída padrão do Windows', atual || 'default'));
 }
@@ -591,7 +608,6 @@ for (const input of document.querySelectorAll('[data-volume]')) {
 
 // --- Soundboard --------------------------------------------------------
 
-const CORES = ['', '#d9605a', '#e0b04a', '#5fbf85', '#5a9bd9', '#a77bd9', '#d97bb4'];
 let soundboard = { categorias: [], sons: [], loops: [] };
 /** Uma cor discreta por categoria, só na faixa da esquerda do botão. */
 const CORES_CATEGORIA = ['#d9605a', '#5b9bd5', '#5fbf85', '#b07fe0', '#e0b04a', '#4fc1c1', '#e07fb0', '#9aa36b'];
@@ -628,7 +644,7 @@ function renderSoundboard(estado) {
     els.sons.replaceChildren(
       el('p', {
         className: 'vazio',
-        textContent: 'Nenhum som ainda. Clique em "Abrir pasta" e coloque seus efeitos lá. Subpastas viram categorias.',
+        textContent: 'Nenhum efeito ainda. Clique em "+ Mais sons" para instalar um pacote pronto ou abrir a pasta.',
       }),
     );
     return;
@@ -655,7 +671,7 @@ function renderSoundboard(estado) {
           el('span', {
             className: 'opcoes',
             textContent: '⋯',
-            title: 'Volume, loop e cor',
+            title: 'Volume e loop',
             onclick: (e) => {
               e.stopPropagation();
               abrirOpcoesSom(som);
@@ -689,9 +705,9 @@ let previaTocando = null;
 function preencherDestinosFreesound(estado) {
   const select = $('#fs-destino');
   const atual = select.value;
-  const opcoes = [new Option('→ Soundboard (Geral)', 'sons')];
-  for (const c of estado.categorias.filter((c) => c !== 'Geral')) opcoes.push(new Option(`→ Soundboard: ${c}`, `sons/${c}`));
-  opcoes.push(new Option('→ Ambiente', 'ambientes'));
+  const opcoes = [new Option('para Efeitos', 'sons')];
+  for (const c of estado.categorias.filter((c) => c !== 'Geral')) opcoes.push(new Option(`para Efeitos › ${c}`, `sons/${c}`));
+  opcoes.push(new Option('para Ambiente', 'ambientes'));
   select.replaceChildren(...opcoes);
   if ([...select.options].some((o) => o.value === atual)) select.value = atual;
 }
@@ -753,21 +769,6 @@ function abrirOpcoesSom(som) {
   formSom.volume.value = Math.round(som.volume * 100);
   formSom.volume.nextElementSibling.textContent = `${formSom.volume.value}%`;
   formSom.loop.checked = som.loop;
-  $('#som-cores').replaceChildren(
-    ...CORES.map((cor) => {
-      const botao = el('button', {
-        type: 'button',
-        className: `cor${(som.cor ?? '') === cor ? ' ativo' : ''}`,
-        title: cor || 'Sem cor',
-        onclick: () => {
-          api.somOpcoes(som.id, { cor: cor || undefined });
-          for (const b of $('#som-cores').children) b.classList.toggle('ativo', b === botao);
-        },
-      });
-      if (cor) botao.style.setProperty('--cor', cor);
-      return botao;
-    }),
-  );
   dialogoSom.showModal();
 }
 
@@ -781,6 +782,10 @@ formSom.loop.addEventListener('change', (e) => {
 
 $('#parar-efeitos').addEventListener('click', () => api.pararEfeitos());
 $('#abrir-sons').addEventListener('click', () => api.abrirSons());
+const dialogoAdicionar = $('#adicionar');
+$('#abrir-adicionar').addEventListener('click', () => dialogoAdicionar.showModal());
+$('#adicionar-fechar').addEventListener('click', () => dialogoAdicionar.close());
+dialogoAdicionar.addEventListener('close', () => previa.pause());
 
 // Ao voltar para a janela, relê a pasta de sons (você pode ter adicionado arquivos).
 window.addEventListener('focus', async () => renderSoundboard((await api.estado()).soundboard));
@@ -812,9 +817,9 @@ function renderCombate(estado) {
   $('#combate-status').textContent = estado.ativo
     ? `Rodada ${estado.rodada} · vez de ${estado.combatentes[estado.turno]?.nome ?? '—'}`
     : 'Fora de combate';
-  $('#combate-status').classList.toggle('on', estado.ativo);
-  $('#combate-iniciar').classList.toggle('hidden', estado.ativo);
-  for (const id of ['#combate-anterior', '#combate-proximo', '#combate-encerrar']) $(id).classList.toggle('hidden', !estado.ativo);
+  $('#combate-fora').classList.toggle('hidden', estado.ativo);
+  $('#combate-dentro').classList.toggle('hidden', !estado.ativo);
+  $('#combate-limpar').disabled = !estado.combatentes.some((c) => !c.jogador);
   $('#combate-cena').value = estado.cenaCombate ?? '';
 
   $('#combatentes').replaceChildren(
@@ -854,21 +859,25 @@ function renderCombate(estado) {
 function preencherCenasCombate(cenas) {
   const select = $('#combate-cena');
   const atual = combate?.cenaCombate ?? '';
-  select.replaceChildren(new Option('Sem trocar de cena', ''), ...cenas.cenas.map((c) => new Option(`Cena: ${c.nome}`, c.id)));
+  select.replaceChildren(new Option('sem trocar de cena', ''), ...cenas.cenas.map((c) => new Option(`com a cena ${c.nome}`, c.id)));
   select.value = atual;
 }
 
 $('#combate-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const f = e.target;
+  // "15" define a iniciativa; "+3"/"-1" rola 1d20 com esse modificador; vazio rola 1d20.
+  const init = f.iniciativa.value.trim().replace(',', '.');
+  const comSinal = /^[+-]\d+$/.test(init);
+  if (init && !comSinal && !/^\d+$/.test(init)) return mostrarErro('Iniciativa: um número (15) ou um modificador (+3).');
   api.combate.add({
     nome: f.nome.value,
-    iniciativa: f.iniciativa.value === '' ? undefined : Number(f.iniciativa.value),
-    modificador: Number(f.modificador.value) || 0,
+    iniciativa: init === '' || comSinal ? undefined : Number(init),
+    modificador: comSinal ? Number(init) : 0,
     hp: f.hp.value === '' ? undefined : Number(f.hp.value),
     jogador: f.jogador.checked,
   });
-  f.nome.value = f.iniciativa.value = f.modificador.value = f.hp.value = '';
+  f.nome.value = f.iniciativa.value = f.hp.value = '';
   f.nome.focus();
 });
 $('#combate-iniciar').addEventListener('click', () => api.combate.iniciar());
@@ -877,7 +886,6 @@ $('#combate-anterior').addEventListener('click', () => api.combate.anterior());
 $('#combate-encerrar').addEventListener('click', () => api.combate.encerrar());
 $('#combate-limpar').addEventListener('click', () => api.combate.limpar());
 $('#combate-cena').addEventListener('change', (e) => api.combate.cena(e.target.value));
-$('#combate-anunciar').addEventListener('change', (e) => api.combate.anunciar(e.target.checked));
 
 // Timers
 
@@ -915,15 +923,17 @@ setInterval(atualizarContagens, 250);
 function preencherSonsTimer(estadoSoundboard) {
   const select = $('#timer-form').som;
   const atual = select.value;
-  select.replaceChildren(new Option('Sem som', ''), ...estadoSoundboard.sons.map((s) => new Option(`🔔 ${s.id}`, s.id)));
+  select.replaceChildren(new Option('sem som no fim', ''), ...estadoSoundboard.sons.map((s) => new Option(s.id, s.id)));
   select.value = atual;
 }
 
 $('#timer-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const f = e.target;
-  const segundos = (Number(f.min.value) || 0) * 60 + (Number(f.seg.value) || 0);
-  if (segundos <= 0) return mostrarErro('Defina um tempo maior que zero.');
+  // "10" = 10 min; "1:30" = 1 min 30 s.
+  const [min, seg = '0'] = f.tempo.value.trim().split(':');
+  const segundos = (Number(min) || 0) * 60 + (Number(seg) || 0);
+  if (!(segundos > 0)) return mostrarErro('Tempo: minutos (10) ou minutos:segundos (1:30).');
   api.timers.add(f.nome.value, segundos, f.som.value);
   f.nome.value = '';
 });
@@ -957,6 +967,7 @@ window.addEventListener('focus', carregarTabelas);
 // --- Roteiro -------------------------------------------------------------
 
 let roteiro = { roteiros: [], indice: -1 };
+let roteiroAntes = true;
 let handoutsUrl = '';
 let cenasConhecidas = [];
 let momentoEditado = null;
@@ -969,10 +980,16 @@ function renderRoteiro(estado) {
   const ativo = roteiroAtivo();
   const select = $('#roteiro-select');
   select.replaceChildren(
-    ...(estado.roteiros.length ? estado.roteiros.map((r) => new Option(r.nome, r.id)) : [new Option('Nenhum roteiro — clique em + Novo', '')]),
+    ...(estado.roteiros.length ? estado.roteiros.map((r) => new Option(r.nome, r.id)) : [new Option('Sem roteiro', '')]),
   );
   select.value = estado.ativo ?? '';
-  for (const id of ['#roteiro-renomear', '#roteiro-apagar', '#momento-novo']) $(id).disabled = !ativo;
+  for (const id of ['#roteiro-renomear', '#roteiro-apagar']) $(id).classList.toggle('hidden', !ativo);
+  $('#momento-novo').disabled = !ativo;
+  $('#roteiro-novo').classList.toggle('primary', !ativo);
+  // Sem roteiro, o "Novo roteiro" fica à vista; ao criar o primeiro, o menu se fecha.
+  if (!ativo) $('#roteiro-menu-opcoes').classList.remove('hidden');
+  else if (!roteiroAntes) $('#roteiro-menu-opcoes').classList.add('hidden');
+  roteiroAntes = Boolean(ativo);
 
   const momentos = ativo?.momentos ?? [];
   $('#momentos').replaceChildren(
@@ -1039,6 +1056,9 @@ function botaoIcone(texto, titulo, acao) {
 }
 
 $('#roteiro-select').addEventListener('change', (e) => e.target.value && api.roteiro.selecionar(e.target.value));
+$('#roteiro-menu').addEventListener('click', () => $('#roteiro-menu-opcoes').classList.toggle('hidden'));
+for (const b of document.querySelectorAll('#roteiro-menu-opcoes button'))
+  b.addEventListener('click', () => roteiroAtivo() && $('#roteiro-menu-opcoes').classList.add('hidden'));
 $('#roteiro-novo').addEventListener('click', async () => {
   const nome = await pedirTexto('Nome do roteiro (ex.: Sessão 12 — A cripta)');
   if (nome !== null) api.roteiro.criar(nome);
@@ -1111,34 +1131,32 @@ editor.addEventListener('close', () => {
 // --- Pedidos dos jogadores ------------------------------------------------
 
 function renderPedidos(estado) {
-  $('#pedidos-aceitar').checked = estado.aceitando;
+  aceitandoPedidos = estado.aceitando;
   const n = estado.pedidos.length;
+  $('#pedidos').classList.toggle('hidden', !estado.aceitando && n === 0);
   const aviso = $('#pedidos-aviso');
   aviso.classList.toggle('hidden', n === 0);
-  aviso.textContent = `📨 ${n} pedido${n > 1 ? 's' : ''}`;
+  aviso.textContent = `${n} pedido${n > 1 ? 's' : ''}`;
   $('#pedidos-lista').replaceChildren(
     ...estado.pedidos.map((p) =>
       el(
         'li',
         {},
         el('span', { className: 'quem', textContent: p.jogador.nome }),
-        el('span', { className: 'nome', textContent: `${p.tipo === 'musica' ? '🎵' : '🔊'} ${p.valor}`, title: p.valor }),
-        el('button', { className: 'primary pequeno', textContent: '✓ Tocar', onclick: () => api.pedidos.aprovar(p.id) }),
+        el('span', { className: 'nome', textContent: `${p.tipo === 'musica' ? 'Música' : 'Som'}: ${p.valor}`, title: p.valor }),
+        el('button', { className: 'primary pequeno', textContent: 'Tocar', onclick: () => api.pedidos.aprovar(p.id) }),
         el('button', { className: 'ghost icone', textContent: '✕', title: 'Recusar', onclick: () => api.pedidos.recusar(p.id) }),
       ),
     ),
   );
 }
-$('#pedidos-aceitar').addEventListener('change', (e) => api.pedidos.aceitar(e.target.checked));
 $('#pedidos-aviso').addEventListener('click', () => irPara('musica'));
 
 // --- Sessão (resumo) -----------------------------------------------------
 
-const ICONES_SESSAO = { cena: '🎬', momento: '📜', combate: '⚔️', critico: '✨', falha: '💀', musica: '🎵', pedido: '📨' };
-
 function renderSessao(estado) {
   const inicio = new Date(estado.inicio);
-  $('#sessao-info').textContent = `Desde ${inicio.toLocaleDateString('pt-BR')} ${inicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${estado.eventos.length} registros`;
+  $('#sessao-info').textContent = `Desde ${inicio.toLocaleDateString('pt-BR')}, ${inicio.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   $('#sessao-eventos').replaceChildren(
     ...estado.eventos
       .slice(-200)
@@ -1148,7 +1166,7 @@ function renderSessao(estado) {
           'li',
           {},
           el('span', { className: 'hora', textContent: new Date(e.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) }),
-          el('span', { className: 'nome', textContent: `${ICONES_SESSAO[e.tipo] ?? ''} ${e.texto}` }),
+          el('span', { className: `nome tipo-${e.tipo}`, textContent: e.texto }),
         ),
       ),
   );
@@ -1202,7 +1220,7 @@ function perguntarPacotes(lista) {
       api.pacotes.perguntado();
       if (dialogo.returnValue !== 'instalar') return;
       for (const c of $('#pacotes-inicio-opcoes').querySelectorAll('input:checked')) await api.pacotes.instalar(c.value);
-      irPara('cenas');
+      irPara('sons');
     },
     { once: true },
   );
@@ -1354,7 +1372,7 @@ api.onSoundboard((s) => {
 });
 api.onCombate(renderCombate);
 api.onTimers(renderTimers);
-api.onTimerFim((t) => mostrarErro(`⏰ ${t.nome}: o tempo acabou!`));
+api.onTimerFim((t) => mostrarErro(`${t.nome || 'Timer'}: o tempo acabou!`));
 api.onMixer(renderMixer);
 api.onErro(mostrarErro);
 api.onAviso((msg) => mostrarErro(msg, 'aviso'));
@@ -1379,13 +1397,12 @@ api.onAtalhos(renderAtalhos);
   await iniciarMonitor(estado.monitorDevice);
   renderMixer(estado.mixer);
   mostrarSaidaSalva(estado.monitorDevice);
-  if (paginaAtual === 'audio') carregarSaidas(estado.monitorDevice);
   renderSoundboard(estado.soundboard);
   preencherSonsTimer(estado.soundboard);
   preencherDestinosFreesound(estado.soundboard);
   renderCombate(estado.combate);
   preencherCenasCombate(estado.cenas);
-  $('#combate-anunciar').checked = estado.anunciarTurnos;
+  anunciarTurnos = estado.anunciarTurnos;
   renderTimers(estado.timers);
   carregarTabelas();
   renderRoteiro(estado.roteiro);
