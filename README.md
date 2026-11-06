@@ -87,11 +87,12 @@ Ele sai sozinho quando não sobra nenhuma pessoa no canal.
 
 ## Mesa (ferramentas do mestre)
 
-O cartão **Mesa** tem três abas:
+Na página **Sessão**, ao lado do roteiro, o cartão da mesa tem quatro abas:
 
-- **Iniciativa**: adicione jogadores e criaturas (deixe a iniciativa vazia para rolar 1d20 + modificador). A lista se ordena sozinha; no campo de HP, `-7` causa dano, `+5` cura e `30` define. **Começar combate** pode ativar uma cena (ex.: "Combate") e **Encerrar** volta para a cena de antes. Opcionalmente anuncia "vez de Fulano" no canal do `/canal`. O combate sobrevive a fechar o app.
-- **Timers**: contagens regressivas ("a tocha apaga em 10 min") que avisam e podem tocar um som da soundboard no fim.
+- **Combate**: adicione jogadores e criaturas. No campo de iniciativa, `15` define, `+3` rola 1d20+3 e vazio rola 1d20. A lista se ordena sozinha; no campo de HP, `-7` causa dano, `+5` cura e `30` define. **Começar combate** pode ativar uma cena (ex.: "Combate") e **Encerrar** volta para a cena de antes. Opcionalmente anuncia "vez de Fulano" no canal do `/canal` (⚙ → Discord). O combate sobrevive a fechar o app.
+- **Timers**: contagens regressivas ("a tocha apaga em 10 min"; o tempo aceita `10` ou `1:30`) que avisam e podem tocar um som da soundboard no fim.
 - **Tabelas**: cada `.txt` da pasta `tabelas/` é uma tabela aleatória, uma opção por linha. `3x` no começo dá peso e `[[1d6]]` é rolado na hora. O resultado pode ir para o Discord. Há dois exemplos na pasta.
+- **Registro**: o que aconteceu na sessão (cenas, momentos, combates, críticos, músicas), que pode virar um resumo no Discord.
 
 ## Comandos no Discord
 
@@ -151,21 +152,21 @@ O volume do fone não muda o que vai para a call.
 
 ## Pacotes de sons
 
-O app vem com dois pacotes prontos, todos em domínio público (CC0): **Medieval** (espadas, magia, criaturas, taverna, floresta, masmorra) e **Moderno** (tiros, sirenes, telefone, cidade, escritório, tempestade). Na primeira vez que abre, o Mestrônomo pergunta quais instalar; depois, dá para instalar ou remover na página **Soundboard → Pacotes de sons**. Cada pacote traz efeitos (`sons/<Pacote>/<Categoria>`), ambientes em loop (`ambientes/<Pacote>`) e cenas de exemplo. Os créditos ficam em `CREDITOS.txt`.
+O app vem com dois pacotes prontos, todos em domínio público (CC0): **Medieval** (espadas, magia, criaturas, taverna, floresta, masmorra) e **Moderno** (tiros, sirenes, telefone, cidade, escritório, tempestade). Na primeira vez que abre, o Mestrônomo pergunta quais instalar; depois, dá para instalar ou remover em **Sons → + Mais sons**. Cada pacote traz efeitos (`sons/<Pacote>/<Categoria>`), ambientes em loop (`ambientes/<Pacote>`) e cenas de exemplo. Os créditos ficam em `CREDITOS.txt`.
 
 Para refazer os pacotes a partir das fontes (`pacotes/fontes.json`): extraia os zips da Kenney indicados lá numa pasta e rode `node scripts/montar-pacotes.js <pasta>`.
 
 ## Roteiro da sessão
 
-Na página **Roteiro** (`Ctrl+1`), prepare a sessão em **momentos** ("Chegada à taverna", "A briga", "Fuga pela floresta"). Cada momento pode ter notas (o que narrar, falas de NPCs), uma cena que entra junto, atalhos de sons e um handout. Durante o jogo, **Próximo momento** (ou `/api/roteiro/proximo`, ou a tecla Próximo Momento do Ulanzi) troca a cena e mostra tudo daquele trecho.
+Na página **Sessão** (`Ctrl+1`), prepare a sessão em **momentos** ("Chegada à taverna", "A briga", "Fuga pela floresta"). Cada momento pode ter notas (o que narrar, falas de NPCs), uma cena que entra junto, atalhos de sons e um handout. Durante o jogo, **Próximo momento** (ou `/api/roteiro/proximo`, ou a tecla Próximo Momento do Ulanzi) troca a cena e mostra tudo daquele trecho.
 
 ## Filtros de ambiente
 
-**Abafado** (atrás da porta, debaixo d'água), **Caverna** (reverberação) e **Eco** mudam todo o som da mesa. Ficam na barra de baixo e na página Áudio, e as cenas salvam os filtros ligados.
+**Abafado** (atrás da porta, debaixo d'água), **Caverna** (reverberação) e **Eco** mudam todo o som da mesa. Ficam na barra de baixo, e as cenas salvam os filtros ligados.
 
 ## Freesound
 
-Na página Soundboard, busque efeitos gratuitos no [Freesound](https://freesound.org), ouça a prévia e baixe direto para a soundboard ou para o ambiente. Precisa de uma chave de API gratuita (⚙ → Freesound). Os créditos ficam em `CREDITOS-freesound.txt`.
+Em **Sons → + Mais sons**, busque efeitos gratuitos no [Freesound](https://freesound.org), ouça a prévia e baixe direto para a soundboard ou para o ambiente. Precisa de uma chave de API gratuita (⚙ → Geral). Os créditos ficam em `CREDITOS-freesound.txt`.
 
 ## Atualização automática
 
@@ -173,28 +174,28 @@ A versão instalada baixa as atualizações sozinha e mostra **Atualização pro
 
 ## Cenas
 
-Monte o clima (camadas de ambiente, sons ocasionais e, se quiser, a fila do YouTube) e clique em **Salvar cena atual**. Depois, um clique na cena troca tudo com **crossfade** (duração ajustável em "Transição"). Para cada cena você escolhe o que fazer com a música: usar a fila atual do YouTube, parar a música ou não mexer nela.
+Monte o clima (camadas de ambiente, sons ocasionais e, se quiser, a fila do YouTube) e clique em **+ Salvar o que está tocando** (página **Sons**). Depois, um clique na cena troca tudo com **crossfade** (duração em ⚙ → Áudio → Transições). Se o player tiver uma fila, a cena guarda essa fila; senão, não mexe na música.
 
 Também funciona por `/api/cena/Taverna` (ou `/api/cena/1`) e pela ação **Cena** do plugin do Ulanzi, que acende a tecla da cena ativa.
 
 ## Ambiente
 
-Coloque sons contínuos (chuva, fogueira, vento, taverna…) na pasta `ambientes/` (instalado: `Documentos\Mestrônomo\ambientes`). No cartão **Ambiente**:
+Coloque sons contínuos (chuva, fogueira, vento, taverna…) na pasta `ambientes/` (instalado: `Documentos\Mestrônomo\ambientes`). No cartão **Ambiente** da página **Sons** (`Ctrl+3`):
 
 - clique num arquivo para ligar a camada em **loop** (entra e sai com fade); várias tocam juntas, cada uma com seu volume;
 - **sons ocasionais**: escolha um ou mais arquivos e um intervalo (ex.: a cada 30–90 s); um deles é sorteado a cada vez, com uma leve variação de volume.
 
-Prefira `.ogg` ou `.wav` para loops sem emenda. O volume do grupo é o slider **Ambiente** do mixer.
+Prefira `.ogg` ou `.wav` para loops sem emenda. O volume do grupo é o slider **Ambiente** em ⚙ → Áudio.
 
-## Soundboard
+## Efeitos (soundboard)
 
 Coloque os efeitos na pasta `sons/` (instalado: `Documentos\Mestrônomo\sons`):
 
 - **Subpastas viram abas** (`sons/Combate`, `sons/Magia`…); arquivos soltos ficam em "Geral".
 - **Variações**: arquivos com o mesmo nome e um número no fim (`espada 1.mp3`, `espada 2.mp3`, `espada (3).ogg`) viram **um botão** que sorteia entre eles, sem repetir o último.
-- **⋯ em cada botão**: volume próprio, **loop** (clique liga e desliga; loops não abaixam a música) e cor.
+- **⋯ em cada botão**: volume próprio e **loop** (clique liga e desliga; loops não abaixam a música).
 - **Botão direito**: pré-escuta, só no seu fone.
-- **Atalhos**: por padrão `Ctrl+Alt+1..9` tocam os nove primeiros e `Ctrl+Alt+0` para todos os efeitos (inclusive loops). Em **Áudio → Atalhos de teclado** dá para trocar as teclas e criar atalhos para sons específicos, cenas, roteiro, filtros, player, turno e bot; o app avisa quando outro programa já usa a combinação.
+- **Atalhos**: por padrão `Ctrl+Alt+1..9` tocam os nove primeiros e `Ctrl+Alt+0` para todos os efeitos (inclusive loops). Em **⚙ → Atalhos** dá para trocar as teclas e criar atalhos para sons específicos, cenas, roteiro, filtros, player, turno e bot; o app avisa quando outro programa já usa a combinação.
 
 ## API local (Ulanzi Studio / Stream Deck)
 
