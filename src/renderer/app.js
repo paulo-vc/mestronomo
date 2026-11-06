@@ -26,13 +26,36 @@ let ytRecebidoEm = 0;
 let erroTimer;
 
 const REPETIR = {
-  nenhum: { proximo: 'fila', icone: '↻', titulo: 'Repetir: desligado' },
-  fila: { proximo: 'faixa', icone: '↻', titulo: 'Repetir: fila inteira' },
-  faixa: { proximo: 'nenhum', icone: '↻1', titulo: 'Repetir: só esta faixa' },
+  nenhum: { proximo: 'fila', icone: 'repetir', titulo: 'Repetir: desligado' },
+  fila: { proximo: 'faixa', icone: 'repetir', titulo: 'Repetir: fila inteira' },
+  faixa: { proximo: 'nenhum', icone: 'repetir-1', titulo: 'Repetir: só esta faixa' },
 };
 
+/** Ícone do sprite do index.html (<symbol id="i-nome">). */
+function ic(nome) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'i');
+  const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+  use.setAttribute('href', `#i-${nome}`);
+  svg.append(use);
+  return svg;
+}
+
+/** Troca o conteúdo de um botão por um ícone (o texto vira o rótulo acessível). */
+function setIcone(botao, nome) {
+  if (botao.dataset.icone === nome) return;
+  botao.dataset.icone = nome;
+  botao.replaceChildren(ic(nome));
+}
+
+// Botões criados com um destes caracteres como texto ganham o ícone correspondente.
+const ICONES = { '✕': 'x', '✎': 'editar', '↑': 'cima', '↓': 'baixo', '▶': 'play', '⏸': 'pause', '⋯': 'mais', '✓': 'ok' };
+
 function el(tag, props = {}, ...filhos) {
-  const node = Object.assign(document.createElement(tag), props);
+  const { textContent, ...resto } = props;
+  const node = Object.assign(document.createElement(tag), resto);
+  if (textContent in ICONES && filhos.length === 0) setIcone(node, ICONES[textContent]);
+  else if (textContent !== undefined) node.textContent = textContent;
   node.append(...filhos);
   return node;
 }
@@ -108,7 +131,7 @@ const barra = { cena: undefined, camadas: 0 };
 function renderBarra() {
   const faixa = yt?.fila[yt.atual];
   $('#barra-titulo').textContent = yt?.carregando && !faixa ? 'Carregando…' : faixa ? faixa.title : 'Nada tocando';
-  $('#barra-pausar').textContent = faixa && !yt.pausado ? '⏸' : '▶';
+  setIcone($('#barra-pausar'), faixa && !yt.pausado ? 'pause' : 'play');
   const partes = [];
   if (barra.cena) partes.push(`Cena: ${barra.cena}`);
   if (barra.camadas) partes.push(`${barra.camadas} camada${barra.camadas > 1 ? 's' : ''} de ambiente`);
@@ -143,6 +166,7 @@ function renderBot(status) {
   const semConfig = status.state === 'desligado';
   els.bot.className = `pill ${classe}`;
   els.bot.textContent = texto;
+  els.bot.classList.toggle('hidden', semConfig);
   botNoCanal = status.state === 'no-canal';
   els.botBotao.textContent = semConfig ? 'Configurar bot' : botNoCanal ? 'Dispensar bot' : 'Chamar bot';
   els.botBotao.classList.toggle('primary', !botNoCanal);
@@ -289,9 +313,9 @@ function renderYoutube(estado) {
   ytRecebidoEm = performance.now();
   const faixa = estado.fila[estado.atual];
   els.ytTitulo.textContent = estado.carregando ? 'Carregando link…' : faixa ? faixa.title : 'Nada tocando';
-  els.ytPausar.textContent = faixa && !estado.pausado ? '⏸' : '▶';
+  setIcone(els.ytPausar, faixa && !estado.pausado ? 'pause' : 'play');
   const repetir = REPETIR[estado.repetir];
-  els.ytRepetir.textContent = repetir.icone;
+  setIcone(els.ytRepetir, repetir.icone);
   els.ytRepetir.title = repetir.titulo;
   els.ytRepetir.classList.toggle('ativo', estado.repetir !== 'nenhum');
   $('#yt-aleatorio').classList.toggle('ativo', estado.aleatorio);
@@ -435,6 +459,9 @@ $('#cena-fade').addEventListener('input', (e) => {
 const semExtensao = (arquivo) => arquivo.replace(/\.[^.]+$/, '');
 
 function renderAmbiente(estado) {
+  // "Medieval/chuva" vira "chuva" quando todos os ambientes estão na mesma subpasta.
+  const pastas = new Set(estado.arquivos.map((a) => (a.includes('/') ? a.split('/')[0] : '')));
+  const nomeAmb = (a) => semExtensao(pastas.size === 1 ? a.slice(a.indexOf('/') + 1) : a);
   barra.camadas = estado.camadas.length;
   renderBarra();
   const ativas = new Set(estado.camadas.map((c) => c.arquivo));
@@ -442,7 +469,7 @@ function renderAmbiente(estado) {
     ...estado.arquivos.map((arquivo) =>
       el('button', {
         className: ativas.has(arquivo) ? 'ativo' : '',
-        textContent: semExtensao(arquivo),
+        textContent: nomeAmb(arquivo),
         title: ativas.has(arquivo) ? 'Desligar' : 'Ligar',
         onclick: () => api.amb.alternar(arquivo),
       }),
@@ -453,7 +480,7 @@ function renderAmbiente(estado) {
       el(
         'li',
         {},
-        el('span', { className: 'nome', textContent: semExtensao(arquivo) }),
+        el('span', { className: 'nome', textContent: nomeAmb(arquivo) }),
         ...slider(volume, (v) => api.amb.volume(arquivo, v)),
         el('button', { className: 'ghost icone', textContent: '✕', title: 'Desligar', onclick: () => api.amb.alternar(arquivo) }),
       ),
@@ -464,7 +491,7 @@ function renderAmbiente(estado) {
       el(
         'li',
         { className: 'ocasional' },
-        el('span', { className: 'nome', textContent: o.arquivos.map(semExtensao).join(', '), title: o.arquivos.join('\n') }),
+        el('span', { className: 'nome', textContent: o.arquivos.map(nomeAmb).join(', '), title: o.arquivos.join('\n') }),
         el('span', { className: 'detalhe', textContent: `a cada ${o.min}–${o.max} s` }),
         el('button', { className: 'ghost icone', textContent: '✕', title: 'Remover', onclick: () => api.amb.removerOcasional(o.id) }),
       ),
@@ -473,7 +500,7 @@ function renderAmbiente(estado) {
   // Preserva a seleção do formulário ao re-renderizar.
   const select = $('#amb-ocasional-form').arquivos;
   const selecionados = new Set([...select.selectedOptions].map((o) => o.value));
-  select.replaceChildren(...estado.arquivos.map((a) => new Option(semExtensao(a), a, false, selecionados.has(a))));
+  select.replaceChildren(...estado.arquivos.map((a) => new Option(nomeAmb(a), a, false, selecionados.has(a))));
 }
 
 $('#amb-pasta').addEventListener('click', () => api.amb.abrirPasta());
@@ -566,6 +593,8 @@ for (const input of document.querySelectorAll('[data-volume]')) {
 
 const CORES = ['', '#d9605a', '#e0b04a', '#5fbf85', '#5a9bd9', '#a77bd9', '#d97bb4'];
 let soundboard = { categorias: [], sons: [], loops: [] };
+/** Uma cor discreta por categoria, só na faixa da esquerda do botão. */
+const CORES_CATEGORIA = ['#d9605a', '#5b9bd5', '#5fbf85', '#b07fe0', '#e0b04a', '#4fc1c1', '#e07fb0', '#9aa36b'];
 let categoria = 'Todos';
 try {
   categoria = localStorage.getItem('categoria') || 'Todos';
@@ -575,11 +604,15 @@ function renderSoundboard(estado) {
   soundboard = estado;
   if (categoria !== 'Todos' && !estado.categorias.includes(categoria)) categoria = 'Todos';
   const abas = estado.categorias.length > 1 ? ['Todos', ...estado.categorias] : [];
+  const corDa = (c) => CORES_CATEGORIA[estado.categorias.indexOf(c) % CORES_CATEGORIA.length];
+  // "Medieval › Combate" vira "Combate" quando todas as abas são do mesmo pacote.
+  const prefixos = new Set(estado.categorias.map((c) => (c.includes(' › ') ? c.split(' › ')[0] : '')));
+  const rotulo = (c) => (prefixos.size === 1 && c.includes(' › ') ? c.split(' › ')[1] : c);
   $('#sons-abas').replaceChildren(
     ...abas.map((c) =>
       el('button', {
         className: c === categoria ? 'ativo' : '',
-        textContent: c,
+        textContent: rotulo(c),
         onclick: () => {
           categoria = c;
           try {
@@ -629,6 +662,7 @@ function renderSoundboard(estado) {
             },
           }),
         );
+        botao.style.setProperty('--cat', corDa(som.categoria));
         if (som.cor) botao.style.setProperty('--cor', som.cor);
         botao.classList.toggle('com-cor', Boolean(som.cor));
         botao.classList.toggle('em-loop', loops.has(som.id));
@@ -673,19 +707,19 @@ $('#fs-form').addEventListener('submit', async (e) => {
       ouvir.addEventListener('click', () => {
         if (previaTocando === som.id && !previa.paused) {
           previa.pause();
-          ouvir.textContent = '▶';
+          setIcone(ouvir, 'play');
           return;
         }
         for (const b of lista.querySelectorAll('.tocando-previa')) {
-          b.textContent = '▶';
+          setIcone(b, 'play');
           b.classList.remove('tocando-previa');
         }
         previa.src = som.previa;
         previa.play();
         previaTocando = som.id;
-        ouvir.textContent = '⏸';
+        setIcone(ouvir, 'pause');
         ouvir.classList.add('tocando-previa');
-        previa.onended = () => (ouvir.textContent = '▶');
+        previa.onended = () => setIcone(ouvir, 'play');
       });
       const baixar = el('button', { className: 'ghost pequeno', textContent: 'Baixar' });
       baixar.addEventListener('click', async () => {
@@ -963,10 +997,9 @@ function renderRoteiro(estado) {
   const atual = momentos[estado.indice];
   $('#agora-vazio').classList.toggle('hidden', Boolean(atual));
   $('#agora').classList.toggle('hidden', !atual);
-  $('#roteiro-comecar').disabled = momentos.length === 0;
   $('#roteiro-anterior').disabled = !atual || estado.indice === 0;
   $('#roteiro-proximo').disabled = !ativo || estado.indice >= momentos.length - 1;
-  $('#roteiro-proximo').textContent = atual ? 'Próximo momento ▶' : 'Começar ▶';
+  $('#roteiro-proximo').replaceChildren(atual ? 'Próximo momento ' : 'Começar ', ic('direita'));
   $('#momento-posicao').textContent = atual ? `${estado.indice + 1} de ${momentos.length}` : '';
   if (!atual) return;
 
@@ -1019,7 +1052,6 @@ $('#roteiro-apagar').addEventListener('click', () => {
   const ativo = roteiroAtivo();
   if (ativo && confirm(`Apagar o roteiro "${ativo.nome}" e todos os momentos dele?`)) api.roteiro.remover(ativo.id);
 });
-$('#roteiro-comecar').addEventListener('click', () => api.roteiro.ir(0));
 $('#roteiro-proximo').addEventListener('click', () => api.roteiro.proximo());
 $('#roteiro-anterior').addEventListener('click', () => api.roteiro.anterior());
 $('#agora-handout-enviar').addEventListener('click', () => {

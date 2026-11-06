@@ -7,6 +7,38 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- Ícones (traço 2px, 24×24). Uso: <svg class="i"><use href="#i-nome" /></svg> -->
+    <svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true">
+      <symbol id="i-roteiro" viewBox="0 0 24 24"><path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4" /><path d="M19 17V5a2 2 0 0 0-2-2H4" /><path d="M15 8h-5" /><path d="M15 12h-5" /></symbol>
+      <symbol id="i-cenas" viewBox="0 0 24 24"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z" /><path d="m6.2 5.3 3.1 3.9" /><path d="m12.4 3.4 3.1 4" /><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /></symbol>
+      <symbol id="i-musica" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></symbol>
+      <symbol id="i-ambiente" viewBox="0 0 24 24"><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2" /><path d="M16 14v6" /><path d="M8 14v6" /><path d="M12 16v6" /></symbol>
+      <symbol id="i-soundboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></symbol>
+      <symbol id="i-mesa" viewBox="0 0 24 24"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" /><line x1="13" y1="19" x2="19" y2="13" /><line x1="16" y1="16" x2="20" y2="20" /><line x1="19" y1="21" x2="21" y2="19" /><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" /><line x1="5" y1="14" x2="9" y2="18" /><line x1="7" y1="17" x2="4" y2="20" /><line x1="3" y1="19" x2="5" y2="21" /></symbol>
+      <symbol id="i-audio" viewBox="0 0 24 24"><line x1="21" y1="4" x2="14" y2="4" /><line x1="10" y1="4" x2="3" y2="4" /><line x1="21" y1="12" x2="12" y2="12" /><line x1="8" y1="12" x2="3" y2="12" /><line x1="21" y1="20" x2="16" y2="20" /><line x1="12" y1="20" x2="3" y2="20" /><line x1="14" y1="2" x2="14" y2="6" /><line x1="8" y1="10" x2="8" y2="14" /><line x1="16" y1="18" x2="16" y2="22" /></symbol>
+      <symbol id="i-imagem" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" /></symbol>
+      <symbol id="i-config" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><polygon points="7 4 20 12 7 20" fill="currentColor" /></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" /><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" /></symbol>
+      <symbol id="i-proxima" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20" fill="currentColor" /><line x1="19" y1="5" x2="19" y2="19" /></symbol>
+      <symbol id="i-anterior" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4" fill="currentColor" /><line x1="5" y1="19" x2="5" y2="5" /></symbol>
+      <symbol id="i-parar" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" /></symbol>
+      <symbol id="i-repetir" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" /><path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" /></symbol>
+      <symbol id="i-repetir-1" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" /><path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" /><path d="M11 10h1v4" /></symbol>
+      <symbol id="i-aleatorio" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4" /><path d="m18 2 4 4-4 4" /><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-7.6a4 4 0 0 1 3.3-1.7H22" /><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2" /><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45" /></symbol>
+      <symbol id="i-pasta" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></symbol>
+      <symbol id="i-atualizar" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></symbol>
+      <symbol id="i-editar" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></symbol>
+      <symbol id="i-lixo" viewBox="0 0 24 24"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+      <symbol id="i-cima" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" /></symbol>
+      <symbol id="i-baixo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+      <symbol id="i-esquerda" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol>
+      <symbol id="i-direita" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+      <symbol id="i-mais" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" /><circle cx="12" cy="12" r="1" fill="currentColor" /><circle cx="19" cy="12" r="1" fill="currentColor" /></symbol>
+      <symbol id="i-ok" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      <symbol id="i-volume" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></symbol>
+    </svg>
     <header class="topo">
       <h1 class="marca"><img src="../../assets/icon.svg" alt="" /> Mestrônomo</h1>
       <div class="row">
@@ -14,20 +46,20 @@
         <button id="atualizacao" class="atualizacao hidden"></button>
         <div id="bot" class="pill">Bot desligado</div>
         <button id="bot-botao">Chamar bot</button>
-        <button id="abrir-handout" class="ghost icone-grande" title="Mandar uma imagem (mapa, retrato...) no Discord">🖼</button>
-        <button id="abrir-config" class="ghost icone-grande" title="Configurações">⚙</button>
+        <button id="abrir-handout" class="ghost icone-grande" title="Mandar uma imagem (mapa, retrato...) no Discord"><svg class="i"><use href="#i-imagem" /></svg></button>
+        <button id="abrir-config" class="ghost icone-grande" title="Configurações"><svg class="i"><use href="#i-config" /></svg></button>
       </div>
     </header>
 
     <div class="corpo">
       <nav class="menu" aria-label="Seções">
-        <button data-ir="roteiro"><span class="ic">📜</span><span>Roteiro</span><kbd>Ctrl+1</kbd></button>
-        <button data-ir="cenas"><span class="ic">🎬</span><span>Cenas</span><kbd>Ctrl+2</kbd></button>
-        <button data-ir="musica"><span class="ic">🎵</span><span>Música</span><kbd>Ctrl+3</kbd></button>
-        <button data-ir="ambiente"><span class="ic">🌧</span><span>Ambiente</span><kbd>Ctrl+4</kbd></button>
-        <button data-ir="soundboard"><span class="ic">🔊</span><span>Soundboard</span><kbd>Ctrl+5</kbd></button>
-        <button data-ir="mesa"><span class="ic">⚔</span><span>Mesa</span><kbd>Ctrl+6</kbd></button>
-        <button data-ir="audio"><span class="ic">🎚</span><span>Áudio</span><kbd>Ctrl+7</kbd></button>
+        <button data-ir="roteiro" title="Ctrl+1"><svg class="i ic"><use href="#i-roteiro" /></svg><span>Roteiro</span><kbd>Ctrl+1</kbd></button>
+        <button data-ir="cenas" title="Ctrl+2"><svg class="i ic"><use href="#i-cenas" /></svg><span>Cenas</span><kbd>Ctrl+2</kbd></button>
+        <button data-ir="musica" title="Ctrl+3"><svg class="i ic"><use href="#i-musica" /></svg><span>Música</span><kbd>Ctrl+3</kbd></button>
+        <button data-ir="ambiente" title="Ctrl+4"><svg class="i ic"><use href="#i-ambiente" /></svg><span>Ambiente</span><kbd>Ctrl+4</kbd></button>
+        <button data-ir="soundboard" title="Ctrl+5"><svg class="i ic"><use href="#i-soundboard" /></svg><span>Soundboard</span><kbd>Ctrl+5</kbd></button>
+        <button data-ir="mesa" title="Ctrl+6"><svg class="i ic"><use href="#i-mesa" /></svg><span>Mesa</span><kbd>Ctrl+6</kbd></button>
+        <button data-ir="audio" title="Ctrl+7"><svg class="i ic"><use href="#i-audio" /></svg><span>Áudio</span><kbd>Ctrl+7</kbd></button>
       </nav>
 
       <main class="conteudo">
@@ -38,13 +70,13 @@
               <h2>Roteiro</h2>
               <div class="row">
                 <button id="roteiro-novo" class="ghost pequeno" title="Novo roteiro">+ Novo</button>
-                <button id="roteiro-renomear" class="ghost pequeno" title="Renomear">✎</button>
-                <button id="roteiro-apagar" class="ghost pequeno" title="Apagar roteiro">🗑</button>
+                <button id="roteiro-renomear" class="ghost pequeno" title="Renomear"><svg class="i"><use href="#i-editar" /></svg></button>
+                <button id="roteiro-apagar" class="ghost pequeno" title="Apagar roteiro"><svg class="i"><use href="#i-lixo" /></svg></button>
               </div>
             </div>
             <select id="roteiro-select" title="Roteiro desta sessão"></select>
             <ol id="momentos" class="lista momentos" data-vazio="Nenhum momento ainda."></ol>
-            <button id="momento-novo" class="primary">+ Momento</button>
+            <button id="momento-novo">+ Momento</button>
           </section>
 
           <section class="card roteiro-agora">
@@ -53,8 +85,7 @@
               <span id="momento-posicao" class="hint"></span>
             </div>
             <div id="agora-vazio" class="vazio-grande">
-              <p>Prepare a sessão em momentos (ex.: "Chegada à taverna", "A briga", "Fuga pela floresta"). Cada momento pode trocar a cena, ter notas e atalhos de sons e um handout.</p>
-              <button id="roteiro-comecar" class="primary">Começar do primeiro momento</button>
+              <p>Divida a sessão em momentos — "Chegada à taverna", "A briga", "Fuga pela floresta". Cada um troca a cena e mostra suas notas, sons e handout.</p>
             </div>
             <div id="agora" class="hidden">
               <h3 id="agora-titulo" class="agora-titulo"></h3>
@@ -70,8 +101,8 @@
               </div>
             </div>
             <div class="row roteiro-nav">
-              <button id="roteiro-anterior" class="ghost">◀ Anterior</button>
-              <button id="roteiro-proximo" class="primary">Próximo momento ▶</button>
+              <button id="roteiro-anterior" class="ghost"><svg class="i"><use href="#i-esquerda" /></svg> Anterior</button>
+              <button id="roteiro-proximo" class="primary">Próximo momento <svg class="i"><use href="#i-direita" /></svg></button>
             </div>
           </section>
         </div>
@@ -85,7 +116,6 @@
                 <span>Transição</span><input type="range" id="cena-fade" min="0" max="10" step="0.5" /><output></output>
               </label>
             </div>
-            <p class="hint">Monte o clima nas páginas Música e Ambiente e salve aqui. Um clique troca tudo com crossfade.</p>
             <div id="cenas-lista" class="cenas"></div>
             <form id="cena-form" class="row cena-form">
               <input name="nome" type="text" placeholder="Nome da cena (ex.: Taverna, Combate)" required maxlength="40" />
@@ -94,7 +124,7 @@
                 <option value="manter">Sem mexer na música</option>
                 <option value="parar">Parando a música</option>
               </select>
-              <button class="primary">Salvar cena atual</button>
+              <button class="primary" title="Guarda a música, os ambientes e os filtros que estão tocando agora">Salvar cena atual</button>
             </form>
           </section>
         </div>
@@ -104,31 +134,31 @@
           <section class="card" id="youtube">
             <h2>Player</h2>
             <form id="yt-form" class="row">
-              <input id="yt-url" type="text" placeholder="Link do YouTube ou texto para buscar" required />
-              <button class="primary">Adicionar</button>
+              <input id="yt-url" type="text" placeholder="Link do YouTube ou busca" required />
+              <button>Adicionar</button>
             </form>
             <ul id="yt-resultados" class="lista resultados"></ul>
             <div class="row">
               <select id="playlists" title="Pastas dentro de musicas/"></select>
               <button id="playlist-carregar" class="ghost">Pôr na fila</button>
-              <button id="playlist-pasta" class="ghost" title="Abrir a pasta de músicas">📁</button>
+              <button id="playlist-pasta" class="ghost" title="Abrir a pasta de músicas"><svg class="i"><use href="#i-pasta" /></svg></button>
             </div>
             <div class="tocando">
               <div id="yt-titulo" class="titulo">Nada tocando</div>
               <div id="yt-tempo" class="tempo"></div>
             </div>
             <div class="row controles">
-              <button id="yt-anterior" class="ghost" title="Anterior">⏮</button>
-              <button id="yt-pausar" title="Tocar/pausar">▶</button>
-              <button id="yt-proxima" class="ghost" title="Próxima">⏭</button>
-              <button id="yt-parar" class="ghost" title="Parar">⏹</button>
-              <button id="yt-repetir" class="ghost" title="Repetir"></button>
-              <button id="yt-aleatorio" class="ghost" title="Ordem aleatória">⤨</button>
+              <button id="yt-anterior" class="ghost" title="Anterior"><svg class="i"><use href="#i-anterior" /></svg></button>
+              <button id="yt-pausar" title="Tocar/pausar"><svg class="i"><use href="#i-play" /></svg></button>
+              <button id="yt-proxima" class="ghost" title="Próxima"><svg class="i"><use href="#i-proxima" /></svg></button>
+              <button id="yt-parar" class="ghost" title="Parar"><svg class="i"><use href="#i-parar" /></svg></button>
+              <button id="yt-repetir" class="ghost" title="Repetir"><svg class="i"><use href="#i-repetir" /></svg></button>
+              <button id="yt-aleatorio" class="ghost" title="Ordem aleatória"><svg class="i"><use href="#i-aleatorio" /></svg></button>
               <label class="slider compacto"><input type="range" data-volume="youtube" min="0" max="100" /><output></output></label>
             </div>
             <div class="row player-ajustes">
               <label class="slider compacto" title="Uma faixa entra enquanto a outra sai. 0 desliga.">
-                <span>Transição entre faixas</span><input type="range" id="yt-crossfade" min="0" max="12" step="1" /><output></output>
+                <span>Transição</span><input type="range" id="yt-crossfade" min="0" max="12" step="1" /><output></output>
               </label>
               <label class="check" title="Deixa todas as músicas com o mesmo volume percebido (vale a partir da próxima faixa)">
                 <input type="checkbox" id="yt-normalizar" /> Igualar volume
@@ -143,17 +173,15 @@
               <h2>Pedidos dos jogadores</h2>
               <label class="check"><input type="checkbox" id="pedidos-aceitar" /> Aceitar pedidos</label>
             </div>
-            <p class="hint">Os jogadores pedem com <code>/musica link</code> e <code>/som nome</code> no Discord. Nada toca sem você aprovar.</p>
-            <ul id="pedidos-lista" class="lista pedidos" data-vazio="Nenhum pedido esperando."></ul>
+            <ul id="pedidos-lista" class="lista pedidos" data-vazio="Nenhum pedido. Os jogadores pedem com /musica e /som no Discord; nada toca sem você aprovar."></ul>
           </section>
 
           <section class="card" id="programas">
-            <h2>Áudio de programas</h2>
-            <p class="hint">Transmita o som de um ou mais programas ao mesmo tempo (Spotify, navegador…).</p>
+            <h2 title="Transmite o som de um ou mais programas ao mesmo tempo (Spotify, navegador…)">Áudio de programas</h2>
             <div class="row">
               <select id="apps"><option value="">Carregando apps…</option></select>
-              <button id="recarregar" class="ghost" title="Atualizar lista">⟳</button>
-              <button id="capturar" class="primary">Adicionar</button>
+              <button id="recarregar" class="ghost" title="Atualizar lista"><svg class="i"><use href="#i-atualizar" /></svg></button>
+              <button id="capturar">Adicionar</button>
             </div>
             <ul id="capturas" class="lista" data-vazio="Nenhum programa sendo capturado."></ul>
           </section>
@@ -163,27 +191,25 @@
         <div class="pagina duas-colunas" data-pagina="ambiente">
           <section class="card" id="ambiente">
             <div class="card-head">
-              <h2>Camadas</h2>
+              <h2 title="Sons contínuos em loop; várias camadas tocam juntas">Camadas</h2>
               <div class="row">
                 <button id="amb-pasta" class="ghost pequeno">Abrir pasta</button>
                 <button id="amb-parar" class="ghost pequeno">Parar tudo</button>
               </div>
             </div>
-            <p class="hint">Clique para ligar sons contínuos em loop; várias camadas tocam juntas.</p>
             <div id="amb-arquivos" class="chips"></div>
             <ul id="amb-camadas" class="lista" data-vazio="Nenhuma camada tocando."></ul>
           </section>
 
           <section class="card">
-            <h2>Sons ocasionais</h2>
-            <p class="hint">Um som sorteado da lista de tempos em tempos (um corvo, um trovão distante…).</p>
+            <h2 title="Um som sorteado da lista de tempos em tempos (um corvo, um trovão distante…)">Sons ocasionais</h2>
             <ul id="amb-ocasionais" class="lista" data-vazio="Nenhum som ocasional."></ul>
             <form id="amb-ocasional-form" class="ocasional-form">
               <select name="arquivos" multiple size="4" title="Ctrl+clique para escolher vários"></select>
               <div class="row">
                 <label>a cada <input type="number" name="min" value="30" min="1" /></label>
                 <label>– <input type="number" name="max" value="90" min="1" /> s</label>
-                <button class="primary">Adicionar</button>
+                <button>Adicionar</button>
               </div>
             </form>
           </section>
@@ -193,34 +219,30 @@
         <div class="pagina" data-pagina="soundboard">
           <section class="card" id="soundboard">
             <div class="card-head">
-              <h2>Soundboard</h2>
+              <h2 title="Clique toca na call · botão direito toca só no seu fone · ⋯ ajusta volume, loop e cor. Subpastas viram abas; &quot;espada 1&quot;, &quot;espada 2&quot;… viram um botão que sorteia.">Soundboard</h2>
               <div class="row">
                 <button id="abrir-sons" class="ghost pequeno">Abrir pasta</button>
               </div>
             </div>
-            <p class="hint">Clique toca na call · botão direito toca só no seu fone · ⋯ ajusta volume, loop e cor. Subpastas viram abas; "espada 1", "espada 2"… viram um botão que sorteia.</p>
             <div id="sons-abas" class="chips abas"></div>
             <div id="sons" class="grid"></div>
           </section>
 
           <section class="card" id="pacotes">
-            <h2>Pacotes de sons</h2>
-            <p class="hint">Efeitos, ambientes e cenas de exemplo prontos para usar. Todos em domínio público (CC0).</p>
+            <h2 title="Efeitos, ambientes e cenas de exemplo prontos para usar. Todos em domínio público (CC0).">Pacotes de sons</h2>
             <ul id="pacotes-lista" class="lista pacotes" data-vazio="Nenhum pacote disponível."></ul>
           </section>
 
           <section class="card" id="freesound">
             <div class="card-head">
-              <h2>Buscar sons no Freesound</h2>
-              <span class="hint">Milhares de efeitos gratuitos</span>
+              <h2 title="A prévia toca só para você. CC0 é livre; CC BY pede crédito (anotado em CREDITOS-freesound.txt na pasta); CC BY-NC não permite uso comercial.">Buscar no Freesound</h2>
             </div>
             <form id="fs-form" class="row">
               <input id="fs-busca" type="text" placeholder="Em inglês funciona melhor: sword, dragon roar, door creak…" required />
               <select id="fs-destino" title="Para onde vai o som baixado"></select>
-              <button class="primary">Buscar</button>
+              <button>Buscar</button>
             </form>
             <ul id="fs-resultados" class="lista fs-resultados"></ul>
-            <p class="hint">A prévia toca só para você. Respeite a licença: CC0 é livre; CC BY pede crédito (anotado em CREDITOS-freesound.txt na pasta); CC BY-NC não permite uso comercial.</p>
           </section>
         </div>
 
@@ -245,21 +267,20 @@
               </div>
               <div class="row">
                 <button id="combate-iniciar" class="primary">Começar combate</button>
-                <button id="combate-anterior" class="ghost" title="Turno anterior">◀</button>
-                <button id="combate-proximo" class="primary" title="Próximo turno">Próximo turno ▶</button>
+                <button id="combate-anterior" class="ghost" title="Turno anterior"><svg class="i"><use href="#i-esquerda" /></svg></button>
+                <button id="combate-proximo" class="primary" title="Próximo turno">Próximo turno <svg class="i"><use href="#i-direita" /></svg></button>
                 <button id="combate-encerrar" class="ghost">Encerrar</button>
                 <button id="combate-limpar" class="ghost" title="Tira os NPCs e mantém os jogadores">Limpar NPCs</button>
               </div>
-              <ol id="combatentes" class="lista combatentes" data-vazio="Adicione jogadores e criaturas abaixo."></ol>
+              <ol id="combatentes" title="HP: -7 causa dano, +5 cura, 30 define. Enter aplica." class="lista combatentes" data-vazio="Adicione jogadores e criaturas abaixo."></ol>
               <form id="combate-form" class="row combate-form">
                 <input name="nome" type="text" placeholder="Nome" required maxlength="40" />
                 <input name="iniciativa" type="number" placeholder="Iniciativa" title="Deixe vazio para rolar 1d20 + modificador" />
                 <input name="modificador" type="number" placeholder="Mod." title="Modificador de iniciativa (usado se a iniciativa estiver vazia)" />
-                <input name="hp" type="number" placeholder="HP" min="0" />
+                <input name="hp" type="number" placeholder="HP" min="0" title="Na lista, o campo de HP aceita -7 (dano), +5 (cura) ou 30 (define). Enter aplica." />
                 <label class="check"><input type="checkbox" name="jogador" /> Jogador</label>
-                <button class="primary">Adicionar</button>
+                <button>Adicionar</button>
               </form>
-              <p class="hint">No campo de HP de cada linha: <b>-7</b> causa dano, <b>+5</b> cura, <b>30</b> define. Enter aplica.</p>
             </div>
 
             <div data-painel="timers" class="hidden">
@@ -276,24 +297,22 @@
             <div data-painel="sessao" class="hidden">
               <div class="row">
                 <span id="sessao-info" class="status"></span>
-                <button id="sessao-postar" class="primary">Postar resumo no Discord</button>
+                <button id="sessao-postar" class="primary" title="Também dá para usar /resumo no Discord">Postar resumo no Discord</button>
                 <button id="sessao-nova" class="ghost" title="Limpa o registro e começa a contar de novo">Nova sessão</button>
               </div>
               <ol id="sessao-eventos" class="lista sessao-eventos" data-vazio="Nada registrado ainda. Cenas, momentos do roteiro, combates, críticos e músicas aparecem aqui."></ol>
-              <p class="hint">O mestre também pode usar <code>/resumo</code> no Discord. Os jogadores entram na iniciativa com <code>/iniciativa bonus:3</code> e veem a ordem com <code>/ordem</code>.</p>
             </div>
 
             <div data-painel="tabelas" class="hidden">
               <div class="row">
-                <select id="tabelas"></select>
+                <select id="tabelas" title="Cada .txt da pasta tabelas/ é uma tabela: uma opção por linha, &quot;3x&quot; no começo dá peso e [[1d6]] é rolado na hora."></select>
                 <button id="tabela-rolar" class="primary">Rolar</button>
-                <button id="tabelas-pasta" class="ghost" title="Abrir a pasta de tabelas">📁</button>
+                <button id="tabelas-pasta" class="ghost" title="Abrir a pasta de tabelas"><svg class="i"><use href="#i-pasta" /></svg></button>
               </div>
               <div id="tabela-resultado" class="resultado hidden">
                 <p id="tabela-texto"></p>
                 <button id="tabela-discord" class="ghost pequeno">Mandar no Discord</button>
               </div>
-              <p class="hint">Cada .txt da pasta tabelas/ é uma tabela: uma opção por linha, "3x" no começo dá peso e [[1d6]] é rolado na hora.</p>
             </div>
           </section>
         </div>
@@ -301,8 +320,7 @@
         <!-- Áudio -->
         <div class="pagina duas-colunas" data-pagina="audio">
           <section class="card" id="mixer">
-            <h2>Mixer</h2>
-            <p class="hint">Volume final = volume do som × volume do grupo × geral.</p>
+            <h2 title="Volume final = volume do som × volume do grupo × geral">Mixer</h2>
             <label class="slider">
               <span>Geral<small>tudo que sai pelo bot</small></span>
               <input type="range" data-volume="master" min="0" max="100" /><output></output>
@@ -323,8 +341,7 @@
               <span>Ducking<small>música enquanto um efeito toca</small></span>
               <input type="range" data-volume="ducking" min="0" max="100" /><output></output>
             </label>
-            <h3>Filtros de ambiente</h3>
-            <p class="hint">Mudam todo o som da mesa (também na barra de baixo). Salvar uma cena guarda os filtros ligados.</p>
+            <h3 title="Mudam todo o som da mesa (também na barra de baixo). Salvar uma cena guarda os filtros ligados.">Filtros de ambiente</h3>
             <div class="chips filtros">
               <button data-filtro="abafado">Abafado</button>
               <button data-filtro="caverna">Caverna</button>
@@ -333,8 +350,7 @@
           </section>
 
           <section class="card">
-            <h2>Seu fone</h2>
-            <p class="hint">O que você ouve no seu PC. Não muda o que vai para a call.</p>
+            <h2 title="O que você ouve no seu PC. Não muda o que vai para a call.">Seu fone</h2>
             <label class="campo"><span>O que ouvir</span>
               <select id="monitor-modo">
                 <option value="sem-capturas">Efeitos, ambiente e player</option>
@@ -354,13 +370,12 @@
 
           <section class="card atalhos-card">
             <div class="card-head">
-              <h2>Atalhos de teclado</h2>
+              <h2 title="Funcionam mesmo com o Mestrônomo em segundo plano. Clique no campo da tecla e aperte a combinação; use Ctrl, Alt ou Shift (só as teclas F funcionam sozinhas). Tudo é salvo na hora.">Atalhos de teclado</h2>
               <div class="row">
                 <button id="atalho-novo" class="ghost pequeno">+ Atalho</button>
                 <button id="atalhos-padrao" class="ghost pequeno">Restaurar padrão</button>
               </div>
             </div>
-            <p class="hint">Funcionam mesmo com o Mestrônomo em segundo plano. Clique no campo da tecla e aperte a combinação; use Ctrl, Alt ou Shift (só as teclas F funcionam sozinhas). Tudo é salvo na hora.</p>
             <ul id="atalhos-lista" class="lista atalhos" data-vazio="Nenhum atalho."></ul>
           </section>
         </div>
@@ -370,8 +385,8 @@
     <!-- Barra fixa: o essencial sempre à mão -->
     <footer class="barra">
       <div class="barra-player">
-        <button id="barra-pausar" class="redondo" title="Tocar/pausar">▶</button>
-        <button id="barra-proxima" class="ghost" title="Próxima">⏭</button>
+        <button id="barra-pausar" class="redondo" title="Tocar/pausar"><svg class="i"><use href="#i-play" /></svg></button>
+        <button id="barra-proxima" class="ghost" title="Próxima"><svg class="i"><use href="#i-proxima" /></svg></button>
         <div class="barra-info">
           <span id="barra-titulo" class="titulo">Nada tocando</span>
           <span id="barra-sub" class="sub"></span>
@@ -384,9 +399,9 @@
           <button data-filtro="caverna" title="Reverberação de masmorra">Caverna</button>
           <button data-filtro="eco" title="Eco de abismo">Eco</button>
         </div>
-        <button id="parar-efeitos" class="ghost" title="Para todos os efeitos, inclusive loops">⏹ Efeitos</button>
+        <button id="parar-efeitos" class="ghost" title="Para todos os efeitos, inclusive loops"><svg class="i"><use href="#i-parar" /></svg> Efeitos</button>
         <label class="slider compacto barra-volume" title="Volume geral">
-          <span>🔊</span><input type="range" data-volume="master" min="0" max="100" /><output></output>
+          <svg class="i"><use href="#i-volume" /></svg><input type="range" data-volume="master" min="0" max="100" /><output></output>
         </label>
       </div>
     </footer>
