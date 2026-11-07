@@ -25,7 +25,15 @@ jobs:
         run: npm ci
 
       - name: ffmpeg (testes de decodificação)
-        run: choco install ffmpeg -y --no-progress
+        # O ffmpeg.exe do Chocolatey no PATH é um "shim" que abre o ffmpeg de verdade como filho:
+        # encerrar o shim deixa o filho vivo (e, com -stream_loop -1, segurando o arquivo para sempre).
+        # Por isso a pasta do binário real vai na frente do PATH.
+        run: |
+          choco install ffmpeg -y --no-progress
+          $real = Get-ChildItem "$env:ChocolateyInstall\lib\ffmpeg" -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          if (-not $real) { throw 'ffmpeg real não encontrado' }
+          $real.DirectoryName | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          & $real.FullName -hide_banner -version | Select-Object -First 1
 
       - name: Tipos
         run: npm run typecheck
