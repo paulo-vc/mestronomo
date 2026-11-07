@@ -31,10 +31,15 @@ import { DEFAULT_HOTKEYS, registerHotkeys, type Hotkey, type HotkeyAction, type 
 import { SessionLog, type SessionLogState } from './sessionLog';
 import type { BotHooks } from './discord';
 
-if (!PACKAGED) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
+// MESTRONOMO_SEM_ENV=1 ignora o .env (testes e medições não podem ligar o bot de verdade).
+if (!PACKAGED && !process.env.MESTRONOMO_SEM_ENV) dotenv.config({ path: path.join(ROOT, '.env'), quiet: true });
 // A interface é simples (sem vídeo nem 3D): sem aceleração de GPU o processo de GPU fica
 // ~36 MB menor e a janela praticamente igual (medido com scripts/medir-app.ps1).
 app.disableHardwareAcceleration();
+// O serviço de rede do Chromium quase não é usado (só a prévia do Freesound): dentro do processo
+// principal ele poupa um processo de ~50 MB, sem mudar a CPU. A GPU fica fora: no processo
+// principal ela disputaria CPU com o mixer de áudio (medido com scripts/medir-app.ps1).
+app.commandLine.appendSwitch('enable-features', 'NetworkServiceInProcess2');
 // Pasta de configuração alternativa (testes, ou mais de um perfil de mesa).
 if (process.env.MESTRONOMO_USER_DATA) app.setPath('userData', process.env.MESTRONOMO_USER_DATA);
 

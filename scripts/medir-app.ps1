@@ -18,11 +18,17 @@ New-Item -ItemType Directory "$raiz\musicas\zz-teste" -Force | Out-Null
 & $ff -loglevel error -y -f lavfi -i "sine=frequency=330:duration=120" "$raiz\musicas\zz-teste\musica.ogg"
 & $ff -loglevel error -y -f lavfi -i "sine=frequency=500:duration=3" "$raiz\sons\zz-loop.wav"; $criados += "$raiz\sons\zz-loop.wav"
 
-$env:MESTRONOMO_USER_DATA = "$tmp\userdata"; $env:MESTRONOMO_PORT = "$Porta"; $env:DISCORD_TOKEN = ''
+# No PowerShell, DISCORD_TOKEN='' apaga a variável; quem garante que o .env (com o token real) não é lido é o MESTRONOMO_SEM_ENV.
+$env:MESTRONOMO_USER_DATA = "$tmp\userdata"; $env:MESTRONOMO_PORT = "$Porta"; $env:DISCORD_TOKEN = ''; $env:MESTRONOMO_SEM_ENV = '1'
 $app = Start-Process "$raiz\node_modules\electron\dist\electron.exe" -ArgumentList "`"$raiz`"" -PassThru
 Start-Sleep 8
 $api = "http://127.0.0.1:$Porta/api"
 function Arvore { $todos = Get-CimInstance Win32_Process; $ids = @($app.Id); do { $novos = $todos | Where-Object { $ids -contains $_.ParentProcessId -and $ids -notcontains $_.ProcessId } | ForEach-Object ProcessId; $ids += $novos } while ($novos); $ids }
+$bot = (Invoke-RestMethod "$api/estado").bot.state
+if ($bot -ne 'desligado') {
+  foreach ($id in (Arvore)) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
+  throw "O bot está '$bot' (deveria estar desligado); medição abortada."
+}
 
 # Carga: liga tudo e espera estabilizar.
 Invoke-RestMethod "$api/sons" | Out-Null

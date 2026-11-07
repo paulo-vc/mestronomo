@@ -35,6 +35,12 @@
     "appId": "com.paulovc.mestronomo",
     "productName": "Mestrônomo",
     "executableName": "Mestronomo",
+    "electronLanguages": [
+      "pt-BR",
+      "en-US"
+    ],
+    "compression": "maximum",
+    "afterPack": "scripts/depois-empacotar.js",
     "directories": {
       "output": "release/${version}"
     },

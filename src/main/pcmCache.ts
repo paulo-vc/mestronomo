@@ -136,7 +136,11 @@ export class MemorySource implements Source {
     readonly bus: Bus,
     readonly preview = false,
     private loop = false,
-  ) {}
+    /** Posição inicial (em valores s16), para continuar de onde um streaming parou. */
+    inicio = 0,
+  ) {
+    this.pos = pcm.length ? inicio % pcm.length : 0;
+  }
 
   get seconds() {
     return this.pos / CHANNELS / SAMPLE_RATE;
@@ -169,9 +173,64 @@ export class MemorySource implements Source {
  * Fonte para um arquivo: da memória se já estiver decodificado; senão por streaming com o
  * ffmpeg (como antes) e decodifica em segundo plano para a próxima vez.
  */
-export function playFile(cache: PcmCache | undefined, file: string, bus: Bus, preview = false, loop = false): MemorySource | FileSource {
+export function playFile(cache: PcmCache | undefined, file: string, bus: Bus, preview = false, loop = false): Source & { volume: number; ducks?: boolean } {
   const pcm = cache?.get(file);
   if (pcm) return new MemorySource(pcm, bus, preview, loop);
-  cache?.load(file);
-  return new FileSource(file, bus, preview, loop);
+  const carregando = cache?.load(file);
+  const streaming = new FileSource(file, bus, preview, loop);
+  // Um loop que começou antes de o arquivo estar decodificado passa para a memória assim que ficar
+  // pronto; sem isso o ffmpeg (~20 MB + console) ficaria aberto enquanto a camada tocasse.
+  return loop && carregando ? new LoopSource(streaming, carregando) : streaming;
+}
+
+/** Loop que começa por streaming e troca para a memória, no mesmo ponto, quando o PCM chega. */
+export class LoopSource implements Source {
+  private atual: MemorySource | FileSource;
+  private pronto?: Int16Array;
+
+  constructor(streaming: FileSource, carregando: Promise<Int16Array | undefined>) {
+    this.atual = streaming;
+    carregando.then((pcm) => (this.pronto = pcm)).catch(() => {});
+  }
+
+  get bus() {
+    return this.atual.bus;
+  }
+  get preview() {
+    return this.atual.preview;
+  }
+  get volume() {
+    return this.atual.volume;
+  }
+  set volume(v: number) {
+    this.atual.volume = v;
+  }
+  get ducks() {
+    return this.atual.ducks;
+  }
+  set ducks(v: boolean) {
+    this.atual.ducks = v;
+  }
+  /** true quando já toca da memória (sem ffmpeg). */
+  get naMemoria() {
+    return this.atual instanceof MemorySource;
+  }
+
+  read(out: Int16Array) {
+    if (this.pronto && this.atual instanceof FileSource) {
+      const streaming = this.atual;
+      const memoria = new MemorySource(this.pronto, streaming.bus, streaming.preview, true, streaming.framesPlayed * FRAME_VALUES);
+      memoria.volume = streaming.volume;
+      memoria.ducks = streaming.ducks;
+      memoria.paused = streaming.paused;
+      streaming.stop();
+      this.atual = memoria;
+      this.pronto = undefined;
+    }
+    return this.atual.read(out);
+  }
+
+  stop() {
+    this.atual.stop();
+  }
 }

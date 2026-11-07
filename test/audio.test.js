@@ -127,3 +127,29 @@ test('cache: decodifica, toca da memória, respeita limite e orçamento', precis
   assert.equal(c2.get(um), undefined, 'o menos usado sai');
   assert.ok(c2.get(tres));
 });
+
+test('cache: loop que começou por streaming passa para a memória e fecha o ffmpeg', precisaFfmpeg, async (t) => {
+  const { PcmCache, playFile } = load('pcmCache');
+  const dir = tempDir(t);
+  const arquivo = makeWav(path.join(dir, 'camada.wav'), 2);
+  const c = new PcmCache();
+  const fonte = playFile(c, arquivo, 'ambiente', false, true);
+  assert.equal(fonte.constructor.name, 'LoopSource');
+  fonte.volume = 0.4;
+  fonte.ducks = false;
+  const out = new Int16Array(FRAME_VALUES);
+  // Toca alguns quadros por streaming e espera o cache terminar de decodificar.
+  const inicio = Date.now();
+  while (!c.get(arquivo) && Date.now() - inicio < 10000) {
+    fonte.read(out);
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  assert.ok(c.get(arquivo), 'decodificou');
+  assert.equal(fonte.read(out), true);
+  assert.equal(fonte.naMemoria, true, 'trocou para a memória');
+  assert.equal(fonte.volume, 0.4, 'manteve o volume');
+  assert.equal(fonte.ducks, false, 'manteve o ducking');
+  for (let i = 0; i < 300; i++) assert.equal(fonte.read(out), true, 'continua em loop');
+  fonte.stop();
+  assert.equal(fonte.read(out), false);
+});
