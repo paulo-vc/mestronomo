@@ -137,6 +137,7 @@ test('cache: loop que começou por streaming passa para a memória e fecha o ffm
   assert.equal(fonte.constructor.name, 'LoopSource');
   fonte.volume = 0.4;
   fonte.ducks = false;
+  const ffmpeg = fonte.atual.ffmpeg;
   const out = new Int16Array(FRAME_VALUES);
   // Toca alguns quadros por streaming e espera o cache terminar de decodificar.
   const inicio = Date.now();
@@ -149,6 +150,8 @@ test('cache: loop que começou por streaming passa para a memória e fecha o ffm
   assert.equal(fonte.naMemoria, true, 'trocou para a memória');
   assert.equal(fonte.volume, 0.4, 'manteve o volume');
   assert.equal(fonte.ducks, false, 'manteve o ducking');
+  // O ffmpeg do streaming foi encerrado (no Windows, a pasta temporária só sai depois disso).
+  await new Promise((r) => (ffmpeg.exitCode !== null || ffmpeg.signalCode !== null ? r() : ffmpeg.once('exit', r)));
   for (let i = 0; i < 300; i++) assert.equal(fonte.read(out), true, 'continua em loop');
   fonte.stop();
   assert.equal(fonte.read(out), false);

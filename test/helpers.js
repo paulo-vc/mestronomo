@@ -12,7 +12,7 @@ const load = (nome) => require(path.join(DIST, `${nome}.js`));
 /** Pasta temporária apagada no fim do teste. */
 function tempDir(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mestronomo-teste-'));
-  t.after(() => fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true, maxRetries: 20, retryDelay: 150 }));
   return dir;
 }
 
