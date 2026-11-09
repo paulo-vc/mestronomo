@@ -1,7 +1,7 @@
 // Ajuda a configurar o próprio bot: verifica o token, descobre o dono e monta o link de convite.
 
-/** View Channels, Send Messages, Embed Links, Attach Files, Connect e Speak — só o que o Mestrônomo usa. */
-const PERMISSIONS = 1024 + 2048 + 16384 + 32768 + 1048576 + 2097152;
+/** View Channels, Send Messages, Embed Links, Attach Files, Read Message History (responder a !d20), Connect e Speak — só o que o Mestrônomo usa. */
+const PERMISSIONS = 1024 + 2048 + 16384 + 32768 + 65536 + 1048576 + 2097152;
 
 export const DEVELOPER_PORTAL = 'https://discord.com/developers/applications';
 

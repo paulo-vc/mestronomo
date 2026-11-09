@@ -34,7 +34,7 @@ Cada mestre usa o **próprio bot** (é de graça e leva uns 2 minutos). Um bot �
 
 No app, clique em **⚙** e siga os três passos:
 
-1. **Abrir o Discord Developer Portal** → *New Application* → dê um nome → aba **Bot** → **Reset Token** e copie. (Opcional: em *Installation*, deixe *Install Link* em "None" e desmarque *Public Bot* para que só você possa adicioná-lo.)
+1. **Abrir o Discord Developer Portal** → *New Application* → dê um nome → aba **Bot** → **Reset Token** e copie. Na mesma aba, ligue **Message Content Intent** (é o que deixa rolar dados escrevendo `!d20` no chat). (Opcional: em *Installation*, deixe *Install Link* em "None" e desmarque *Public Bot* para que só você possa adicioná-lo.)
 2. **Cole o token** e clique em **Verificar**: o app confere o token e mostra o nome do bot e o dono.
 3. **Convidar o bot**: abre o convite já com as permissões certas (ver canais, conectar, falar, enviar mensagens, links e arquivos). Escolha o servidor da mesa e **Salvar**.
 
@@ -99,7 +99,7 @@ Na página **Sessão**, ao lado do roteiro, o cartão da mesa tem quatro abas:
 | Comando | Quem pode | O que faz |
 | --- | --- | --- |
 | `/entrar` · `/sair` | Mestre | Chama o bot para o seu canal de voz, ou dispensa |
-| `/r 2d20kh1+5` | Todos | Rola dados. Aceita `NdM`, `kh`/`kl` (manter maiores/menores), `d%`, somas e subtrações, e os atalhos `vantagem` e `desvantagem`. Destaca 20 e 1 naturais no d20. Com `secreto: True`, só quem rolou vê |
+| `/r 2d20kh1+5` ou `!2d20kh1+5` | Todos | Rola dados (veja **Dados** abaixo). Com `/r … secreto: True`, só quem rolou vê. O atalho `!` no chat precisa da *Message Content Intent* ligada no Developer Portal |
 | `/canal` | Mestre | Escolhe, **neste servidor**, o canal de texto da mensagem **tocando agora**, dos handouts e dos avisos. Cada servidor tem o seu. |
 | `/iniciativa bonus:3` | Todos | Rola 1d20 + bônus e entra (ou atualiza) na ordem de combate do app |
 | `/ordem` | Todos | Mostra a ordem de combate, sem revelar HP |
@@ -114,6 +114,24 @@ Na página **Sessão**, ao lado do roteiro, o cartão da mesa tem quatro abas:
 **Handouts**: o botão 🖼 no topo do app manda uma imagem (mapa, retrato, carta…) com legenda opcional para esse canal.
 
 > Se você convidou o bot antes destes recursos, dê a ele as permissões **Send Messages**, **Embed Links** e **Attach Files** (pelo cargo do bot no servidor, ou convidando de novo com a URL nova).
+
+## Dados
+
+Escreva `!` e a rolagem direto no chat (ou use `/r`). O que vier depois da expressão vira o rótulo:
+
+| Exemplo | O que faz |
+| --- | --- |
+| `!d20+5` | Soma: um d20 + 5 |
+| `!3#d20+5` | Três rolagens separadas de d20+5 (sem somar entre elas) |
+| `!2d20kh1+5` ou `!vantagem+5` | Mantém o maior (`kh`) ou o menor (`kl`, `desvantagem`) |
+| `!4d6dl1` | Descarta o menor (`dl`) ou o maior (`dh`) |
+| `!3d6!` | Dado que explode: cada máximo rola mais um |
+| `!2d6r2` | Rola de novo, uma vez, resultados até 2 |
+| `!(2d6+3)*2` | Parênteses, `*` e `/` (arredonda para baixo) |
+| `!d20+5 >= 15` | Mostra sucesso ou falha; com `#`, conta os sucessos |
+| `!d20+5 ataque com espada` | Rolagem com rótulo |
+
+20 e 1 naturais no d20 são destacados e entram no registro da sessão. `!r d20` também funciona. Para o atalho com `!`, ligue **Message Content Intent** no Developer Portal (aba **Bot**); sem ela, o bot funciona normalmente e só o `/r` rola dados. Responder à mensagem precisa da permissão **Read Message History**, que o convite novo já pede (com convites antigos, o bot manda o resultado no canal em vez de responder).
 
 ## Backup
 
