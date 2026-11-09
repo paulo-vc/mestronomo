@@ -5,9 +5,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { load, tempDir, sequencia } = require('./helpers');
 
-const { roll, formatRoll } = load('dice');
+const { roll, formatRoll, rollCommand, formatCommand } = load('dice');
 /** Valor de random() que faz um d20 sair `face`. */
 const d20 = (...faces) => sequencia(faces.map((f) => (f - 1) / 20 + 0.001));
+/** Idem para um dado de `lados` lados. */
+const dN = (lados, ...faces) => sequencia(faces.map((f) => (f - 1) / lados + 0.001));
 
 test('dados: vantagem mantém o maior e soma o modificador', () => {
   const r = roll('2d20kh1+5', d20(3, 17));
@@ -35,6 +37,73 @@ test('dados: expressões inválidas dão erro claro', () => {
   ]) {
     assert.throws(() => roll(entrada), (e) => e.message.includes(trecho), entrada);
   }
+});
+
+test('dados: 3#d20+5 rola três vezes, separado', () => {
+  const c = rollCommand('3#d20+5', d20(10, 20, 1));
+  assert.deepEqual(c.rolagens.map((r) => r.total), [15, 25, 6]);
+  assert.deepEqual(c.rolagens.map((r) => r.natural), [undefined, 'critico', 'falha']);
+  assert.equal(formatCommand(c).split('\n')[0], '`3#d20+5`');
+  assert.match(formatCommand(c), /^2\. \[\*\*20\*\*\] \+ 5 = \*\*25\*\*  ✨/m);
+});
+
+test('dados: descartar (dl/dh), explodir (!) e rolar de novo (r)', () => {
+  const dl = roll('4d6dl1', dN(6, 6, 1, 6, 6));
+  assert.equal(dl.total, 18);
+  assert.equal(dl.detalhe, '[**6**, ~~1~~, **6**, **6**]');
+  assert.equal(roll('4d6dh1', dN(6, 6, 1, 5, 4)).total, 10);
+  // 6 explode → 6 explode → 2; os outros dois saem 3 e 4.
+  const ex = roll('3d6!', dN(6, 6, 6, 2, 3, 4));
+  assert.equal(ex.total, 21);
+  assert.equal(ex.grupos[0].dados.length, 5);
+  // 2 e 1 (≤ 2) rolam de novo, uma vez só.
+  const r = roll('2d6r2', dN(6, 2, 5, 1, 1));
+  assert.equal(r.detalhe, '[~~2~~, **5**, ~~1~~, **1**]');
+  assert.equal(r.total, 6);
+});
+
+test('dados: parênteses, * e / (arredonda para baixo)', () => {
+  const r = roll('(2d6+3)*2', dN(6, 3, 1));
+  assert.equal(r.total, 14);
+  assert.equal(r.detalhe, '([**3**, **1**] + 3) × 2');
+  assert.equal(roll('3d6/2', dN(6, 1, 2, 4)).total, 3);
+  assert.equal(roll('-2+10').total, 8);
+});
+
+test('dados: >= mostra sucesso/falha e conta sucessos com #', () => {
+  const r = roll('d20+5>=15', d20(10));
+  assert.deepEqual(r.teste, { comparador: '>=', alvo: 15, sucesso: true });
+  assert.match(formatRoll(r), /= \*\*15\*\* ≥ 15 ✅ sucesso$/);
+  const c = rollCommand('3#d20+3 > 12 teste de força', d20(15, 2, 10));
+  assert.equal(c.rotulo, 'teste de força');
+  assert.deepEqual(c.rolagens.map((x) => x.teste.sucesso), [true, false, true]);
+  assert.match(formatCommand(c), /\*\*2\*\* de 3 sucessos$/);
+});
+
+test('dados: rótulo depois da expressão, sem colar palavras soltas', () => {
+  const c = rollCommand('d20 + 5 iniciativa do goblin', d20(7));
+  assert.equal(c.expressao, 'd20+5');
+  assert.equal(c.rotulo, 'iniciativa do goblin');
+  assert.equal(formatCommand(c), '`d20+5` — *iniciativa do goblin* → [**7**] + 5 = **12**');
+  // "d20 3 vezes" não vira d203.
+  const v = rollCommand('d20 3 vezes', d20(4));
+  assert.equal(v.expressao, 'd20');
+  assert.equal(v.rotulo, '3 vezes');
+  assert.equal(rollCommand('vantagem + 2 ataque', d20(3, 17)).rolagens[0].total, 19);
+});
+
+test('dados: limites e erros claros dos recursos novos', () => {
+  for (const [entrada, trecho] of [
+    ['21#d20', 'de 1 a 20 rolagens'],
+    ['2d6r6', 'rolaria de novo todos'],
+    ['(d20+2', 'parêntese'],
+    ['d20/0', 'zero'],
+    ['oi tudo bem', 'Não entendi'],
+  ]) {
+    assert.throws(() => rollCommand(entrada), (e) => e.message.includes(trecho), entrada);
+  }
+  // Muitos dados: a mensagem não passa do limite do Discord.
+  assert.ok(formatCommand(rollCommand('20#100d6')).length <= 2000);
 });
 
 test('combate: ordena, avança rodadas e mantém o turno ao entrar alguém', () => {
@@ -137,7 +206,7 @@ test('convite do bot: id tirado do token e permissões', () => {
   const token = `${Buffer.from('123456789012345678').toString('base64').replace(/=+$/, '')}.AAAAAA.${'x'.repeat(38)}`;
   assert.equal(botIdFromToken(token), '123456789012345678');
   assert.equal(botIdFromToken('lixo'), undefined);
-  assert.match(inviteUrl('123456789012345678'), /client_id=123456789012345678&scope=bot\+applications\.commands&permissions=3197952$/);
+  assert.match(inviteUrl('123456789012345678'), /client_id=123456789012345678&scope=bot\+applications\.commands&permissions=3263488$/);
 });
 
 test('versões: comparação número a número', () => {

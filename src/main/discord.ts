@@ -25,7 +25,16 @@ import {
   type AudioPlayer,
 } from '@discordjs/voice';
 import type { Mixer } from './mixer';
-import { formatRoll, roll, type RollResult } from './dice';
+import { formatCommand, formatRoll, roll, rollCommand, type RollResult } from './dice';
+
+/** Rolar escrevendo no chat: "!d20+5", "!3#d20+5 ataque" (também "!r d20"). */
+const PREFIXO_DADOS = '!';
+/** Com o prefixo, só responde erro quando o texto parece mesmo dado (não atrapalha "!play" de outro bot). */
+const PARECE_DADO = /^(\d|\(|d\d|d%|vantagem|desvantagem|adv\b|dis\b)/i;
+
+/** Erro de login por pedir "Message Content Intent" sem ela estar ligada no Developer Portal. */
+const intentNegada = (err: unknown) =>
+  (err as { code?: string }).code === 'DisallowedIntents' || /disallowed intents|privileged intent/i.test(String((err as Error)?.message));
 
 export type BotStatus =
   | { state: 'desligado'; motivo?: string }
@@ -38,8 +47,8 @@ const COMMANDS = [
   new SlashCommandBuilder().setName('sair').setDescription('Mestrônomo sai do canal de voz'),
   new SlashCommandBuilder()
     .setName('r')
-    .setDescription('Rola dados: 2d20kh1+5, 4d6kh3, 1d8+2d6-1, vantagem+3...')
-    .addStringOption((o) => o.setName('dados').setDescription('Expressão, ex.: 1d20+5').setRequired(true))
+    .setDescription('Rola dados: d20+5, 3#d20+5, 4d6dl1, 3d6!, vantagem+3, d20+5>=15 (ou no chat: !d20+5)')
+    .addStringOption((o) => o.setName('dados').setDescription('Expressão e rótulo opcional, ex.: 3#d20+5 ataque').setRequired(true))
     .addBooleanOption((o) => o.setName('secreto').setDescription('Só você vê o resultado')),
   new SlashCommandBuilder().setName('canal').setDescription('Usa este canal de texto para "tocando agora" e handouts'),
   new SlashCommandBuilder()
@@ -98,7 +107,9 @@ const BRAND_COLOR = 0xd9a441;
 export class DiscordBot extends EventEmitter {
   status: BotStatus = { state: 'desligado' };
 
-  private client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates] });
+  /** Ler as mensagens do chat (para "!d20") exige "Message Content Intent" ligada no Developer Portal. */
+  private lerMensagens = true;
+  private client = DiscordBot.criarCliente(true);
   private player: AudioPlayer;
   private guildId: string | undefined;
   /**
@@ -129,8 +140,40 @@ export class DiscordBot extends EventEmitter {
     this.playMixer();
   }
 
+  private static criarCliente(lerMensagens: boolean) {
+    const intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates];
+    if (lerMensagens) intents.push(GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent);
+    return new Client({ intents });
+  }
+
   async start() {
     this.setStatus({ state: 'conectando' });
+    this.ligarEventos();
+    try {
+      await this.client.login(this.token);
+    } catch (err) {
+      if (!this.lerMensagens || !intentNegada(err)) {
+        this.setStatus({ state: 'desligado', motivo: `Falha no login: ${(err as Error).message}` });
+        return;
+      }
+      // Sem "Message Content Intent" no Developer Portal: entra sem ler o chat; o /r continua valendo.
+      this.lerMensagens = false;
+      await this.client.destroy().catch(() => {});
+      this.client = DiscordBot.criarCliente(false);
+      this.ligarEventos();
+      this.emit(
+        'erro',
+        'Para rolar dados escrevendo !d20 no chat, ligue "Message Content Intent" no Discord Developer Portal (seu app → aba Bot) e reinicie o Mestrônomo. O /r funciona sem isso.',
+      );
+      try {
+        await this.client.login(this.token);
+      } catch (err2) {
+        this.setStatus({ state: 'desligado', motivo: `Falha no login: ${(err2 as Error).message}` });
+      }
+    }
+  }
+
+  private ligarEventos() {
     this.client.once('clientReady', async () => {
       if (!this.ownerId) {
         const app = await this.client.application!.fetch();
@@ -150,11 +193,30 @@ export class DiscordBot extends EventEmitter {
       const channel = oldState.guild.members.me?.voice.channel;
       if (oldState.guild.id === this.guildId && channel && channel.members.every((m) => m.user.bot)) this.leave();
     });
+    if (this.lerMensagens) this.client.on('messageCreate', (message) => this.onMensagem(message).catch((err) => console.error('[dados]', err)));
+  }
+
+  /** "!d20+5", "!3#d20+5 ataque", "!r 2d6": rola e responde no próprio canal. */
+  private async onMensagem(message: Message) {
+    if (message.author.bot || !message.inGuild()) return;
+    const texto = message.content.trim();
+    if (!texto.startsWith(PREFIXO_DADOS)) return;
+    const expressao = texto.slice(PREFIXO_DADOS.length).trim().replace(/^(r|roll|rolar)\s+/i, '');
+    if (!expressao) return;
+    const jogador: Player = { id: message.author.id, nome: message.member?.displayName ?? message.author.displayName };
+    let conteudo: string;
     try {
-      await this.client.login(this.token);
+      const comando = rollCommand(expressao);
+      for (const r of comando.rolagens) this.hooks.rolagem(jogador, r);
+      conteudo = `🎲 **${jogador.nome}** rolou ${formatCommand(comando)}`;
     } catch (err) {
-      this.setStatus({ state: 'desligado', motivo: `Falha no login: ${(err as Error).message}` });
+      if (!PARECE_DADO.test(expressao)) return;
+      conteudo = (err as Error).message;
     }
+    // Responder exige "Ler histórico de mensagens"; bots convidados antes disso mandam no canal.
+    await message
+      .reply({ content: conteudo, allowedMentions: { repliedUser: false } })
+      .catch(() => message.channel.send({ content: conteudo, allowedMentions: { parse: [] } }));
   }
 
   /** Entra no canal de voz em que o mestre está agora. */
@@ -260,13 +322,11 @@ export class DiscordBot extends EventEmitter {
   private async onRoll(interaction: ChatInputCommandInteraction) {
     const secreto = interaction.options.getBoolean('secreto') ?? false;
     try {
-      const r = roll(interaction.options.getString('dados', true));
-      const resultado = formatRoll(r);
+      const comando = rollCommand(interaction.options.getString('dados', true));
       const jogador = this.jogadorDe(interaction);
-      if (!secreto) this.hooks.rolagem(jogador, r);
-      const quem = jogador.nome;
+      if (!secreto) for (const r of comando.rolagens) this.hooks.rolagem(jogador, r);
       await interaction.reply({
-        content: `🎲 **${quem}** rolou ${resultado}${secreto ? '  *(secreto)*' : ''}`,
+        content: `🎲 **${jogador.nome}** rolou ${formatCommand(comando)}${secreto ? '  *(secreto)*' : ''}`,
         flags: secreto ? MessageFlags.Ephemeral : undefined,
       });
     } catch (err) {
